@@ -279,6 +279,8 @@ and
 
     member QualifiedName: string
 
+    static member Parse: assemblyQualifiedName: string -> ILType
+
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature =  
     { CallingConv: ILCallingConv
@@ -1838,6 +1840,7 @@ val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val storeILCustomAttrs: ILAttributes -> ILAttributesStored
 val mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
 val emptyILCustomAttrs: ILAttributes
+val emptyILCustomAttrsStored: ILAttributesStored
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
@@ -1981,6 +1984,7 @@ val isILIntPtrTy: ILGlobals -> ILType -> bool
 val isILUIntPtrTy: ILGlobals -> ILType -> bool
 val isILBoolTy: ILGlobals -> ILType -> bool
 val isILCharTy: ILGlobals -> ILType -> bool
+val isILTypeTy: ILGlobals -> ILType -> bool
 val isILTypedReferenceTy: ILGlobals -> ILType -> bool
 val isILDoubleTy: ILGlobals -> ILType -> bool
 val isILSingleTy: ILGlobals -> ILType -> bool

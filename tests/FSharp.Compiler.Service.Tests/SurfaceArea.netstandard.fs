@@ -16854,6 +16854,7 @@ FSharp.Compiler.AbstractIL.IL+ILType: System.String QualifiedName
 FSharp.Compiler.AbstractIL.IL+ILType: System.String ToString()
 FSharp.Compiler.AbstractIL.IL+ILType: System.String get_BasicQualifiedName()
 FSharp.Compiler.AbstractIL.IL+ILType: System.String get_QualifiedName()
+FSharp.Compiler.AbstractIL.IL+ILType: ILType Parse(System.String)
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean HasSecurity
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsAbstract
 FSharp.Compiler.AbstractIL.IL+ILTypeDef: Boolean IsClass
@@ -17920,6 +17921,9 @@ FSharp.Compiler.AbstractIL.IL: System.Tuple`2[FSharp.Compiler.AbstractIL.IL+ILAr
 FSharp.Compiler.AbstractIL.IL: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.AbstractIL.IL+ILAttribElem],Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`4[System.String,FSharp.Compiler.AbstractIL.IL+ILType,System.Boolean,FSharp.Compiler.AbstractIL.IL+ILAttribElem]]] decodeILAttribData(ILGlobals, ILAttribute)
 FSharp.Compiler.AbstractIL.IL: System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[System.String],System.String] splitILTypeName(System.String)
 FSharp.Compiler.AbstractIL.IL: System.Tuple`2[Microsoft.FSharp.Core.FSharpOption`1[System.String],System.String] splitTypeNameRight(System.String)
+FSharp.Compiler.AbstractIL.IL: Boolean isILTypeTy(ILGlobals, ILType)
+FSharp.Compiler.AbstractIL.IL: ILAttributesStored emptyILCustomAttrsStored
+FSharp.Compiler.AbstractIL.IL: ILAttributesStored get_emptyILCustomAttrsStored()
 FSharp.Compiler.AbstractIL.IL: System.Tuple`2[System.String[],System.String] splitILTypeNameWithPossibleStaticArguments(System.String)
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: ILModuleDef ILModuleDef
 FSharp.Compiler.AbstractIL.ILBinaryReader+ILModuleReader: ILModuleDef get_ILModuleDef()
