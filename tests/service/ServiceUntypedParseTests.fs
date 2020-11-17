@@ -305,3 +305,506 @@ type T =
     new (x:int) = ()
 """
         getTypeMemberRange source |> shouldEqual [ (3, 4), (3, 20) ]
+
+module FunctionApplicationArguments =
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Single arg``() =
+        let source = """
+let f x = ()
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg``() =
+        let source = """
+let f x y z = ()
+f 1 2 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 4); (3, 6)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg parentheses``() =
+        let source = """
+let f x y z = ()
+f (1) (2) (3)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 6); (3, 10)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - Multi arg nested parentheses``() =
+        let source = """
+let f x y z = ()
+f ((1)) (((2))) ((((3))))
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 10); (3, 19)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - unit``() =
+        let source = """
+let f () = ()
+f ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        Assert.IsTrue(res.IsNone, "Found argument for unit-accepting function, which shouldn't be the case.")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - curried function``() =
+        let source = """
+let f x y = x + y
+f 12
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple value``() =
+        let source = """
+let f (t: int * int) = ()
+let t = (1, 2)
+f t
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 4 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(4, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple literal``() =
+        let source = """
+let f (t: int * int) = ()
+f (1, 2)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 6)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple value with definition that has explicit names``() =
+        let source = """
+let f ((x, y): int * int) = ()
+let t = (1, 2)
+f t
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 4 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(4, 2)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuple literal inside parens``() =
+        let source = """
+let f (x, y) = ()
+f ((1, 2))
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 4); (3, 7)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - tuples with elements as arguments``() =
+        let source = """
+let f (a, b) = ()
+f (1, 2)
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 3); (3, 6)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - top-level arguments with nested function call``() =
+        let source = """
+let f x y = x + y
+f (f 1 2) 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 0)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 2); (3, 10)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function argument positions``() =
+        let source = """
+let f x y = x + y
+f (f 1 2) 3
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 3 3)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(3, 5); (3, 7)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function application in infix expression``() =
+        let source = """
+let addStr x y = string x + y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 17)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 24)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function application outside of infix expression``() =
+        let source = """
+let addStr x y = x + string y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 21)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 28)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+    [<Test>]
+    let ``GetAllArgumentsForFunctionApplicationAtPostion - nested function applications both inside and outside of infix expression``() =
+        let source = """
+let addStr x y = string x + string y
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 17)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 24)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+        
+        let res = parseFileResults.GetAllArgumentsForFunctionApplicationAtPostion (mkPos 2 28)
+        match res with
+        | Some res ->
+            res
+            |> List.map (tups >> fst)
+            |> shouldEqual [(2, 35)]
+        | None ->
+            Assert.Fail("No arguments found in source code")
+
+module TypeAnnotations =
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - function - no annotation``() =
+        let source = """
+let f x = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 6), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - function - single arg annotation``() =
+        let source = """
+let f (x: int) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - function - first arg annotated``() =
+        let source = """
+let f (x: int) y = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - function - second arg annotated``() =
+        let source = """
+let f x (y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.False(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 9), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - function - all args annotated``() =
+        let source = """
+let f (x: int) (y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 16), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - lambda function - all args annotated``() =
+        let source = """
+let f = fun (x: int) (y: string) -> ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected a annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 22), "Expected a annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - arg no annotations``() =
+        let source = """
+type C(x) = class end
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - first arg unannotated``() =
+        let source = """
+type C(x, y: string) = class end
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 10), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - second arg unannotated``() =
+        let source = """
+type C(x: int, y) = class end
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - constuctor - both args annotated``() =
+        let source = """
+type C(x: int, y: int) = class end
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 7), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 15), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method - args no unannotions``() =
+        let source = """
+type C() =
+    member _.M(x, y) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method - first arg annotated``() =
+        let source = """
+type C() =
+    member _.M(x: int, y) = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method - second arg annotated``() =
+        let source = """
+type C() =
+    member _.M(x, y: int) = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method - both args annotated``() =
+        let source = """
+type C() =
+    member _.M(x: int, y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 23), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method currying - args no unannotions``() =
+        let source = """
+type C() =
+    member _.M x y = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 17), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method currying - first arg annotated``() =
+        let source = """
+type C() =
+    member _.M (x: int) y = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 24), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method currying - second arg annotated``() =
+        let source = """
+type C() =
+    member _.M x (y: int) = ()
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 18), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method currying - both args annotated``() =
+        let source = """
+type C() =
+    member _.M (x: int) (y: string) = ()
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 16), "Expected annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 25), "Expected annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - method - only return type annotated``() =
+        let source = """
+type C() =
+    member _.M(x): string = "hello" + x
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 3 15), "Expected no annotation for argument 'x'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - tuple - no annotations``() =
+        let source = """
+let (x, y) = (12, "hello")
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for value 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected no annotation for value 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - tuple - first value annotated``() =
+        let source = """
+let (x: int, y) = (12, "hello")
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected annotation for argument 'x'")
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 13), "Expected no annotation for argument 'y'")
+
+    [<Test>]
+    let ``IsTypeAnnotationGivenAtPosition - tuple - second value annotated``() =
+        let source = """
+let (x, y: string) = (12, "hello")
+"""
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 5), "Expected no annotation for argument 'x'")
+        Assert.IsTrue(parseFileResults.IsTypeAnnotationGivenAtPosition (mkPos 2 8), "Expected annotation for argument 'y'")
+
+module LambdaRecognition =
+    [<Test>]
+    let ``IsBindingALambdaAtPosition - recognize a lambda``() =
+        let source = """
+let f = fun x y -> x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
+
+    [<Test>]
+    let ``IsBindingALambdaAtPosition - recognize a nested lambda``() =
+        let source = """
+let f =
+    fun x ->
+        fun y ->
+            x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
+
+    [<Test>]
+    let ``IsBindingALambdaAtPosition - recognize a "partial" lambda``() =
+        let source = """
+let f x =
+    fun y ->
+        x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsTrue(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "Expected 'f' to be a lambda expression")
+
+    [<Test>]
+    let ``IsBindingALambdaAtPosition - not a lambda``() =
+        let source = """
+let f x y = x + y
+    """
+        let parseFileResults, _ = getParseAndCheckResults source
+        Assert.IsFalse(parseFileResults.IsBindingALambdaAtPosition (mkPos 2 4), "'f' is not a lambda expression'")

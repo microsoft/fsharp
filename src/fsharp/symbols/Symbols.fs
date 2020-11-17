@@ -1645,6 +1645,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m | C m -> m.IsDispatchSlot
         | V v -> v.IsDispatchSlot
 
+    member _.IsMethod =
+        match d with
+        | M _ -> true
+        | _ -> false
+
     member x.IsProperty = 
         match d with 
         | P _ -> true
@@ -2062,6 +2067,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
         | _ -> false
 
+    member x.IsFunction =
+        match d with
+        | V valRef -> SymbolHelpers.isFunction cenv.g valRef.Type
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -2082,10 +2092,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName
         with _  -> "??"
 
-    member x.FormatLayout (context:FSharpDisplayContext) =
+    member x.FormatLayout (displayContext: FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfMemberNoInstShort { (context.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (displayContext.Contents cenv.g) with showMemberContainers=true } v.Deref
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -2097,8 +2107,26 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
-            NicePrint.prettyLayoutOfTypeNoCx (context.Contents cenv.g) ty
+            NicePrint.prettyLayoutOfTypeNoCx (displayContext.Contents cenv.g) ty
 
+    member x.GetReturnTypeLayout (displayContext: FSharpDisplayContext) =
+        match x.IsMember, d with
+        | true, _ ->
+            None
+        | false, _ ->
+            checkIsResolved()
+            match d with 
+            | E _
+            | P _
+            | C _ -> None
+            | M m ->
+                let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                NicePrint.layoutType (displayContext.Contents cenv.g) rty
+                |> Some
+            | V v ->
+                NicePrint.layoutOfValReturnType (displayContext.Contents cenv.g) v
+                |> Some        
+    
     member x.GetWitnessPassingInfo() = 
         let witnessInfos = 
             match d with 

@@ -1198,7 +1198,18 @@ module private PrintTypes =
 
     let prettyLayoutOfTypeNoConstraints denv ty = 
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty 
+        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
+
+    let layoutOfValReturnType denv (v: ValRef) =
+        match v.ValReprInfo with 
+        | None ->
+            let _, tau = v.TypeScheme
+            let _argtysl, rty = stripFunTy denv.g tau
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
+        | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
+            let tau = v.TauType
+            let _c, rty = GetTopTauTypeInFSharpForm denv.g argInfos tau Range.range0
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
 
     let layoutAssemblyName _denv (ty: TType) =
         ty.GetAssemblyName()
@@ -2250,7 +2261,9 @@ let prettyLayoutOfValOrMember denv typarInst v = PrintTastMemberOrVals.prettyLay
 
 let prettyLayoutOfValOrMemberNoInst denv v = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv v
 
-let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v 
+let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v
+
+let layoutOfValReturnType denv x = x |> PrintTypes.layoutOfValReturnType denv
 
 let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 

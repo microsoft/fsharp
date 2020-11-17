@@ -104,6 +104,61 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: ParsedInput option
         match input with
         | Some input -> FSharpNoteworthyParamInfoLocations.Find(pos, input)
         | _ -> None
+
+    member scope.GetAllArgumentsForFunctionApplicationAtPostion pos =
+        match input with
+        | Some input -> SynExprAppLocationsImpl.getAllCurriedArgsAtPosition pos input
+        | None -> None
+
+    member scope.IsTypeAnnotationGivenAtPosition pos =
+        match input with
+        | Some parseTree ->
+            let res =
+                AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+                    member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                        match expr with
+                        | SynExpr.Typed (_expr, _typeExpr, range) when posEq range.Start pos ->
+                            Some range
+                        | _ -> defaultTraverse expr
+
+                    override _.VisitSimplePats(pats) =
+                        match pats with
+                        | [] -> None
+                        | _ ->
+                            let exprFunc pat =
+                                match pat with
+                                | SynSimplePat.Typed (_pat, _targetExpr, range) when posEq range.Start pos ->
+                                    Some range
+                                | _ ->
+                                    None
+
+                            pats |> List.tryPick exprFunc
+
+                    override _.VisitPat(defaultTraverse, pat) =
+                        match pat with
+                        | SynPat.Typed (_pat, _targetType, range) when posEq range.Start pos ->
+                            Some range
+                        | _ -> defaultTraverse pat })
+            res.IsSome
+        | None -> false
+
+    member scope.IsBindingALambdaAtPosition pos =
+        match input with
+        | Some parseTree ->
+            let res =
+                AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with
+                    member _.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) =
+                        defaultTraverse expr
+
+                    override _.VisitBinding(defaultTraverse, binding) =
+                        match binding with
+                        | SynBinding.Binding(_, _, _, _, _, _, _, _, _, expr, range, _) when posEq range.Start pos ->
+                            match expr with
+                            | SynExpr.Lambda _ -> Some range
+                            | _ -> None
+                        | _ -> defaultTraverse binding })
+            res.IsSome
+        | None -> false
     
     /// Get declared items and the selected item at the specified location
     member private scope.GetNavigationItemsImpl() =

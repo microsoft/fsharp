@@ -10,8 +10,6 @@ open System.Threading.Tasks
 open System.Linq
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
 

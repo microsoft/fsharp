@@ -22,11 +22,20 @@ type public FSharpParseFileResults =
     /// Notable parse info for ParameterInfo at a given location
     member FindNoteworthyParamInfoLocations : pos:pos -> FSharpNoteworthyParamInfoLocations option
 
+    /// Gets the ranges of all arguments, if they can be found, for a function application at the given position.
+    member GetAllArgumentsForFunctionApplicationAtPostion: pos: pos -> range list option
+
+    /// Determines if the expression or pattern at the given position has a type annotation
+    member IsTypeAnnotationGivenAtPosition: pos -> bool
+
+    /// Determines if the binding at the given position is bound to a lambda expression
+    member IsBindingALambdaAtPosition: pos -> bool
+
     /// Name of the file for which this information were created
-    member FileName                       : string
+    member FileName: string
 
     /// Get declared items and the selected item at the specified location
-    member GetNavigationItems             : unit -> FSharpNavigationItems
+    member GetNavigationItems: unit -> FSharpNavigationItems
 
     /// Return the inner-most range associated with a possible breakpoint location
     member ValidateBreakpointLocation : pos:pos -> range option
