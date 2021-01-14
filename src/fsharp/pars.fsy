@@ -37,6 +37,9 @@ let debugPrint s = ignore s
 
 let exprFromParseError (e:SynExpr) = SynExpr.FromParseError (e, e.Range)
 
+let unitExprFromRange m = SynExpr.Const (SynConst.Unit, m)
+let unitExprFromParseError m = unitExprFromRange m |> exprFromParseError
+
 let patFromParseError (e:SynPat) = SynPat.FromParseError(e, e.Range)
 
 let mkSynOptionalExpr (m: range) xopt = 
@@ -2311,13 +2314,6 @@ opt_explicitValTyparDecls:
   |       
       { SynValTyparDecls([], true, []) }
 
-opt_explicitValTyparDecls2: 
-  | explicitValTyparDecls 
-      { Some $1 } 
-
-  | /* EMPTY */      
-      { None }
-
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 opt_typeConstraints:
@@ -3065,17 +3061,26 @@ namePatPair:
      { ($1, $3) }
 
 constrPattern:
-  | atomicPatternLongIdent explicitValTyparDecls                                                          
+  | atomicPatternLongIdent explicitValTyparDecls
       { let vis, lid = $1 in SynPat.LongIdent (lid, None, Some $2, SynArgPats.Pats [], vis, lhs parseState) }
 
-  | atomicPatternLongIdent opt_explicitValTyparDecls2                     atomicPatsOrNamePatPairs    %prec pat_app 
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, $2, $3, vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls atomicPatsOrNamePatPairs %prec pat_app
+      { let vis, lid = $1 in SynPat.LongIdent (lid, None, Some $2, $3, vis, lhs parseState) }
 
-  | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs                  
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, $2, $4, vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1 in SynPat.LongIdent (lid, None, Some $2, $4, vis, lhs parseState) }
 
-  | atomicPatternLongIdent opt_explicitValTyparDecls2 HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs                  
-      { let vis, lid = $1 in SynPat.LongIdent (lid, None, $2, $4, vis, lhs parseState) }
+  | atomicPatternLongIdent explicitValTyparDecls HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1 in SynPat.LongIdent (lid, None, Some $2, $4, vis, lhs parseState) }
+
+  | atomicPatternLongIdent atomicPatsOrNamePatPairs %prec pat_app
+      { let vis, lid = $1 in SynPat.LongIdent (lid, None, None, $2, vis, lhs parseState) }
+
+  | atomicPatternLongIdent HIGH_PRECEDENCE_PAREN_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1 in SynPat.LongIdent (lid, None, None, $3, vis, lhs parseState) }
+
+  | atomicPatternLongIdent HIGH_PRECEDENCE_BRACK_APP atomicPatsOrNamePatPairs
+      { let vis, lid = $1 in SynPat.LongIdent (lid, None, None, $3, vis, lhs parseState) }
 
   | COLON_QMARK atomTypeOrAnonRecdType  %prec pat_isinst 
       { SynPat.IsInst($2, lhs parseState) }
@@ -3914,12 +3919,11 @@ patternClauses:
        // silent recovery 
        [Clause(pat, guard, $2, patm, DebugPointForTarget.Yes)], mLast }
 
-  | patternAndGuard error 
-     { let pat, guard, patm = $1 
-       let mLast = rhs parseState 2
-       // silent recovery 
-       [Clause(pat, guard, SynExpr.Const (SynConst.Unit, mLast.EndRange), patm, DebugPointForTarget.Yes)], mLast }
- 
+  | patternAndGuard error
+     { let pat, guard, patm = $1
+       let mLast = match guard with | Some _ -> rhs parseState 1 | _ -> patm
+       [Clause(pat, guard, unitExprFromParseError mLast.EndRange, patm, DebugPointForTarget.Yes)], mLast }
+
 patternGuard: 
   | WHEN declExpr 
      { Some $2 }
