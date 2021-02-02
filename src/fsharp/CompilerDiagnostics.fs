@@ -1162,7 +1162,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   printfn "   ----" 
                   //printfn "   state %d" state
                   for rp in rps do
-                      printfn "       non-terminal %+A: ... " (Parser.prodIdxToNonTerminal rp)
+                      printfn "       non-terminal %+A (idx %d): ... " (Parser.prodIdxToNonTerminal rp) rp
 #endif
 
           match ctxt.CurrentToken with 
