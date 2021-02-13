@@ -1304,8 +1304,7 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
                             // NOTE: The types provided by GetTypes() are available for name resolution
                             // when the namespace is "opened". This is part of the specification of the language
                             // feature.
-                            let tys = providedNamespace.PApplyArray((fun provider -> provider.GetTypes()), "GetTypes", m)
-                            let ptys = [| for ty in tys -> ty.PApply((fun ty -> ty |> ProvidedType.CreateNoContext), m) |]
+                            let ptys = providedNamespace.PApplyArray(GetProvidedTypes, "GetTypes", m)
                             for st in ptys do 
                                 tcImportsStrong.InjectProvidedNamespaceOrTypeIntoEntity (typeProviderEnvironment, tcConfig, m, entityToInjectInto, [], path, provider, Some st)
 

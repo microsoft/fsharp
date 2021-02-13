@@ -18,7 +18,7 @@ type internal TypeProviderToken() = interface LockToken
 type internal TypeProviderLock() =
     inherit Lock<TypeProviderToken>()
 
-type internal TypeProviderError
+type TypeProviderError
     (
         errNum: int,
         tpDesignation: string,
@@ -77,10 +77,10 @@ type internal TypeProviderError
             for msg in errors do
                 f (new TypeProviderError(errNum, tpDesignation, m, [msg], typeNameContext, methodNameContext))
 
-type TaintedContext = { TypeProvider: ITypeProvider; TypeProviderAssemblyRef: ILScopeRef; Lock: TypeProviderLock }
+type TaintedContext = { TypeProvider : ITypeProvider; TypeProviderAssemblyRef : ILScopeRef; TypeProviderDesignation: string; Lock : TypeProviderLock }
 
-[<NoEquality>][<NoComparison>] 
-type internal Tainted<'T> (context: TaintedContext, value: 'T) =
+[<NoEquality>][<NoComparison>]
+type Tainted<'T> (context : TaintedContext, value : 'T) =
     do
         match box context.TypeProvider with 
         | null -> 
@@ -88,8 +88,8 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
             failwith "null ITypeProvider in Tainted constructor"
         | _ -> ()
 
-    member _.TypeProviderDesignation = 
-        context.TypeProvider.GetType().FullName
+    member _.TypeProviderDesignation =
+        context.TypeProviderDesignation
 
     member _.TypeProviderAssemblyRef = 
         context.TypeProviderAssemblyRef
@@ -148,9 +148,9 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     /// Access the target object directly. Use with extreme caution.
     member this.AccessObjectDirectly = value
 
-    static member CreateAll(providerSpecs: (ITypeProvider * ILScopeRef) list) =
-        [for (tp,nm) in providerSpecs do
-             yield Tainted<_>({ TypeProvider=tp; TypeProviderAssemblyRef=nm; Lock=TypeProviderLock() },tp) ] 
+    static member CreateAll(providerSpecs : (ITypeProvider * ILScopeRef * string) list) =
+        [for (tp,nm, tpd) in providerSpecs do
+             yield Tainted<_>({ TypeProvider = tp; TypeProviderAssemblyRef = nm; TypeProviderDesignation = tpd; Lock=TypeProviderLock() },tp) ]
 
     member this.OfType<'U> () =
         match box value with
@@ -160,7 +160,7 @@ type internal Tainted<'T> (context: TaintedContext, value: 'T) =
     member this.Coerce<'U> (range:range) =
         Tainted(context, this.Protect(fun value -> box value :?> 'U) range)
 
-module internal Tainted =
+module Tainted =
     let (|Null|_|) (p:Tainted<'T>) =
         if p.PUntaintNoFailure(fun p -> match p with null -> true | _ -> false) then Some() else None
 

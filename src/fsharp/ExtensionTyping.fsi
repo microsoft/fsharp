@@ -12,7 +12,7 @@ open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
 
-module internal ExtensionTyping =
+module ExtensionTyping =
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
@@ -285,6 +285,9 @@ module internal ExtensionTyping =
     /// Get the provided expression for a particular use of a method.
     val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
 
+    /// Get all provided types from provided namespace
+    val GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]
+
     /// Validate that the given provided type meets some of the rules for F# provided types
     val ValidateProvidedTypeAfterStaticInstantiation : range * Tainted<ProvidedType> * expectedPath : string[] * expectedName : string-> unit
 
@@ -336,5 +339,33 @@ module internal ExtensionTyping =
     /// Check if this is a direct reference to a non-embedded generated type. This is not permitted at any name resolution.
     /// We check by seeing if the type is absent from the remapping context.
     val IsGeneratedTypeDirectReference         : Tainted<ProvidedType> * range -> bool
+
+    [<AutoOpen>]
+    module Shim =
+
+        type IExtensionTypingProvider =
+
+             /// Find and instantiate the set of ITypeProvider components for the given assembly reference
+            abstract InstantiateTypeProvidersOfAssembly :
+              runtimeAssemblyFilename: string
+              * designerAssemblyName: string
+              * ResolutionEnvironment
+              * bool
+              * isInteractive: bool
+              * systemRuntimeContainsType : (string -> bool)
+              * systemRuntimeAssemblyVersion : System.Version
+              * compilerToolsPath : string list
+              * m: range -> ITypeProvider list
+
+            abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]
+            abstract ResolveTypeName: pn: IProvidedNamespace * typeName: string -> ProvidedType
+            abstract GetInvokerExpression: provider: ITypeProvider * methodBase: ProvidedMethodBase * paramExprs: ProvidedVar[] -> ProvidedExpr
+            abstract DisplayNameOfTypeProvider: typeProvider: ITypeProvider * fullName: bool -> string
+
+        [<Sealed>]
+        type DefaultExtensionTypingProvider =
+            interface IExtensionTypingProvider
+
+        val mutable ExtensionTypingProvider: IExtensionTypingProvider
 
 #endif

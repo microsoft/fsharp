@@ -22,6 +22,9 @@
     <Compile Include="..\service\AssemblyReaderShim.fs">
       <Link>AssemblyReaderShim.fs</Link>
     </Compile>
+    <Compile Include="..\service\ExtensionTypingProviderShim.fs">
+      <Link>ExtensionTypingProviderShim.fs</Link>
+    </Compile>
     <Compile Include="..\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
     </Compile>
