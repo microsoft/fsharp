@@ -355,6 +355,7 @@ module ExtensionTyping =
               * systemRuntimeContainsType : (string -> bool)
               * systemRuntimeAssemblyVersion : System.Version
               * compilerToolsPath : string list
+              * logError: (TypeProviderError -> unit)
               * m: range -> ITypeProvider list
 
             abstract GetProvidedTypes: pn: IProvidedNamespace -> ProvidedType[]
