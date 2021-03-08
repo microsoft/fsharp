@@ -26,6 +26,7 @@ module FSharpTokenTag =
     let String = tagOfToken (STRING ("a", SynStringKind.Regular, LexCont.Default))
 
     let IDENT = tagOfToken (IDENT "a")
+    let HASH_IDENT = tagOfToken (HASH_IDENT "a")
     let STRING = String
     let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", SynStringKind.Regular, LexCont.Default))
     let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", SynStringKind.Regular, LexCont.Default))
@@ -166,6 +167,7 @@ module internal TokenClassifications =
 
     let tokenInfo token =
         match token with
+        | HASH_IDENT s
         | IDENT s ->
             if s.Length <= 0 then
                 System.Diagnostics.Debug.Assert(false, "BUG: Received zero length IDENT token.")
@@ -767,6 +769,9 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     false, processHashEndElse m.StartColumn lineStr 4 cont
                 | HASH_ENDIF (m, lineStr, cont) when lineStr <> "" ->
                     false, processHashEndElse m.StartColumn lineStr 5 cont
+                | HASH_IDENT(ident) ->
+                    delayToken(IDENT (ident), leftc + 1, rightc)
+                    false, (HASH, leftc, leftc)
                 | RQUOTE_DOT (s, raw) ->
                     delayToken(DOT, rightc, rightc)
                     false, (RQUOTE (s, raw), leftc, rightc - 1)

@@ -120,6 +120,7 @@ let ``Test project1 and make sure TcImports gets cleaned up`` () =
             Assert.True weakTcImports.IsAlive
             weakTcImports
      
+    // Here we are only keeping a handle to weakTcImports and nothing else
     let weakTcImports = test ()
     checker.InvalidateConfiguration (Project1.options)
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
@@ -4563,7 +4564,7 @@ module internal Project36 =
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = """
+    let fileSource1 = """module Project36
 type A(i:int) =
     member x.Value = i
 
@@ -4583,26 +4584,16 @@ let callToOverload = B(5).Overload(4)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-    let wholeProjectResults =
-        keepAssemblyContentsChecker.ParseAndCheckProject(options)
-        |> Async.RunSynchronously
-    let declarations =
-        let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
-        match checkedFile.Declarations.[0] with
-        | FSharpImplementationFileDeclaration.Entity (_, subDecls) -> subDecls
-        | _ -> failwith "unexpected declaration"
-    let getExpr exprIndex =
-        match declarations.[exprIndex] with
-        | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue(_,_,e) -> e
-        | FSharpImplementationFileDeclaration.InitAction e -> e
-        | _ -> failwith "unexpected declaration"
 
 [<Test>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` () =
-    Project36.wholeProjectResults.GetAllUsesOfAllSymbols()
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
+    let wholeProjectResults =
+        keepAssemblyContentsChecker.ParseAndCheckProject(options)
+        |> Async.RunSynchronously
     
+    wholeProjectResults.GetAllUsesOfAllSymbols()
     |> Array.pick (fun (su:FSharpSymbolUse) ->
         if su.Symbol.DisplayName = "base"
         then Some (su.Symbol :?> FSharpMemberOrFunctionOrValue)
@@ -4611,7 +4602,9 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsBaseValue`` () =
 
 [<Test>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMemberThisValue`` () =
-    let wholeProjectResults = Project36.keepAssemblyContentsChecker.ParseAndCheckProject(Project36.options) |> Async.RunSynchronously
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
+    let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     let declarations =
         let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
         match checkedFile.Declarations.[0] with
@@ -4626,19 +4619,19 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
     // the correct values are also visible from there. Also note you cannot use
     // ThisValue in these cases, this is only used when the symbol
     // is implicit in the constructor
-    match Project36.getExpr 4 with
+    match getExpr 4 with
     | Let((b,_),_) ->
         b.IsConstructorThisValue && not b.IsMemberThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
 
-    match Project36.getExpr 5 with
+    match getExpr 5 with
     | FSharpFieldGet(Some(Value x),_,_) ->
         x.IsMemberThisValue && not x.IsConstructorThisValue
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
 
-    match Project36.getExpr 6 with
+    match getExpr 6 with
     | Call(_,_,_,_,[Value s;_]) ->
         not s.IsMemberThisValue && not s.IsConstructorThisValue
     | _ -> failwith "unexpected expression"
@@ -4646,7 +4639,9 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.IsConstructorThisValue & IsMe
 
 [<Test>]
 let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` () =
-    let wholeProjectResults = Project36.keepAssemblyContentsChecker.ParseAndCheckProject(Project36.options) |> Async.RunSynchronously
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (Project36.projFileName, Project36.args)
+    let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     let project36Module = wholeProjectResults.AssemblySignature.Entities.[0]
     let lit = project36Module.MembersFunctionsAndValues.[0]
     shouldEqual true (lit.LiteralValue.Value |> unbox |> (=) 1.)
@@ -5208,7 +5203,8 @@ let foo (a: Foo): bool =
 
 [<Test>]
 let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/FSharp.Compiler.Service/issues/756
-    let wholeProjectResults = Project36.keepAssemblyContentsChecker.ParseAndCheckProject(ProjectStructUnions.options) |> Async.RunSynchronously
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let wholeProjectResults = keepAssemblyContentsChecker.ParseAndCheckProject(ProjectStructUnions.options) |> Async.RunSynchronously
     let declarations =
         let checkedFile = wholeProjectResults.AssemblyContents.ImplementationFiles.[0]
         match checkedFile.Declarations.[0] with

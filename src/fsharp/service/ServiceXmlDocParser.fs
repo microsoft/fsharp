@@ -40,7 +40,7 @@ module XmlDocParsing =
         | SynPat.InstanceMember _
         | SynPat.FromParseError _ -> []
 
-    let getXmlDocablesImpl(sourceText: ISourceText, input: ParsedInput option) =
+    let getXmlDocablesImpl(sourceText: ISourceText, input: ParsedInput) =
         let indentOf (lineNum: int) =
             let mutable i = 0
             let line = sourceText.GetLineString(lineNum-1) // -1 because lineNum reported by xmldocs are 1-based, but array is 0-based
@@ -151,12 +151,7 @@ module XmlDocParsing =
             | ParsedInput.SigFile _ -> []
 
         // Get compiler options for the 'project' implied by a single script file
-        match input with
-        | Some input -> 
-            getXmlDocablesInput input
-        | None ->
-            // Should not fail here, just in case 
-            []
+        getXmlDocablesInput input
 
 module XmlDocComment =
     let ws (s: string, pos) = 

@@ -41,11 +41,11 @@
     <PropertyGroup>
       <_Line>
 <![CDATA[
-folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\%(_XlfLanguages.Identity)"
-  file source="$(ArtifactsBinDir)FSharp.Build\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Build.resources.dll"
-  file source="$(ArtifactsBinDir)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
-  file source="$(ArtifactsBinDir)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Service.resources.dll"
-  file source="$(ArtifactsBinDir)FSharp.Core\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Core.resources.dll"
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\%(_XlfLanguages.Identity)"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Build.resources.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Service.resources.dll"
+  file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Core.resources.dll"
 ]]>
       </_Line>
     </PropertyGroup>
@@ -74,35 +74,37 @@ vs.dependencies
                 version=$(VsixVersion)
                 type=Required
 
-folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
-  file source="$(BinariesFolder)\fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsc.exe"
-  file source="$(BinariesFolder)\fsc\$(Configuration)\$(TargetFramework)\fsc.exe.config"
-  file source="$(BinariesFolder)\fsi\$(Configuration)\$(TargetFramework)\fsi.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsi.exe"
-  file source="$(BinariesFolder)\fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
-  file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\fsiAnyCpu.exe"
-  file source="$(BinariesFolder)\fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe.config"
-  file source="$(BinariesFolder)\FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Service.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Buffers.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Collections.Immutable.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Memory.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Numerics.Vectors.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Reflection.Metadata.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Resources.Extensions.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Runtime.CompilerServices.Unsafe.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Threading.Tasks.Dataflow.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\Microsoft.Build.Tasks.Core.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\Microsoft.Build.Utilities.Core.dll"
-  file source="$(BinariesFolder)\FSharp.Compiler.Server.Shared\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.xml"
-  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll" vs.file.ngen=no vs.file.ngenArchitecture=All vs.file.ngenPriority=2
-  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.Portable.FSharp.Targets"
-  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.props"
-  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.targets"
-  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"
-  file source="$(BinariesFolder)\FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Targets"
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
+  file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsc.exe"
+  file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe.config"
+  file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsi.exe"
+  file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
+  file source="$(BinariesFolder)fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsiAnyCpu.exe"
+  file source="$(BinariesFolder)fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe.config"
+  file source="$(BinariesFolder)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.xml"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\netstandard2.0\FSharp.Compiler.Service.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\netstandard2.0\FSharp.Compiler.Service.xml"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Buffers.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Collections.Immutable.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Memory.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Numerics.Vectors.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Reflection.Metadata.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Resources.Extensions.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Runtime.CompilerServices.Unsafe.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\System.Threading.Tasks.Dataflow.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\Microsoft.Build.Tasks.Core.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\Microsoft.Build.Utilities.Core.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Server.Shared\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.xml"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll" vs.file.ngen=no vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.Portable.FSharp.Targets"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.props"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.targets"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Overrides.NetSdk.targets"
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.Targets"
 
 @(_BuiltSwrLines)
 ]]>

@@ -20,6 +20,7 @@ open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
@@ -202,6 +203,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 %token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
+%token <string> HASH_IDENT 
 %token <string> INFIX_STAR_STAR_OP 
 %token <string> INFIX_COMPARE_OP 
 %token <string> INFIX_AT_HAT_OP 
@@ -1155,7 +1157,10 @@ fileModuleImpl:
       (fun (isRec, path, xml) -> 
         match path with 
         | [] -> ParsedImplFileFragment.AnonModule($1, m)  
-        | _ -> ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m)) } 
+        | _ ->
+            let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
+            let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
+            ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m)) } 
 
 
 /* A collection/block of definitions or expressions making up a module or namespace, possibly empty */

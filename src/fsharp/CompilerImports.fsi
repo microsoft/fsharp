@@ -12,6 +12,7 @@ open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
@@ -42,11 +43,24 @@ val IsReflectedDefinitionsResource: ILResource -> bool
 
 val GetSignatureDataResourceName: ILResource -> string
 
-/// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Remap * CcuThunk * filename: string * inMem: bool -> ILResource
+/// Encode the F# interface data into a set of IL attributes and resources
+val EncodeSignatureData:
+    tcConfig:TcConfig *
+    tcGlobals:TcGlobals *
+    exportRemapping:Remap *
+    generatedCcu: CcuThunk *
+    outfile: string *
+    isIncrementalBuild: bool
+      -> ILAttribute list * ILResource list
 
-/// Write F# optimization data as an IL resource
-val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
+val EncodeOptimizationData: 
+    tcGlobals:TcGlobals *
+    tcConfig:TcConfig *
+    outfile: string *
+    exportRemapping:Remap *
+    (CcuThunk * #CcuOptimizationInfo) *
+    isIncrementalBuild: bool
+      -> ILResource list
 
 [<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode =

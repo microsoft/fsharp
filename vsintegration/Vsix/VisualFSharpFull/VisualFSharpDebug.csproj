@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <ExtensionInstallationFolder>Microsoft\FSharp</ExtensionInstallationFolder>
+    <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
+    <IsShipping>true</IsShipping>
+    <DependencyTargetFramework>net472</DependencyTargetFramework>
+  </PropertyGroup>
+
+  <Import Project="VisualFSharp.Core.targets" />
+
+  <Target Name="_GenerateLanguageList">
+    <CreateItem Include="$(XlfLanguages)">
+      <Output TaskParameter="Include" ItemName="_XlfLanguages" />
+    </CreateItem>
+  </Target>
+
+  <Target Name="_ToolsDirFiles" BeforeTargets="CopyFilesToOutputDirectory" DependsOnTargets="_GenerateLanguageList">
+    <ItemGroup>
+      <Content Include="$(ArtifactsBinDir)/fsc/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsi/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsiAnyCpu/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsc/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsi/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsiAnyCPU/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+    </ItemGroup>
+  </Target>
+
+</Project>

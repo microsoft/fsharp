@@ -122,7 +122,7 @@ type FSharpScript(?additionalArgs: string[], ?quiet: bool, ?langVersion: LangVer
     /// <param name="column">The 0-based column index</param>
     member _.GetCompletionItems(text: string, line: int, column: int) =
         async {
-            let! parseResults, checkResults, _projectResults = fsi.ParseAndCheckInteraction(text)
+            let parseResults, checkResults, _projectResults = fsi.ParseAndCheckInteraction(text)
             let lineText = text.Split('\n').[line - 1]
             let partialName = QuickParse.GetPartialLongNameEx(lineText, column - 1)
             let declarationListInfos = checkResults.GetDeclarationListInfo(Some parseResults, line, lineText, partialName)

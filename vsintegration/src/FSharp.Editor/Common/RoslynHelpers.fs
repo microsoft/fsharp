@@ -142,10 +142,15 @@ module internal RoslynHelpers =
         // (i.e the same error does not appear twice, where the only difference is the line endings.)
         let normalizedMessage = error.Message |> FSharpDiagnostic.NormalizeErrorString |> FSharpDiagnostic.NewlineifyErrorString
 
-        let id = "FS" + error.ErrorNumber.ToString("0000")
+        let id = error.ErrorNumberText
         let emptyString = LocalizableString.op_Implicit("")
         let description = LocalizableString.op_Implicit(normalizedMessage)
-        let severity = if error.Severity = FSharpDiagnosticSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
+        let severity = 
+           match error.Severity with
+           | FSharpDiagnosticSeverity.Error -> DiagnosticSeverity.Error 
+           | FSharpDiagnosticSeverity.Warning -> DiagnosticSeverity.Warning
+           | FSharpDiagnosticSeverity.Info -> DiagnosticSeverity.Info
+           | FSharpDiagnosticSeverity.Hidden -> DiagnosticSeverity.Hidden
         let customTags = 
             match error.ErrorNumber with
             | 1182 -> FSharpDiagnosticCustomTags.Unnecessary

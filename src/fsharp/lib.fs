@@ -5,6 +5,7 @@ module internal Internal.Utilities.Library.Extras
 open System
 open System.IO
 open System.Collections.Generic
+open System.Threading.Tasks
 open System.Runtime.InteropServices
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -594,3 +595,31 @@ type DisposablesTracker() =
             items.Clear()
             for i in l do 
                 try i.Dispose() with _ -> ()
+
+/// Specialized parallel functions for an array.
+/// Different from Array.Parallel as it will try to minimize the max degree of parallelism.
+/// Will flatten aggregate exceptions that contain one exception.
+[<RequireQualifiedAccess>]
+module ArrayParallel =
+
+    let inline iteri f (arr: 'T []) =
+        let parallelOptions = ParallelOptions(MaxDegreeOfParallelism = max (min Environment.ProcessorCount arr.Length) 1)
+        try
+            Parallel.For(0, arr.Length, parallelOptions, fun i ->
+                f i arr.[i]
+            ) |> ignore
+        with
+        | :? AggregateException as ex when ex.InnerExceptions.Count = 1 ->
+            raise(ex.InnerExceptions.[0])
+
+    let inline iter f (arr: 'T []) =
+        arr |> iteri (fun _ item -> f item)
+
+    let inline mapi f (arr: 'T []) =
+        let mapped = Array.zeroCreate arr.Length
+        arr |> iteri (fun i item -> mapped.[i] <- f i item)
+        mapped
+
+    let inline map f (arr: 'T []) =
+        arr |> mapi (fun _ item -> f item)
+        

@@ -302,9 +302,11 @@ type public Fsi () as this =
                                                         CultureInfo.InvariantCulture)
                         unbox ret
                     with
-                    | :? TargetInvocationException as tie when (match tie.InnerException with | :? Microsoft.Build.Exceptions.BuildAbortedException -> true | _ -> false) ->
+                    // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                    // Do a string compare on the type name to do eliminate a compile time dependency on Microsoft.Build.dll
+                    | :? TargetInvocationException as tie when not (isNull tie.InnerException) && (tie.InnerException).GetType().FullName = "Microsoft.Build.Exceptions.BuildAbortedException" ->
                         fsi.Log.LogError(tie.InnerException.Message, [| |])
-                        -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                        -1
                     | e -> reraise()
 
                 let baseCallDelegate = Func<int>(fun () -> fsi.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )

@@ -5,6 +5,7 @@ namespace Internal.Utilities.Library
 open System
 open System.Threading
 open System.Collections.Generic
+open System.Diagnostics
 open System.Runtime.CompilerServices
 
 [<AutoOpen>]
@@ -275,12 +276,14 @@ type internal ExecutionToken = interface end
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
 /// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
+[<Sealed>]
 type internal CompilationThreadToken =
 
     interface ExecutionToken
     new: unit -> CompilationThreadToken
   
 /// Represents a token that indicates execution on any of several potential user threads calling the F# compiler services.
+[<Sealed>]
 type internal AnyCallerThreadToken =
 
     interface ExecutionToken
@@ -320,9 +323,10 @@ module internal Map =
     val tryFindMulti :
         k:'a -> map:Map<'a,'b list> -> 'b list when 'a: comparison
 
+[<Struct>]
 type internal ResultOrException<'TResult> =
-    | Result of 'TResult
-    | Exception of Exception
+    | Result of result: 'TResult
+    | Exception of ``exception``: Exception
 
 module internal ResultOrException =
 
@@ -336,10 +340,10 @@ module internal ResultOrException =
 
     val otherwise : f:(unit -> ResultOrException<'a>) -> x:ResultOrException<'a> -> ResultOrException<'a>
 
-[<RequireQualifiedAccessAttribute>]
+[<RequireQualifiedAccessAttribute; Struct>]
 type internal ValueOrCancelled<'TResult> =
-    | Value of 'TResult
-    | Cancelled of OperationCanceledException
+    | Value of result: 'TResult
+    | Cancelled of ``exception``: OperationCanceledException
 
 /// Represents a synchronous cancellable computation with explicit representation of a cancelled result.
 ///
@@ -355,22 +359,22 @@ module internal Cancellable =
     val run : ct:CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
 
     /// Bind the result of a cancellable computation
-    val bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
+    val inline bind : f:('a -> Cancellable<'b>) -> comp1:Cancellable<'a> -> Cancellable<'b>
 
     /// Map the result of a cancellable computation
-    val map: f:('a -> 'b) -> oper:Cancellable<'a> -> Cancellable<'b>
+    val inline map: f:('a -> 'b) -> oper:Cancellable<'a> -> Cancellable<'b>
 
     /// Return a simple value as the result of a cancellable computation
-    val ret: x:'a -> Cancellable<'a>
+    val inline ret: x:'a -> Cancellable<'a>
 
     /// Fold a cancellable computation along a sequence of inputs
     val fold : f:('a -> 'b -> Cancellable<'a>) -> acc:'a -> seq:seq<'b> -> Cancellable<'a>
 
     /// Iterate a cancellable computation over a collection
-    val each : f:('a -> Cancellable<'b>) -> seq:seq<'a> -> Cancellable<'b list>
+    val inline each : f:('a -> Cancellable<'b>) -> seq:seq<'a> -> Cancellable<'b list>
 
     /// Delay a cancellable computation
-    val delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
+    val inline delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
@@ -383,111 +387,138 @@ module internal Cancellable =
     val canceled: unit -> Cancellable<'a>
 
     /// Implement try/finally for a cancellable computation
-    val tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
+    val inline catch : e:Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
+
+    /// Implement try/finally for a cancellable computation
+    val inline tryFinally : e:Cancellable<'a> -> compensation:(unit -> unit) -> Cancellable<'a>
 
     /// Implement try/with for a cancellable computation
-    val tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
+    val inline tryWith : e:Cancellable<'a> -> handler:(exn -> Cancellable<'a>) -> Cancellable<'a>
+
+    val toAsync: Cancellable<'a> -> Async<'a>
 
 type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
 
-    member Bind: e:Cancellable<'k> * k:('k -> Cancellable<'l>) -> Cancellable<'l>
+    member inline BindReturn: e:Cancellable<'T> * k:('T -> 'U) -> Cancellable<'U>
 
-    member Combine: e1:Cancellable<unit> * e2:Cancellable<'h> -> Cancellable<'h>
+    member inline Bind: e:Cancellable<'T> * k:('T -> Cancellable<'U>) -> Cancellable<'U>
 
-    member Delay: f:(unit -> Cancellable<'a>) -> Cancellable<'a>
+    member inline Combine: e1:Cancellable<unit> * e2:Cancellable<'T> -> Cancellable<'T>
 
-    member For: es:seq<'f> * f:('f -> Cancellable<'g>) -> Cancellable<'g list>
+    member inline Delay: f:(unit -> Cancellable<'T>) -> Cancellable<'T>
 
-    member Return: v:'j -> Cancellable<'j>
+    member inline For: es:seq<'T> * f:('T -> Cancellable<'U>) -> Cancellable<'U list>
 
-    member ReturnFrom: v:'i -> 'i
+    member inline Return: v:'T -> Cancellable<'T>
 
-    member TryFinally: e:Cancellable<'b> * compensation:(unit -> unit) -> Cancellable<'b>
+    member inline ReturnFrom: v:Cancellable<'T> -> Cancellable<'T>
 
-    member TryWith: e:Cancellable<'e> * handler:(exn -> Cancellable<'e>) -> Cancellable<'e>
+    member inline TryFinally: e:Cancellable<'T> * compensation:(unit -> unit) -> Cancellable<'T>
 
-    member Using: resource:'c * e:('c -> Cancellable<'d>) -> Cancellable<'d> when 'c :> System.IDisposable
+    member inline TryWith: e:Cancellable<'T> * handler:(exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member Zero: unit -> Cancellable<unit>
+    member inline Using: resource:'c * e:('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> System.IDisposable
+
+    member inline Zero: unit -> Cancellable<unit>
   
 [<AutoOpen>]
 module internal CancellableAutoOpens =
     val cancellable: CancellableBuilder
 
-/// Computations that can cooperatively yield by returning a continuation
+/// Cancellable computations that can cooperatively yield 
 ///
-///    - Any yield of a NotYetDone should typically be "abandonable" without adverse consequences. No resource release
-///      will be called when the computation is abandoned.
-///
-///    - Computations suspend via a NotYetDone may use local state (mutables), where these are
-///      captured by the NotYetDone closure. Computations do not need to be restartable.
-///
-///    - The key thing is that you can take an Eventually value and run it with 
-///      Eventually.repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled
-///
-///    - Cancellation results in a suspended computation rather than complete abandonment
-type internal Eventually<'T> =
-    | Done of 'T
-    | NotYetDone of (CompilationThreadToken -> Eventually<'T>)
+///    - You can take an Eventually value and run it with Eventually.forceForTimeSlice
+type internal Eventually<'T> = 
+    | Done of 'T 
+    | NotYetDone of (CancellationToken -> (Stopwatch * int64) option -> ValueOrCancelled<Eventually<'T>>)
+    | Delimited of (unit -> IDisposable) * Eventually<'T>
 
 module internal Eventually =
 
+    /// Return a simple value as the result of an eventually computation
+    val inline ret: x:'a -> Eventually<'a>
+
     val box: e:Eventually<'a> -> Eventually<obj>
 
-    val forceWhile : ctok:CompilationThreadToken -> check:(unit -> bool) -> e:Eventually<'a> -> 'a option
+    // Throws away time-slicing but retains cancellation
+    val inline toCancellable: e:Eventually<'T> -> Cancellable<'T>
 
-    val force: ctok:CompilationThreadToken -> e:Eventually<'a> -> 'a
+    val inline ofCancellable: Cancellable<'T> -> Eventually<'T>
 
-    /// Keep running the computation bit by bit until a time limit is reached.
-    /// The runner gets called each time the computation is restarted
-    ///
-    /// If cancellation happens, the operation is left half-complete, ready to resume.
-    val repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled :
-        timeShareInMilliseconds:int64 ->
-        ct:CancellationToken ->
-        runner:(CompilationThreadToken -> (#CompilationThreadToken -> Eventually<'b>) -> Eventually<'b>) -> 
-        e:Eventually<'b> 
-            -> Eventually<'b>
+    val force: ct: CancellationToken -> e:Eventually<'a> -> ValueOrCancelled<'a>
 
-    /// Keep running the asynchronous computation bit by bit. The runner gets called each time the computation is restarted.
-    /// Can be cancelled as an Async in the normal way.
-    val forceAsync : runner:((CompilationThreadToken -> Eventually<'T>) -> Async<Eventually<'T>>) -> e:Eventually<'T> -> Async<'T option>
+    /// Run for at most the given time slice, returning the residue computation, which may be complete.
+    /// If cancellation is requested then just return the computation at the point where cancellation
+    /// was detected.
+    val forceForTimeSlice: sw:Stopwatch -> timeShareInMilliseconds: int64 -> ct: CancellationToken -> e: Eventually<'a> -> ValueOrCancelled<Eventually<'a>>
 
-    val bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
+    /// Check if cancellation or time limit has been reached.  Needed for inlined combinators
+    val stepCheck: ct: CancellationToken -> swinfo: (Stopwatch * int64) option -> e:'T -> ValueOrCancelled<'T> voption
 
-    val fold : f:('a -> 'b -> Eventually<'a>) -> acc:'a -> seq:seq<'b> -> Eventually<'a>
+    /// Take steps in the computation. Needed for inlined combinators.
+    [<System.Diagnostics.DebuggerHidden>]
+    val steps: ct: CancellationToken -> swinfo: (Stopwatch * int64) option -> e:Eventually<'T> -> ValueOrCancelled<Eventually<'T>>
 
-    val catch: e:Eventually<'a> -> Eventually<ResultOrException<'a>>
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline map: f:('a -> 'b) -> e:Eventually<'a> -> Eventually<'b>
 
-    val delay: f:(unit -> Eventually<'T>) -> Eventually<'T>
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline bind: k:('a -> Eventually<'b>) -> e:Eventually<'a> -> Eventually<'b>
 
-    val tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
+    /// Fold a computation over a collection
+    //
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline fold : f:('a -> 'b -> Eventually<'a>) -> acc:'a -> seq:seq<'b> -> Eventually<'a>
 
-    val tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
+    /// Map a computation over a collection
+    //
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline each : f:('a -> Eventually<'b>) -> seq:seq<'a> -> Eventually<'b list>
 
-    // All eventually computations carry a CompilationThreadToken
-    val token: Eventually<CompilationThreadToken>
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline catch: e:Eventually<'a> -> Eventually<ResultOrException<'a>>
+
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline delay: f:(unit -> Eventually<'T>) -> Eventually<'T>
+
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline tryFinally : e:Eventually<'a> -> compensation:(unit -> unit) -> Eventually<'a>
+
+    // Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
+    val inline tryWith : e:Eventually<'a> -> handler:(System.Exception -> Eventually<'a>) -> Eventually<'a>
+
+    /// Bind the cancellation token associated with the computation
+    val token: unit -> Eventually<CancellationToken>
+
+    /// Represents a canceled computation
+    val canceled: unit -> Eventually<'a>
+
+    /// Create the resource and install it on the stack each time the Eventually is restarted
+    val reusing: resourcef: (unit -> IDisposable) -> e:Eventually<'T> -> Eventually<'T>
 
 [<Class>]
+// Inlined for better stack traces, replacing ranges of the "runtime" code in the lambdas with ranges in user code.
 type internal EventuallyBuilder =
 
-    member Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
+    member inline BindReturn: e:Eventually<'g> * k:('g -> 'h) -> Eventually<'h>
 
-    member Combine: e1:Eventually<unit> * e2:Eventually<'d> -> Eventually<'d>
+    member inline Bind: e:Eventually<'g> * k:('g -> Eventually<'h>) -> Eventually<'h>
 
-    member Delay: f:(unit -> Eventually<'a>) -> Eventually<'a>
+    member inline Combine: e1:Eventually<unit> * e2:Eventually<'d> -> Eventually<'d>
 
-    member Return: v:'f -> Eventually<'f>
+    member inline Delay: f:(unit -> Eventually<'a>) -> Eventually<'a>
 
-    member ReturnFrom: v:'e -> 'e
+    member inline Return: v:'f -> Eventually<'f>
 
-    member TryFinally: e:Eventually<'b> * compensation:(unit -> unit) -> Eventually<'b>
+    member inline ReturnFrom: v:'e -> 'e
 
-    member TryWith: e:Eventually<'c> * handler:(System.Exception -> Eventually<'c>) -> Eventually<'c>
+    member inline TryFinally: e:Eventually<'b> * compensation:(unit -> unit) -> Eventually<'b>
 
-    member Zero: unit -> Eventually<unit>
+    member inline TryWith: e:Eventually<'c> * handler:(System.Exception -> Eventually<'c>) -> Eventually<'c>
+
+    member inline Zero: unit -> Eventually<unit>
   
 [<AutoOpen>]
 module internal EventuallyAutoOpens =

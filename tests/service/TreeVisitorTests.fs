@@ -13,10 +13,7 @@ let ``Visit type test`` () =
             member x.VisitType(_, _, _) = Some () }
 
     let source = "123 :? int"
-    let parseTree =
-        match parseSourceCode("C:\\test.fs", source) with
-        | None -> failwith "No parse tree"
-        | Some parseTree -> parseTree
+    let parseTree = parseSourceCode("C:\\test.fs", source)
 
     SyntaxTraversal.Traverse(mkPos 1 11, parseTree, visitor)
     |> Option.defaultWith (fun _ -> failwith "Did not visit type")

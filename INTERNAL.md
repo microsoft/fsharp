@@ -7,6 +7,10 @@ Note that usually only the most recent link in each section is interesting.  Old
 The PR build definition can be found [here](https://dev.azure.com/dnceng/public/_build?definitionId=496) or by
 navigating through an existing PR.
 
+There is also a duplicate scouting PR build that is identical to the normal PR build _except_ that it uses a different Windows
+machine queue that always has the next preview build of Visual Studio installed.  This is to hopefully get ahead of any breaking
+API changes.  That build definition is [here](https://dev.azure.com/dnceng/public/_build?definitionId=961).
+
 ## Signed Build Definitions
 
 [VS 16.4 to current](https://dev.azure.com/dnceng/internal/_build?definitionId=499&_a=summary)

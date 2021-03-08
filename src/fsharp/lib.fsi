@@ -288,3 +288,13 @@ type DisposablesTracker =
     member Register: i:System.IDisposable -> unit
 
     interface System.IDisposable
+
+/// Specialized parallel functions for an array.
+/// Different from Array.Parallel as it will try to minimize the max degree of parallelism.
+/// Will flatten aggregate exceptions that contain one exception.
+[<RequireQualifiedAccess>]
+module ArrayParallel =
+
+    val inline map : ('T -> 'U) -> 'T [] -> 'U []
+
+    val inline mapi : (int -> 'T -> 'U) -> 'T [] -> 'U []

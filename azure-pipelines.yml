@@ -156,7 +156,7 @@ stages:
           - task: PublishBuildArtifacts@1
             displayName: Publish Artifact Nightly
             inputs:
-              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpFull.vsix'
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\VSSetup\$(_BuildConfig)\VisualFSharpDebug.vsix'
               ArtifactName: 'Nightly'
             condition: succeeded()
           - task: PublishBuildArtifacts@1
@@ -191,7 +191,12 @@ stages:
         # Windows
         - job: Windows
           pool:
-            vmImage: windows-latest
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=BuildPool.Windows.10.Amd64.VS2019.Open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: NetCorePublic-Pool
+            queue: $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
             maxParallel: 4

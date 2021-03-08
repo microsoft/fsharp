@@ -8,6 +8,10 @@ vs.dependencies
                 version=$(VsixVersion)
                 type=Required
 
+  vs.dependency id=Microsoft.FSharp.Compiler
+                version=$(VsixVersion)
+                type=Required
+
   vs.dependency id=Microsoft.FSharp.VSIX.Full.Core
                 version=$(VsixVersion)
                 type=Required

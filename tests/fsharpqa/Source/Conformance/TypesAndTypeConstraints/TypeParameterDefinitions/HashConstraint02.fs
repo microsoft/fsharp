@@ -1,8 +1,7 @@
 // #Regression #Conformance #TypeConstraints 
 // Regression test for FSHARP1.0:1419
 // Tokens beginning with # should not match greedily with directives
-// The only case where we are still a bit confused is #light: for this reason the code
-// below compiles just fine (it would not work if I replace #light with #r for example)
+//<Expects id="FS0001" span="(14,13)" status="error">The type 'float' is not compatible with the type 'light_'</Expects>
 #light
 
 type light_() = class

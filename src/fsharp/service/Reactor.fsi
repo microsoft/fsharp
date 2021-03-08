@@ -28,7 +28,8 @@ type internal Reactor =
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
-    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string *  (CompilationThreadToken -> CancellationToken -> bool)) option -> unit
+    /// The operation is an Eventually which can be run in time slices.
+    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> Eventually<unit>)) option -> unit
 
     /// Cancel any work being don by the background building function.
     member CancelBackgroundOp : unit -> unit

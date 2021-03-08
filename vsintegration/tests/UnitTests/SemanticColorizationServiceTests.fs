@@ -123,6 +123,30 @@ r.MutableField := 3
 """
         verifyClassificationAtEndOfMarker(sourceText, marker, classificationType)
 
+    [<TestCase("(*1*)", FSharpClassificationTypes.DisposableType)>]
+    [<TestCase("(*2*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
+    [<TestCase("(*3*)", FSharpClassificationTypes.DisposableType)>]
+    [<TestCase("(*4*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
+    [<TestCase("(*5*)", FSharpClassificationTypes.DisposableLocalValue)>]
+    [<TestCase("(*6*)", FSharpClassificationTypes.DisposableType)>]
+    [<TestCase("(*7*)", FSharpClassificationTypes.DisposableLocalValue)>]
+    member _.Disposables(marker: string, classificationType: string) =
+        let sourceText = """
+open System
+
+type (*1*)Disposable() =
+  interface IDisposable with
+    member _.Dispose() = ()
+
+let (*2*)topLevel1 = new (*3*)Disposable()
+let (*4*)topLevel2 = { new IDisposable with member _.Dispose() = () }
+
+let f() =
+  let (*5*)local1 = new (*6*)Disposable()
+  let (*7*)local2 = { new IDisposable with member _.Dispose() = () }
+  ()
+"""
+        verifyClassificationAtEndOfMarker(sourceText, marker, classificationType)
 
     [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]

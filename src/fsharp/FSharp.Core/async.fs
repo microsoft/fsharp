@@ -871,11 +871,9 @@ namespace Microsoft.FSharp.Control
 
         [<DebuggerHidden>]
         let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
-            // Reuse the current ThreadPool thread if possible. Unfortunately
-            // Thread.IsThreadPoolThread isn't available on all profiles so
-            // we approximate it by testing synchronization context for null.
-            match SynchronizationContext.Current, timeout with
-            | null, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
+            // Reuse the current ThreadPool thread if possible.
+            match Thread.CurrentThread.IsThreadPoolThread, timeout with
+            | true, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
             // When the timeout is given we need a dedicated thread
             // which cancels the computation.
             // Performing the cancellation in the ThreadPool eg. by using
@@ -941,7 +939,11 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont completedTask.Result) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
+            if task.IsCompleted then
+                continuation task |> fake
+            else
+                task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.ExecuteSynchronously)
+                |> ignore |> fake
 
         [<DebuggerHidden>]
         let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) useCcontForTaskCancellation =
@@ -960,7 +962,11 @@ namespace Microsoft.FSharp.Control
                     else
                         ctxt.cont ()) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
+            if task.IsCompleted then
+                continuation task |> fake
+            else
+                task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.ExecuteSynchronously)
+                |> ignore |> fake
 
         [<Sealed; AutoSerializable(false)>]
         type AsyncIAsyncResult<'T>(callback: System.AsyncCallback, state:obj) =
@@ -1692,10 +1698,16 @@ namespace Microsoft.FSharp.Control
             CreateWhenCancelledAsync compensation computation
 
         static member AwaitTask (task:Task<'T>) : Async<'T> =
-            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
+            if task.IsCompleted then
+                CreateProtectedAsync (fun ctxt -> taskContinueWith task ctxt false)
+            else
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
 
         static member AwaitTask (task:Task) : Async<unit> =
-            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
+            if task.IsCompleted then
+                CreateProtectedAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
+            else
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
 
     module CommonExtensions =
 

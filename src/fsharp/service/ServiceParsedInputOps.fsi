@@ -112,11 +112,11 @@ type public InsertionContextEntity =
 
 /// Operations querying the entire syntax tree
 module public ParsedInput =
-    val TryFindExpressionASTLeftOfDotLeftOfCursor: pos: pos * parsedInputOpt: ParsedInput option -> (pos * bool) option
+    val TryFindExpressionASTLeftOfDotLeftOfCursor: pos: pos * parsedInput: ParsedInput -> (pos * bool) option
 
-    val GetRangeOfExprLeftOfDot: pos: pos * parsedInputOpt: ParsedInput option -> range option
+    val GetRangeOfExprLeftOfDot: pos: pos * parsedInput: ParsedInput -> range option
 
-    val TryFindExpressionIslandInPosition: pos: pos * parsedInputOpt: ParsedInput option -> string option
+    val TryFindExpressionIslandInPosition: pos: pos * parsedInput: ParsedInput -> string option
 
     val TryGetCompletionContext: pos: pos * parsedInput: ParsedInput * lineStr: string -> CompletionContext option
 

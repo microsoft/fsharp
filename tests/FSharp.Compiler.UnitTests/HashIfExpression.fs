@@ -12,6 +12,7 @@ open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Lexer
 open FSharp.Compiler.Lexhelp
 open FSharp.Compiler.ErrorLogger
@@ -55,7 +56,7 @@ type public HashIfExpression() =
         let errorLogger =
             {
                 new ErrorLogger("TestErrorLogger") with
-                    member x.DiagnosticSink(e, isError)    = if isError then errors.Add e else warnings.Add e
+                    member x.DiagnosticSink(e, sev)    = if sev = FSharpDiagnosticSeverity.Error then errors.Add e else warnings.Add e
                     member x.ErrorCount         = errors.Count
             }
 

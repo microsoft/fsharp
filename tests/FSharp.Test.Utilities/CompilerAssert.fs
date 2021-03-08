@@ -509,7 +509,6 @@ let main argv = 0"""
             |> Async.RunSynchronously
 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
-        Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
 
         let dependencies =
         #if NETCOREAPP
@@ -519,7 +518,7 @@ let main argv = 0"""
         #endif
 
         let compileErrors, statusCode = 
-            checker.Compile([parseResults.ParseTree.Value], "test", outputFilePath, dependencies, executable = isExe, noframework = true) 
+            checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true) 
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -534,7 +533,6 @@ let main argv = 0"""
             |> Async.RunSynchronously
     
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
-        Assert.IsTrue(parseResults.ParseTree.IsSome, "no parse tree returned")
 
         let dependencies =
             #if NETCOREAPP
@@ -544,7 +542,7 @@ let main argv = 0"""
             #endif
 
         let compileErrors, statusCode, assembly = 
-            checker.CompileToDynamicAssembly([parseResults.ParseTree.Value], assemblyName, dependencies, None, noframework = true) 
+            checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true) 
             |> Async.RunSynchronously
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)

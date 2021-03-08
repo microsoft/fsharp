@@ -15,6 +15,7 @@
     <Actions>
       <Action Type="Ngen" Path="fsiAnyCpu.exe" />
       <Action Type="Ngen" Path="fsi.exe" />
+      <Action Type="Ngen" Path="fsc.exe" />
       <Action Type="Ngen" Path="FSharp.Compiler.Service.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
@@ -29,7 +30,6 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
-      <Action Type="Ngen" Path="Interactive.DependencyManager.dll" />
     </Actions>
   </Installer>
   <Dependencies>

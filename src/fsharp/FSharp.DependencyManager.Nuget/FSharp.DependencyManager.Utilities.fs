@@ -6,6 +6,7 @@ open System.Diagnostics
 open System.IO
 open System.Reflection
 open FSDependencyManager
+open System.Runtime.InteropServices
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
@@ -68,55 +69,17 @@ module internal Utilities =
         |> List.map (fun option -> split option)
 
     // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location)
+    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location), "Tools")
 
     // We are running on dotnet core if the executing mscorlib is System.Private.CoreLib
     let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
-    let isWindows = 
-        match Environment.OSVersion.Platform with
-        | PlatformID.Unix -> false
-        | PlatformID.MacOSX -> false
-        | _ -> true
+    let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
     let dotnet =
         if isWindows then "dotnet.exe" else "dotnet"
 
     let sdks = "Sdks"
-
-    let msbuildExePath =
-        // Find msbuild.exe when invoked from desktop compiler.
-        // 1. Look relative to F# compiler location                 Normal retail build
-        // 2. Use VSAPPDIR                                          Nightly when started from VS, or F5
-        // 3. Use VSINSTALLDIR                                   -- When app is run outside of VS, and
-        //                                                          is not copied relative to a vs install.
-        let vsRootFromVSAPPIDDIR =
-            let vsappiddir = Environment.GetEnvironmentVariable("VSAPPIDDIR")
-            if not (String.IsNullOrEmpty(vsappiddir)) then
-                Path.GetFullPath(Path.Combine(vsappiddir, "../.."))
-            else
-                null
-
-        let roots = [|
-            Path.GetFullPath(Path.Combine(fsharpCompilerPath, "../../../../.."))
-            vsRootFromVSAPPIDDIR
-            Environment.GetEnvironmentVariable("VSINSTALLDIR")
-            |]
-
-        let msbuildPath root = Path.GetFullPath(Path.Combine(root, "MSBuild/Current/Bin/MSBuild.exe"))
-
-        let msbuildPathExists root =
-            if String.IsNullOrEmpty(root) then
-                false
-            else
-                File.Exists(msbuildPath root)
-
-        let msbuildOption rootOpt =
-            match rootOpt with
-            | Some root -> Some (msbuildPath root)
-            | _ -> None
-
-        roots |> Array.tryFind(fun root -> msbuildPathExists root) |> msbuildOption
 
     let dotnetHostPath =
         // How to find dotnet.exe --- woe is me; probing rules make me sad.
@@ -129,32 +92,56 @@ module internal Utilities =
         // 3. We are loaded in-process to some other application ... Eg. try .net
         //    See if the host is dotnet.exe ... from net5.0 on this is fairly unlikely
         // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
-        //
+        let fileExists pathToFile =
+            try
+                if File.Exists(pathToFile) then 
+                    true
+                else
+                    false
+            with | _ -> false
+        // Use the path to search for dotnet.exe
+        let probePathForDotnetHost () =
+            let paths =
+                let p = Environment.GetEnvironmentVariable("PATH")
+                if not(isNull p) then p.Split(Path.PathSeparator) 
+                else [||]
+            paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
+
         if isRunningOnCoreClr then
             match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
-            | value when not (String.IsNullOrEmpty(value)) ->
-                Some value                           // Value set externally
+            // Value set externally
+            | value when not (String.IsNullOrEmpty(value)) && fileExists value -> Some value
             | _ ->
                 // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
-                let dotnetLocation =
-                    let dotnetApp =
-                        let platform = Environment.OSVersion.Platform
-                        if platform = PlatformID.Unix then "dotnet" else "dotnet.exe"
+                let candidate =
                     let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
-                    Path.GetFullPath(Path.Combine(assemblyLocation, "../../..", dotnetApp))
-
-                if File.Exists(dotnetLocation) then
-                    Some dotnetLocation
+                    Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", dotnet))
+                if fileExists candidate then
+                    Some candidate
                 else
                     let main = Process.GetCurrentProcess().MainModule
                     if main.ModuleName ="dotnet" then
                         Some main.FileName
                     else
                         Some dotnet
+        elif isWindows then
+            // Use the path to search for dotnet.exe
+            match probePathForDotnetHost () with
+            | Some f -> Some (Path.Combine(f, dotnet))
+            | None ->
+                // Not in paths so look for global install of dotnet sdk
+                let pf = Environment.GetEnvironmentVariable("ProgramW6432")
+                let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
+                let candidate = Path.Combine(pf, "dotnet", dotnet)
+                if fileExists candidate then
+                    Some candidate
+                else
+                    // Can't find it --- give up
+                    None
         else
             None
 
-    let executeBuild pathToExe arguments workingDir timeout =
+    let executeTool pathToExe arguments workingDir timeout =
         match pathToExe with
         | Some path ->
             let errorsList = ResizeArray()
@@ -193,11 +180,6 @@ module internal Utilities =
                     raise (new TimeoutException(SR.timedoutResolvingPackages(psi.FileName, psi.Arguments)))
                 else
                     p.WaitForExit()
-
-#if DEBUG
-            File.WriteAllLines(Path.Combine(workingDir, "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir, "StandardError.txt"), errorsList)
-#endif
             p.ExitCode = 0, outputList.ToArray(), errorsList.ToArray()
 
         | None -> false, Array.empty, Array.empty
@@ -223,12 +205,12 @@ module internal Utilities =
         let workingDir = Path.GetDirectoryName projectPath
 
         let success, stdOut, stdErr =
-            if not (isRunningOnCoreClr) then
-                // The Desktop build uses "msbuild" to build
-                executeBuild msbuildExePath (arguments "-v:quiet") workingDir timeout
-            else
-                // The coreclr uses "dotnet msbuild" to build
-                executeBuild dotnetHostPath (arguments "msbuild -v:quiet") workingDir timeout
+            executeTool dotnetHostPath (arguments "msbuild -v:quiet") workingDir timeout
+
+#if DEBUG
+        File.WriteAllLines(Path.Combine(workingDir, "build_StandardOutput.txt"), stdOut)
+        File.WriteAllLines(Path.Combine(workingDir, "build_StandardError.txt"), stdErr)
+#endif
 
         let outputFile = projectPath + ".resolvedReferences.paths"
         let resolutionsFile = if success && File.Exists(outputFile) then Some outputFile else None
@@ -237,3 +219,24 @@ module internal Utilities =
           stdOut = stdOut
           stdErr = stdErr
           resolutionsFile = resolutionsFile }
+
+    let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
+        let success, stdOut, stdErr =
+            executeTool dotnetHostPath "nuget list source --format short" scriptDirectory timeout
+#if DEBUG
+        File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardOutput.txt"), stdOut)
+        File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardError.txt"), stdErr)
+#else
+        ignore workingDir
+        ignore stdErr
+#endif
+        seq {
+            if success then
+                for source in stdOut do
+                    // String returned by dotnet nuget list source --format short
+                    // is formatted similar to:
+                    // E https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json
+                    // So strip off the flags
+                    let pos = source.IndexOf(" ")
+                    if pos >= 0 then yield ("i", source.Substring(pos).Trim())
+        }

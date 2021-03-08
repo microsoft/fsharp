@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CompilerOptions
 
 open System
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.Diagnostics
 
 // For command-line options that can be suffixed with +/-
 [<RequireQualifiedAccess>]
@@ -38,48 +39,48 @@ and  CompilerOptionBlock =
     | PublicOptions  of string * CompilerOption list 
     | PrivateOptions of CompilerOption list
 
-val PrintCompilerOptionBlocks : CompilerOptionBlock list -> unit  // for printing usage
+val PrintCompilerOptionBlocks: CompilerOptionBlock list -> unit  // for printing usage
 
-val DumpCompilerOptionBlocks  : CompilerOptionBlock list -> unit  // for QA
+val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit  // for QA
 
-val FilterCompilerOptionBlock : (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
+val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
 /// Parse and process a set of compiler options
-val ParseCompilerOptions : (string -> unit) * CompilerOptionBlock list * string list -> unit
+val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list -> unit
 
-val DisplayBannerText : TcConfigBuilder -> unit
+val DisplayBannerText: TcConfigBuilder -> unit
 
-val GetCoreFscCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
+val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
-val GetCoreFsiCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
+val GetCoreFsiCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
-val GetCoreServiceCompilerOptions : TcConfigBuilder -> CompilerOptionBlock list
+val GetCoreServiceCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 /// Apply args to TcConfigBuilder and return new list of source files
 val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
 
 // Expose the "setters" for some user switches, to enable setting of defaults
-val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit
+val SetOptimizeSwitch: TcConfigBuilder -> OptionSwitch -> unit
 
-val SetTailcallSwitch : TcConfigBuilder -> OptionSwitch -> unit
+val SetTailcallSwitch: TcConfigBuilder -> OptionSwitch -> unit
 
-val SetDebugSwitch    : TcConfigBuilder -> string option -> OptionSwitch -> unit
+val SetDebugSwitch: TcConfigBuilder -> string option -> OptionSwitch -> unit
 
-val PrintOptionInfo   : TcConfigBuilder -> unit
+val PrintOptionInfo: TcConfigBuilder -> unit
 
-val SetTargetProfile  : TcConfigBuilder -> string -> unit
+val SetTargetProfile: TcConfigBuilder -> string -> unit
 
 // Miscellany
-val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
+val ignoreFailureOnMono1_1_16: (unit -> unit) -> unit
 
-val mutable enableConsoleColoring : bool
+val mutable enableConsoleColoring: bool
 
-val DoWithColor : ConsoleColor -> (unit -> 'a) -> 'a
+val DoWithColor: ConsoleColor -> (unit -> 'a) -> 'a
 
-val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
+val DoWithDiagnosticColor: FSharpDiagnosticSeverity -> (unit -> 'a) -> 'a
 
-val ReportTime : TcConfig -> string -> unit
+val ReportTime: TcConfig -> string -> unit
 
-val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>
+val GetAbbrevFlagSet: TcConfigBuilder -> bool -> Set<string>
 
-val PostProcessCompilerArgs : string Set -> string [] -> string list
+val PostProcessCompilerArgs: string Set -> string [] -> string list

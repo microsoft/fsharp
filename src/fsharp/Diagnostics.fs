@@ -5,7 +5,14 @@
 // F# compiler.
 namespace FSharp.Compiler.Diagnostics
 
-type public FSharpDiagnosticOptions =
+[<RequireQualifiedAccess>]
+type FSharpDiagnosticSeverity = 
+    | Hidden
+    | Info
+    | Warning 
+    | Error
+
+type FSharpDiagnosticOptions =
     {
       WarnLevel: int
       GlobalWarnAsError: bool

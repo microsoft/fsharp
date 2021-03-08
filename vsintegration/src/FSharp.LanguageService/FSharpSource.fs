@@ -355,6 +355,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                         yield! pi.CompilationOptions |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
                     yield "--noframework"
+                    yield "--define:COMPILED"
 
                 |]
             // get a sync parse of the file

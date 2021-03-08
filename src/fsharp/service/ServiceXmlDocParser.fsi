@@ -17,5 +17,5 @@ module public XmlDocComment =
 module public XmlDocParser =
 
     /// Get the list of Xml documentation from current source code
-    val GetXmlDocables: ISourceText * input: ParsedInput option -> XmlDocable list
+    val GetXmlDocables: ISourceText * input: ParsedInput -> XmlDocable list
     

@@ -914,8 +914,10 @@ rule token args skip = parse
  | "#light" anywhite* 
  | ("#indent" | "#light") anywhite+ "\"on\""
    { if args.lightStatus.ExplicitlySet && args.lightStatus.WarnOnMultipleTokens then 
-         warning(Error((0,"#light should only occur as the first non-comment text in an F# source file"), lexbuf.LexemeRange))
-     // TODO unreachable error above, I think? - brianmcn 
+         let s = lexeme lexbuf
+         warning(Error((0, sprintf "%s should only be set once in an F# source file." s), lexbuf.LexemeRange))
+         // TODO: where should this go? (abelb)
+         //warning(Error((0,"#light should only occur as the first non-comment text in an F# source file."), lexbuf.LexemeRange))
      args.lightStatus.Status <- true 
      if not skip then HASH_LIGHT (LexCont.Token(args.ifdefStack, args.stringNest))
      else token args skip lexbuf } 
@@ -974,6 +976,14 @@ rule token args skip = parse
    { let tok = WHITESPACE (LexCont.Token (args.ifdefStack, args.stringNest))
      let tok = fail args lexbuf (FSComp.SR.lexHashIfMustHaveIdent()) tok 
      if not skip then tok else token args skip lexbuf }
+
+ | anywhite* "#if" ident_char+
+ | anywhite* "#else" ident_char+
+ | anywhite* "#endif" ident_char+
+ | anywhite* "#light" ident_char+
+   { let n = (lexeme lexbuf).IndexOf('#')
+     lexbuf.StartPos <- lexbuf.StartPos.ShiftColumnBy(n)
+     HASH_IDENT(lexemeTrimLeft lexbuf (n+1)) }
 
  | surrogateChar surrogateChar
 

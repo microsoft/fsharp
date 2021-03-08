@@ -84,19 +84,27 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"
-        Condition = "'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' != ''">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersion)"
-        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' == 'true'">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSharpCorePreviewPackageVersion)"
-        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' == 'true' and '$(DisableFSharpCorePreviewCheck)' != 'true'">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
     <PackageReference
         Include="FSharp.Core" Version="$(FSCorePackageVersion)"
-        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'"/>
+        Condition="'$(DisableImplicitFSharpCoreReference)' != 'true' and '$(FSharpCoreImplicitPackageVersion)' == '' and '$(_NETCoreSdkIsPreview)' != 'true'">
+      <ExcludeAssets Condition="'$(FSharpCoreIncludeDocFileInOutput)' != 'true'">contentFiles</ExcludeAssets>
+    </PackageReference>
 
   </ItemGroup>
 

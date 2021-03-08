@@ -2227,6 +2227,13 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
 
     and rulesForBothSoftWhiteAndHardWhite(tokenTup: TokenTup) = 
           match tokenTup.Token with 
+          | HASH_IDENT (ident) ->
+              let hashPos = new LexbufState(tokenTup.StartPos, tokenTup.StartPos.ShiftColumnBy(1), false)
+              let identPos = new LexbufState(tokenTup.StartPos.ShiftColumnBy(1), tokenTup.EndPos, false)
+              delayToken(new TokenTup(IDENT(ident), identPos, tokenTup.LastTokenPos))
+              delayToken(new TokenTup(HASH, hashPos, tokenTup.LastTokenPos))
+              true
+
           // Insert HIGH_PRECEDENCE_PAREN_APP if needed 
           | IDENT _ when (nextTokenIsAdjacentLParenOrLBrack tokenTup).IsSome ->
               let dotTokenTup = peekNextTokenTup()

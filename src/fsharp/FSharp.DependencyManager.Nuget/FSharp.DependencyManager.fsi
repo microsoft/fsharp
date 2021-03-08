@@ -41,7 +41,7 @@ type ResolveDependenciesResult =
 
 [<DependencyManagerAttribute>]
 type FSharpDependencyManager =
-    new: outputDir:string option -> FSharpDependencyManager
+    new: outputDirectory:string option -> FSharpDependencyManager
 
     member Name: string
 
@@ -49,4 +49,4 @@ type FSharpDependencyManager =
 
     member HelpMessages:string[]
 
-    member ResolveDependencies: scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string * timeout: int-> obj
+    member ResolveDependencies: scriptDirectory: string * scriptName: string * scriptExt: string * packageManagerTextLines: (string * string) seq * targetFrameworkMoniker: string * runtimeIdentifier: string * timeout: int-> obj

@@ -122,7 +122,7 @@ See (DEVGUIDE.md#Developing on Windows) for instructions to install what is need
 
 ### Quickly see your changes locally
 
-First, ensure that `VisualFSharpFull` is the startup project.
+First, ensure that `VisualFSharpDebug` is the startup project.
 
 Then, use the **f5** or **ctrl+f5** keyboard shortcuts to test your tooling changes. The former will debug a new instance of Visual Studio. The latter will launch a new instance of Visual Studio, but with your changes installed.
 
@@ -136,7 +136,7 @@ If you'd like to "run with your changes", you can produce a VSIX and install it 
 
 ```
 VSIXInstaller.exe /u:"VisualFSharp"
-VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpFull.vsix
+VSIXInstaller.exe artifacts\VSSetup\Release\VisualFSharpDebug.vsix
 ```
 
 It's important to use `Release` if you want to see if your changes have had a noticeable performance impact.
@@ -170,9 +170,4 @@ See the "Debugging The Compiler" section of this [article](https://medium.com/@w
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
-```
-.nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile NuGet.Config
-.nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile NuGet.Config
-.nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile NuGet.Config
-```
-Where you should set proper proxy address, user name and password.
+See the Nuget config file documention for use with a proxy server [https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file](https://docs.microsoft.com/en-us/nuget/reference/nuget-config-file)

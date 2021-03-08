@@ -61,9 +61,7 @@ let internal identsAndRanges (input: ParsedInput) =
 let internal parseAndExtractRanges code =
     let file = "Test"
     let result = parseSourceCode (file, code)
-    match result with
-    | Some tree -> tree |> identsAndRanges
-    | None -> failwith "fail to parse..."
+    result |> identsAndRanges
 
 let input =
     """

@@ -1864,6 +1864,11 @@ type ParsedInput =
 
     | SigFile of ParsedSigFileInput
 
+    member inp.FileName =
+        match inp with
+        | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
+        | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) -> filename
+
     member inp.Range =
         match inp with
         | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))

@@ -6,6 +6,13 @@
 
 namespace FSharp.Compiler.Diagnostics
 
+[<RequireQualifiedAccess>]
+type FSharpDiagnosticSeverity = 
+    | Hidden
+    | Info
+    | Warning 
+    | Error
+
 type FSharpDiagnosticOptions =
     { WarnLevel: int
       GlobalWarnAsError: bool

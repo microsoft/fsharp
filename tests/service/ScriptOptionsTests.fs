@@ -51,7 +51,7 @@ let ``all default assembly references are system assemblies``(assumeNetFx, useSd
             let ref = Path.GetFullPath(r.[3..])
             let baseName = Path.GetFileNameWithoutExtension(ref)
             let projectDir = System.Environment.CurrentDirectory
-            if not (FSharp.Compiler.FxResolver(Some assumeNetFx, projectDir, rangeForErrors=range0, useSdkRefs=useSdkRefs, isInteractive=false, sdkDirOverride=None).GetSystemAssemblies().Contains(baseName)) then
+            if not (FSharp.Compiler.FxResolver(assumeNetFx, projectDir, rangeForErrors=range0, useSdkRefs=useSdkRefs, isInteractive=false, sdkDirOverride=None).GetSystemAssemblies().Contains(baseName)) then
                 printfn "Failing, printing options from GetProjectOptionsFromScript..."
                 for opt in options.OtherOptions do
                     printfn "option: %s" opt
@@ -82,7 +82,7 @@ let ``sdk dir with dodgy global json gives warning``() =
         printfn "Failure!" 
         printfn "tempPath = %A" tempPath
         printfn "options = %A" options
-        let fxResolver = FSharp.Compiler.FxResolver(Some false, tempPath, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
+        let fxResolver = FSharp.Compiler.FxResolver(false, tempPath, rangeForErrors=range0, useSdkRefs=true, isInteractive=false, sdkDirOverride=None)
         let result = fxResolver.TryGetDesiredDotNetSdkVersionForDirectory()
         printfn "sdkVersion = %A" result
 

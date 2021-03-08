@@ -1544,6 +1544,7 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3382,parsEmptyFillInInterpolatedString,"Invalid interpolated string. This interpolated string expression fill is empty, an expression was expected."
 3383,lexRBraceInInterpolatedString,"A '}}' character must be escaped (by doubling) in an interpolated string."
 3384,scriptSdkNotDetermined,"The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '%s --version' in the directory '%s' was: '%s' and the exit code was '%d'."
+3384,scriptSdkNotDeterminedUnexpected,"The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. Unexpected error '%s'."
 #3501   "This construct is not supported by your version of the F# compiler" CompilerMessage(ExperimentalAttributeMessages.NotSupportedYet, 3501, IsError=true)
 3390,xmlDocBadlyFormed,"This XML comment is invalid: '%s'"
 3390,xmlDocMissingParameterName,"This XML comment is invalid: missing 'name' attribute for parameter or parameter reference"

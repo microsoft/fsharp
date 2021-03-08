@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.ErrorLogger
 
 open System
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 
@@ -39,8 +40,6 @@ exception StopProcessingExn of exn option
 val ( |StopProcessing|_| ): exn:exn -> unit option
 
 val StopProcessing<'T> : exn
-
-exception NumberedError of (int * string) * range
 
 exception Error of (int * string) * range
 
@@ -139,7 +138,7 @@ type ErrorLogger =
 
     member DebugDisplay: unit -> string
 
-    abstract member DiagnosticSink: phasedError:PhasedDiagnostic * isError:bool -> unit
+    abstract member DiagnosticSink: phasedError:PhasedDiagnostic * severity:FSharpDiagnosticSeverity -> unit
 
     abstract member ErrorCount: int
   
@@ -154,9 +153,9 @@ type CapturingErrorLogger =
 
     member CommitDelayedDiagnostics: errorLogger:ErrorLogger -> unit
 
-    override DiagnosticSink: phasedError:PhasedDiagnostic * isError:bool -> unit
+    override DiagnosticSink: phasedError:PhasedDiagnostic * severity:FSharpDiagnosticSeverity -> unit
 
-    member Diagnostics: (PhasedDiagnostic * bool) list
+    member Diagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity) list
 
     override ErrorCount: int
   
@@ -207,7 +206,7 @@ val error: exn:exn -> 'a
 
 val simulateError: p:PhasedDiagnostic -> 'a
 
-val diagnosticSink: phasedError:PhasedDiagnostic * isError:bool -> unit
+val diagnosticSink: phasedError:PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
 val errorSink: pe:PhasedDiagnostic -> unit
 

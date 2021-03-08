@@ -45,7 +45,7 @@ type AsyncType() =
 
         let onSuccess x   =
             match !whatToDo with
-            | Cancel | Throw  
+            | Cancel | Throw
                 -> Assert.Fail("Expected onSuccess but whatToDo was not Exit", [| whatToDo |])
             | Exit
                 -> ()
@@ -167,8 +167,8 @@ type AsyncType() =
     member private this.WaitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
         Assert.True(result, "Task did not finish after waiting for a second.")
-      
-    
+
+
     [<Fact>]
     member this.CreateTask () =
         let s = "Hello tasks!"
@@ -206,7 +206,7 @@ type AsyncType() =
         with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         spinloop <- false
-        
+
         try
             this.WaitASec t
         with :? AggregateException as a ->
@@ -257,47 +257,47 @@ type AsyncType() =
 
     [<Fact>]
     member this.ExceptionPropagatesToTask () =
-        let a = async { 
+        let a = async {
             do raise (Exception ())
          }
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
             Async.StartAsTask a
         let mutable exceptionThrown = false
-        try 
+        try
             this.WaitASec t
-        with 
+        with
             e -> exceptionThrown <- true
         Assert.True (t.IsFaulted)
         Assert.True(exceptionThrown)
-        
+
     [<Fact>]
     member this.CancellationPropagatesToTask () =
         let a = async {
                 while true do ()
             }
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
             Async.StartAsTask a
-        Async.CancelDefaultToken () 
+        Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
             this.WaitASec t
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)   
-        Assert.True(t.IsCanceled)            
-        
+        Assert.True (exceptionThrown)
+        Assert.True(t.IsCanceled)
+
     [<Fact>]
     member this.CancellationPropagatesToGroup () =
         let ewh = new ManualResetEvent(false)
         let cancelled = ref false
-        let a = async { 
+        let a = async {
                 use! holder = Async.OnCancel (fun _ -> cancelled := true)
                 ewh.Set() |> Assert.True
                 while true do ()
@@ -305,7 +305,7 @@ type AsyncType() =
         let cts = new CancellationTokenSource()
         let token = cts.Token
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
@@ -313,14 +313,14 @@ type AsyncType() =
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
-//        printfn "%A" t.Status        
+//        printfn "%A" t.Status
         let mutable exceptionThrown = false
         try
             this.WaitASec t
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)   
-        Assert.True(t.IsCanceled)      
-        Assert.True(!cancelled)      
+        Assert.True (exceptionThrown)
+        Assert.True(t.IsCanceled)
+        Assert.True(!cancelled)
 
     [<Fact>]
     member this.CreateImmediateAsTask () =
@@ -334,38 +334,38 @@ type AsyncType() =
             Async.StartImmediateAsTask a
         this.WaitASec t
         Assert.True (t.IsCompleted)
-        Assert.AreEqual(s, t.Result)    
-        
+        Assert.AreEqual(s, t.Result)
+
     [<Fact>]
     member this.StartImmediateAsTask () =
         let s = "Hello tasks!"
         let a = async { return s }
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
             Async.StartImmediateAsTask a
         this.WaitASec t
         Assert.True (t.IsCompleted)
-        Assert.AreEqual(s, t.Result)    
+        Assert.AreEqual(s, t.Result)
 
-      
+
     [<Fact>]
     member this.ExceptionPropagatesToImmediateTask () =
-        let a = async { 
+        let a = async {
             do raise (Exception ())
          }
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
             Async.StartImmediateAsTask a
         let mutable exceptionThrown = false
-        try 
+        try
             this.WaitASec t
-        with 
+        with
             e -> exceptionThrown <- true
         Assert.True (t.IsFaulted)
         Assert.True(exceptionThrown)
@@ -378,18 +378,18 @@ type AsyncType() =
                 while true do ()
             }
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
             Async.StartImmediateAsTask a
-        Async.CancelDefaultToken () 
+        Async.CancelDefaultToken ()
         let mutable exceptionThrown = false
         try
             this.WaitASec t
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)   
-        Assert.True(t.IsCanceled)            
+        Assert.True (exceptionThrown)
+        Assert.True(t.IsCanceled)
 #endif
 
 #if IGNORED
@@ -398,7 +398,7 @@ type AsyncType() =
     member this.CancellationPropagatesToGroupImmediate () =
         let ewh = new ManualResetEvent(false)
         let cancelled = ref false
-        let a = async { 
+        let a = async {
                 use! holder = Async.OnCancel (fun _ -> cancelled := true)
                 ewh.Set() |> Assert.True
                 while true do ()
@@ -410,21 +410,21 @@ type AsyncType() =
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.True
         cts.Cancel()
-//        printfn "%A" t.Status        
+//        printfn "%A" t.Status
         let mutable exceptionThrown = false
         try
             this.WaitASec t
         with e -> exceptionThrown <- true
-        Assert.True (exceptionThrown)   
-        Assert.True(t.IsCanceled)      
-        Assert.True(!cancelled)      
+        Assert.True (exceptionThrown)
+        Assert.True(t.IsCanceled)
+        Assert.True(!cancelled)
 #endif
 
     [<Fact>]
     member this.TaskAsyncValue () =
         let s = "Test"
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
@@ -433,38 +433,49 @@ type AsyncType() =
                 let! s1 = Async.AwaitTask(t)
                 return s = s1
             }
-        Async.RunSynchronously(a, 1000) |> Assert.True        
+        Async.RunSynchronously(a, 1000) |> Assert.True
 
     [<Fact>]
     member this.AwaitTaskCancellation () =
         let test() = async {
             let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
             tcs.SetCanceled()
-            try 
+            try
                 do! Async.AwaitTask tcs.Task
                 return false
             with :? System.OperationCanceledException -> return true
         }
 
-        Async.RunSynchronously(test()) |> Assert.True   
-        
+        Async.RunSynchronously(test()) |> Assert.True
+
+    [<Fact>]
+    member this.AwaitCompletedTask() =
+        let test() = async {
+            let threadIdBefore = Thread.CurrentThread.ManagedThreadId
+            do! Async.AwaitTask Task.CompletedTask
+            let threadIdAfter = Thread.CurrentThread.ManagedThreadId
+            return threadIdBefore = threadIdAfter
+        }
+
+        Async.RunSynchronously(test()) |> Assert.True
+
     [<Fact>]
     member this.AwaitTaskCancellationUntyped () =
         let test() = async {
             let tcs = new System.Threading.Tasks.TaskCompletionSource<unit>()
             tcs.SetCanceled()
-            try 
+            try
                 do! Async.AwaitTask (tcs.Task :> Task)
                 return false
             with :? System.OperationCanceledException -> return true
         }
 
-        Async.RunSynchronously(test()) |> Assert.True    
-        
+        Async.RunSynchronously(test()) |> Assert.True
+
     [<Fact>]
     member this.TaskAsyncValueException () =
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
 #endif
@@ -475,37 +486,37 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 1000) |> Assert.True  
-        
+        Async.RunSynchronously(a, 1000) |> Assert.True
+
     [<Fact>]
     member this.TaskAsyncValueCancellation () =
-        use ewh = new ManualResetEvent(false)    
+        use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
         let token = cts.Token
 #if !NET46
-        let t : Task<unit>= 
+        let t : Task<unit>=
 #else
         use t : Task<unit>=
-#endif 
+#endif
           Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
-            }        
+            }
         Async.Start a
         cts.Cancel()
-        ewh.WaitOne(10000) |> ignore        
+        ewh.WaitOne(10000) |> ignore
 
     [<Fact>]
     member this.NonGenericTaskAsyncValue () =
         let hasBeenCalled = ref false
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
-#endif 
+#endif
             Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
         let a = async {
                 do! Async.AwaitTask(t)
@@ -513,14 +524,14 @@ type AsyncType() =
             }
         let result =Async.RunSynchronously(a, 1000)
         (!hasBeenCalled && result) |> Assert.True
-        
+
     [<Fact>]
     member this.NonGenericTaskAsyncValueException () =
 #if !NET46
-        let t = 
+        let t =
 #else
         use t =
-#endif 
+#endif
             Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
         let a = async {
                 try
@@ -528,8 +539,8 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 3000) |> Assert.True  
-        
+        Async.RunSynchronously(a, 3000) |> Assert.True
+
     [<Fact>]
     member this.NonGenericTaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)

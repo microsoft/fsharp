@@ -25,16 +25,6 @@ type ConsoleLoggerProvider =
     new : unit -> ConsoleLoggerProvider
     inherit ErrorLoggerProvider
 
-/// Encode the F# interface data into a set of IL attributes and resources
-val EncodeSignatureData:
-    tcConfig:TcConfig *
-    tcGlobals:TcGlobals *
-    exportRemapping:Remap *
-    generatedCcu: CcuThunk *
-    outfile: string *
-    isIncrementalBuild: bool
-      -> ILAttribute list * ILResource list
-
 /// The main (non-incremental) compilation entry point used by fsc.exe
 val mainCompile: 
     ctok: CompilationThreadToken *

@@ -12,7 +12,7 @@ type FSharpChecker with
     member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =
         asyncMaybe {
             let! fileParseResults = checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions, userOpName=userOpName) |> liftAsync
-            return! fileParseResults.ParseTree
+            return fileParseResults.ParseTree
         }
 
     member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: SourceText, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions, userOpName: string) =
@@ -40,9 +40,7 @@ type FSharpChecker with
             let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
                 match results with
                 | Some(parseResults, checkResults) ->
-                    match parseResults.ParseTree with
-                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
-                    | None -> None
+                    Some (parseResults, parseResults.ParseTree, checkResults)
                 | None -> None
 
             if languageServicePerformanceOptions.AllowStaleCompletionResults then

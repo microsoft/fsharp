@@ -195,10 +195,7 @@ type internal FSharpCompletionProvider
 
             
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
-                let completionContext =
-                    parseResults.ParseTree 
-                    |> Option.bind (fun parseTree ->
-                         ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseTree, line))
+                let completionContext = ParsedInput.TryGetCompletionContext(Position.fromZ caretLinePos.Line caretLinePos.Character, parseResults.ParseTree, line)
 
                 match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)

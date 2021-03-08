@@ -25,7 +25,7 @@ open FSharp.Compiler.Text.Range
 ///   - out-of-project sources editing
 ///   - default references for fsc.exe
 ///   - default references for fsi.exe
-type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
+type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdkRefs: bool, isInteractive: bool, rangeForErrors: range, sdkDirOverride: string option) =
 
     static let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
@@ -138,22 +138,32 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
             with err -> 
                 Result.Error (Error(FSComp.SR.scriptSdkNotDetermined(dotnetHostPath, projectDir, err.Message, 1), rangeForErrors))))
 
+    // We need to make sure the warning gets replayed each time, despite the lazy computations
+    // To do this we pass it back as data and eventually replay it at the entry points to FxResolver.
     let tryGetDesiredDotNetSdkVersionForDirectory() =
-    // Make sure the warning gets replayed each time we call this
         match tryGetDesiredDotNetSdkVersionForDirectoryInfo() with
-        | Result.Ok res -> Some res
-        | Result.Error exn -> warning(exn); None
+        | Result.Ok res -> Some res, []
+        | Result.Error exn -> None, [exn]
 
-    /// Get the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
-    let tryGetSdkDir() =
+    // This is used to replay the warnings generated in the function above.
+    // It should not be used under the lazy on-demand computations in this type, nor should the warnings be explicitly ignored
+    let replayWarnings (res, warnings: exn list) =
+        for exn in warnings do warning exn
+        res
+
+    /// Compute the .NET Core SDK directory relevant to projectDir, used to infer the default target framework assemblies.
+    ///
+    /// On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation  
+    let trySdkDir =
+      lazy
         // This path shouldn't be used with reflective processes
         assert not isInteractive
         match assumeDotNetFramework with 
-        | Some true -> None
-        | _ when not useSdkRefs -> None
+        | true -> None, []
+        | _ when not useSdkRefs -> None, []
         | _ ->
         match sdkDirOverride with 
-        | Some sdkDir -> Some sdkDir
+        | Some sdkDir -> Some sdkDir, []
         | None ->
             let sdksDir = 
                 match getDotnetDirectory() with
@@ -165,48 +175,64 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
             match sdksDir with 
             | Some sdksDir ->
                 // Find the sdk version by running `dotnet --version` in the script/project location
-                let desiredSdkVer = tryGetDesiredDotNetSdkVersionForDirectory()
+                let desiredSdkVer, warnings = tryGetDesiredDotNetSdkVersionForDirectory()
 
                 let sdkDir =
                     DirectoryInfo(sdksDir).GetDirectories()
-                    |> Array.filter (fun di -> di.Name |> Seq.forall (fun c -> Char.IsDigit(c) || c = '.'))
                     // Filter to the version reported by `dotnet --version` in the location, if that succeeded
-                    |> Array.filter (fun di -> match desiredSdkVer with None -> true | Some v -> di.Name.Contains(v))
+                    // If it didn't succeed we will revert back to implementation assemblies, but still need an SDK
+                    // to use, so we find the SDKs by looking for dotnet.runtimeconfig.json
+                    |> Array.filter (fun di -> 
+                        match desiredSdkVer with
+                        | None -> File.Exists(Path.Combine(di.FullName,"dotnet.runtimeconfig.json"))
+                        | Some v -> di.Name = v)
                     |> Array.sortBy (fun di -> di.FullName)
                     |> Array.tryLast
                     |> Option.map (fun di -> di.FullName)
-                sdkDir
+                sdkDir, warnings
             | _ -> 
-                None
+                None, []
+
+    let tryGetSdkDir() = trySdkDir.Force()
 
     /// Get the framework implementation directory of the currently running process
     let getRunningImplementationAssemblyDir() =
         let filename = Path.GetDirectoryName(typeof<obj>.Assembly.Location) 
         if String.IsNullOrWhiteSpace filename then getFSharpCompilerLocation() else filename
 
-    /// Get the framework implementation directory, either of the selected SDK or the currently running process as a backup
-    /// F# interactive/reflective scenarios use the implementation directory of the currently running process
-    let getImplementationAssemblyDir() =
+    // Compute the framework implementation directory, either of the selected SDK or the currently running process as a backup
+    // F# interactive/reflective scenarios use the implementation directory of the currently running process
+    //
+    // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation  
+    let implementationAssemblyDir =
+      lazy
         if isInteractive then
-            getRunningImplementationAssemblyDir()
+            getRunningImplementationAssemblyDir(), []
         else
-            let sdkDir = tryGetSdkDir()
+            let sdkDir, warnings = tryGetSdkDir()
             match sdkDir with 
             | Some dir -> 
-                let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                let dotnetConfig = File.ReadAllText(dotnetConfigFile)
-                let pattern = "\"version\": \""
-                let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
-                let endPos = dotnetConfig.IndexOf("\"", startPos)
-                let ver = dotnetConfig.[startPos..endPos-1]
-                let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
-                if Directory.Exists(path) then
-                    path
-                else
-                    getRunningImplementationAssemblyDir()
-            | None ->
+                try
+                    let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                    let dotnetConfig = File.ReadAllText(dotnetConfigFile)
+                    let pattern = "\"version\": \""
+                    let startPos = dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) + pattern.Length
+                    let endPos = dotnetConfig.IndexOf("\"", startPos)
+                    let ver = dotnetConfig.[startPos..endPos-1]
+                    let path = Path.GetFullPath(Path.Combine(dir, "..", "..", "shared", "Microsoft.NETCore.App", ver))
+                    if Directory.Exists(path) then
+                        path, warnings
+                    else
+                        getRunningImplementationAssemblyDir(), warnings
+                with e ->
+                    let warn = Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors)
+                    let path = getRunningImplementationAssemblyDir()
+                    path, [warn]
+            | _ ->
                 let path = getRunningImplementationAssemblyDir()
-                path
+                path, []
+
+    let getImplementationAssemblyDir() = implementationAssemblyDir.Force()
 
     let getFSharpCoreLibraryName = "FSharp.Core"
 
@@ -220,10 +246,11 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
 
     // Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
     // or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
-    let getSystemValueTupleImplementationReference () =
-        let probeFile = Path.Combine(getImplementationAssemblyDir(), "System.ValueTuple.dll")
+    let getSystemValueTupleImplementationReference() =
+        let implDir = getImplementationAssemblyDir() |> replayWarnings
+        let probeFile = Path.Combine(implDir, "System.ValueTuple.dll")
         if File.Exists(probeFile) then 
-            Some probeFile 
+            Some probeFile
         else
             try
                 let asm = typeof<System.ValueTuple<int, int>>.Assembly
@@ -235,7 +262,9 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                         Some valueTuplePath
                     else
                         None
-            with _ -> None
+            with _ ->
+                // This is defensive coding, we don't expect this exception to happen
+                None
 
     // Algorithm:
     //     use implementation location of obj type, on shared frameworks it will always be in:
@@ -249,7 +278,10 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     //     we will rely on the sdk-version match on the two paths to ensure that we get the product that ships with the
     //     version of the runtime we are executing on
     //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location.
-    let tryGetNetCoreRefsPackDirectoryRoot() =
+    //
+    // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation  
+    let tryNetCoreRefsPackDirectoryRoot =
+      lazy
         try
             //     Use the reference assemblies for the highest netcoreapp tfm that we find in that location that is 
             //     lower than or equal to the implementation version.
@@ -259,7 +291,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 | true, v -> v
                 | false, _ -> zeroVersion
 
-            let implDir = getImplementationAssemblyDir()
+            let implDir, warnings = getImplementationAssemblyDir()
             let version = computeVersion (DirectoryInfo(implDir).Name)
             let microsoftNETCoreAppRef = Path.Combine(implDir, "../../../packs/Microsoft.NETCore.App.Ref")
             if Directory.Exists(microsoftNETCoreAppRef) then
@@ -269,14 +301,23 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                     |> Array.sort
                     |> Array.filter(fun v -> v <= version)
                     |> Array.last
-                Some (directory.ToString()), Some microsoftNETCoreAppRef
+                (Some (directory.ToString()), Some microsoftNETCoreAppRef), warnings
             else
-               None,  None
-        with | _ -> None, None
+               (None,  None), warnings
+        with e ->
+            let warn = Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors)
+            // This is defensive coding, we don't expect this exception to happen
+            // NOTE: consider reporting this exception as a warning
+            (None, None), [warn]
+
+    let tryGetNetCoreRefsPackDirectoryRoot() = tryNetCoreRefsPackDirectoryRoot.Force()
 
     // Tries to figure out the tfm for the compiler instance.
     // On coreclr it uses the deps.json file
-    let tryGetRunningDotNetCoreTfm() =
+    //
+    // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation  
+    let tryRunningDotNetCoreTfm =
+      lazy
         let file =
             try
                 let asm = Assembly.GetEntryAssembly()
@@ -288,7 +329,10 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                         File.ReadAllText(depsJsonPath)
                     else
                         ""
-            with _ -> ""
+            with _ ->
+                // This is defensive coding, we don't expect this exception to happen
+                // NOTE: consider reporting this exception as a warning
+                ""
 
         let tfmPrefix=".NETCoreApp,Version=v"
         let pattern = "\"name\": \"" + tfmPrefix
@@ -317,6 +361,8 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 | true, value when value < 5.0 -> "netcoreapp"
                 | _ -> "net"
             Some (prefix + suffix)
+
+    let tryGetRunningDotNetCoreTfm() = tryRunningDotNetCoreTfm.Force()
 
     // Tries to figure out the tfm for the compiler instance on the Windows desktop
     // On full clr it uses the mscorlib version number
@@ -366,7 +412,8 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
             // no TFM could be found, assume latest stable?
             "net48"
 
-    let tryGetSdkRefsPackDirectory() =
+    let trySdkRefsPackDirectory =
+      lazy
         let tfmPrefix = "netcoreapp"
         let tfmCompare c1 c2 =
             let deconstructTfmApp (netcoreApp: DirectoryInfo) =
@@ -376,7 +423,10 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                         Some (Double.Parse(name.Substring(tfmPrefix.Length), NumberStyles.AllowDecimalPoint,  CultureInfo.InvariantCulture))
                     else
                         None
-                with _ -> None
+                with _ -> 
+                    // This is defensive coding, we don't expect this exception to happen
+                   // NOTE: consider reporting this exception as a warning
+                    None
 
             if c1 = c2 then 0
             else
@@ -387,7 +437,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 | _ -> 0
 
         match tryGetNetCoreRefsPackDirectoryRoot() with
-        | Some version, Some root ->
+        | (Some version, Some root), warnings ->
             try
                 let ref = Path.Combine(root, version, "ref")
                 let highestTfm =
@@ -396,17 +446,24 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                     |> Array.tryLast
 
                 match highestTfm with
-                | Some tfm -> Some (Path.Combine(ref, tfm.Name))
-                | None -> None
-            with _ -> None
-        | _ -> None
+                | Some tfm -> Some (Path.Combine(ref, tfm.Name)), warnings
+                | None -> None, warnings
+            with e ->
+                let warn = Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors)
+                // This is defensive coding, we don't expect this exception to happen
+                // NOTE: consider reporting this exception as a warning
+                None, warnings @ [warn]
+        | _ -> None, []
+
+    let tryGetSdkRefsPackDirectory() = trySdkRefsPackDirectory.Force()
 
     let getDependenciesOf assemblyReferences =
         let assemblies = new Dictionary<string, string>()
 
         // Identify path to a dll in the framework directory from a simple name
         let frameworkPathFromSimpleName simpleName =
-            let root = Path.Combine(getImplementationAssemblyDir(), simpleName)
+            let implDir = getImplementationAssemblyDir() |> replayWarnings
+            let root = Path.Combine(implDir, simpleName)
             let pathOpt =
                 [| ""; ".dll"; ".exe" |]
                 |> Seq.tryPick(fun ext ->
@@ -429,7 +486,9 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                         // Reference is a SimpleAssembly name
                         reference, frameworkPathFromSimpleName reference
 
-                with _ -> reference, frameworkPathFromSimpleName reference
+                with _ ->
+                    // This is defensive coding, we don't expect this exception to happen
+                    reference, frameworkPathFromSimpleName reference
 
             if not (assemblies.ContainsKey(referenceName)) then
                 try
@@ -516,7 +575,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     ]
 
     let getDotNetCoreImplementationReferences useFsiAuxLib =
-        let implDir = getImplementationAssemblyDir()
+        let implDir = getImplementationAssemblyDir()  |> replayWarnings
         let roots = 
             [ yield! Directory.GetFiles(implDir, "*.dll")
               yield getFSharpCoreImplementationReference()
@@ -706,13 +765,13 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     member _.GetSystemAssemblies() = systemAssemblies
 
     member _.IsInReferenceAssemblyPackDirectory filename =
-        match tryGetNetCoreRefsPackDirectoryRoot() with
+        match tryGetNetCoreRefsPackDirectoryRoot() |> replayWarnings with
         | _, Some root ->
             let path = Path.GetDirectoryName(filename)
             path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
         | _ -> false
 
-    member _.TryGetSdkDir() = tryGetSdkDir()
+    member _.TryGetSdkDir() = tryGetSdkDir() |> replayWarnings
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member _.GetTfmAndRid() = 
@@ -724,7 +783,7 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                 | Some tfm -> tfm
                 | _ -> getRunningDotNetFrameworkTfm ()
             else
-                let sdkDir = tryGetSdkDir()
+                let sdkDir = tryGetSdkDir() |> replayWarnings
                 match sdkDir with 
                 | Some dir -> 
                     let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
@@ -761,19 +820,20 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
     static member ClearStaticCaches() = 
         desiredDotNetSdkVersionForDirectoryCache.Clear()
 
-    member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory()
+    member _.GetFrameworkRefsPackDirectory() = tryGetSdkRefsPackDirectory() |> replayWarnings
 
     member _.TryGetDesiredDotNetSdkVersionForDirectory() = tryGetDesiredDotNetSdkVersionForDirectoryInfo()
 
     // The set of references entered into the TcConfigBuilder for scripts prior to computing the load closure. 
-    member _.GetDefaultReferences (useFsiAuxLib, assumeDotNetFramework) =
+    member _.GetDefaultReferences (useFsiAuxLib) =
         let defaultReferences =
             if assumeDotNetFramework then
                 getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
             else
                 if useSdkRefs then
                     // Go fetch references
-                    match tryGetSdkRefsPackDirectory() with
+                    let sdkDir = tryGetSdkRefsPackDirectory() |> replayWarnings
+                    match sdkDir with
                     | Some path ->
                         try 
                             let sdkReferences = 
@@ -782,7 +842,9 @@ type internal FxResolver(assumeDotNetFramework: bool option, projectDir: string,
                                   if useFsiAuxLib then yield getFsiLibraryImplementationReference()
                                 ]
                             sdkReferences, false
-                        with _ -> 
+                        with e -> 
+                            warning (Error(FSComp.SR.scriptSdkNotDeterminedUnexpected(e.Message), rangeForErrors))
+                            // This is defensive coding, we don't expect this exception to happen
                             if isRunningOnCoreClr then
                                 // If running on .NET Core and something goes wrong with getting the
                                 // .NET Core references then use .NET Core implementation assemblies for running process

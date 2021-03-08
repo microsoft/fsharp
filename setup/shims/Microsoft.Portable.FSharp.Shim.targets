@@ -1,6 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <Import Condition="'$(FSharpCompilerPath)' != ''" Project="$(FSharpCompilerPath)\Microsoft.Portable.FSharp.targets" />
-  <Import Condition="'$(FSharpCompilerPath)' == ''" Project="$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharp\Microsoft.Portable.FSharp.targets" />
+  <Import Condition="'$(FSharpCompilerPath)' == ''" Project="$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\Microsoft.Portable.FSharp.targets" />
 
 </Project>

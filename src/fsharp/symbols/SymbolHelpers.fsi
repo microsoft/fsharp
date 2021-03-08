@@ -10,13 +10,6 @@ namespace FSharp.Compiler.Diagnostics
     open FSharp.Compiler.Text
     open FSharp.Compiler.ErrorLogger
 
-    [<RequireQualifiedAccess>]
-    type public FSharpDiagnosticSeverity = 
-        | Hidden
-        | Info
-        | Warning 
-        | Error
-
     /// Represents a diagnostic produced by the F# compiler
     [<Class>]
     type public FSharpDiagnostic = 
@@ -57,8 +50,18 @@ namespace FSharp.Compiler.Diagnostics
         /// Gets the number for the diagnostic
         member ErrorNumber: int
 
-        static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * isError: bool * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
-        static member internal CreateFromException: PhasedDiagnostic * isError: bool * range * suggestNames: bool -> FSharpDiagnostic
+        /// Gets the number prefix for the diagnostic, usually "FS" but may differ for analyzers
+        member ErrorNumberPrefix: string
+
+        /// Gets the full error number text e.g "FS0031"
+        member ErrorNumberText: string
+
+        /// Creates a diagnostic, e.g. for reporting from an analyzer
+        static member Create: severity: FSharpDiagnosticSeverity * message: string * number: int * range: range * ?numberPrefix: string * ?subcategory: string -> FSharpDiagnostic
+
+        static member internal CreateFromExceptionAndAdjustEof: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * lastPosInFile: (int*int) * suggestNames: bool -> FSharpDiagnostic
+
+        static member internal CreateFromException: PhasedDiagnostic * severity: FSharpDiagnosticSeverity * range * suggestNames: bool -> FSharpDiagnostic
 
         /// Newlines are recognized and replaced with (ASCII 29, the 'group separator'), 
         /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
@@ -83,11 +86,11 @@ namespace FSharp.Compiler.Diagnostics
     type internal CompilationErrorLogger = 
         inherit ErrorLogger
 
-        /// Create the error logger
+        /// Create the diagnostics logger
         new: debugName:string * options: FSharpDiagnosticOptions -> CompilationErrorLogger
             
-        /// Get the captured errors
-        member GetErrors: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
+        /// Get the captured diagnostics
+        member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
     /// This represents the global state established as each task function runs as part of the build.
     ///
@@ -97,7 +100,7 @@ namespace FSharp.Compiler.Diagnostics
         interface IDisposable
 
     module internal DiagnosticHelpers = 
-        val ReportError: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
+        val ReportDiagnostic: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
 
         val CreateDiagnostics: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpDiagnosticSeverity)> * suggestNames: bool -> FSharpDiagnostic[]
 

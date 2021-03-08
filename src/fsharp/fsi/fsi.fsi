@@ -229,10 +229,7 @@ type FsiEvaluationSession =
     /// check brace matching and other information.
     ///
     /// Operations may be run concurrently with other requests to the InteractiveChecker.
-    ///
-    /// Due to a current limitation, it is not fully thread-safe to run this operation concurrently with evaluation triggered
-    /// by input from 'stdin'. 
-    member ParseAndCheckInteraction: code: string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
+    member ParseAndCheckInteraction: code: string -> FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults
 
     /// The single, global interactive checker to use in conjunction with other operations
     /// on the FsiEvaluationSession.  
