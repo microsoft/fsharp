@@ -35,6 +35,8 @@ neg46.fs(60,8,60,19): typecheck error FS0912: This declaration element is not pe
 
 neg46.fs(64,8,64,26): typecheck error FS0912: This declaration element is not permitted in an augmentation
 
-neg46.fs(68,18,68,36): typecheck error FS0909: All implemented interfaces should be declared on the initial declaration of the type
+neg46.fs(68,18,68,36): typecheck error FS0090: Interface implementations should be given on the initial declaration of a type.
 
-neg46.fs(73,18,73,36): typecheck error FS0909: All implemented interfaces should be declared on the initial declaration of the type
+neg46.fs(69,18,69,21): typecheck error FS0854: Method overrides and interface implementations are not permitted here
+
+neg46.fs(73,18,73,36): typecheck error FS0090: Interface implementations should be given on the initial declaration of a type.

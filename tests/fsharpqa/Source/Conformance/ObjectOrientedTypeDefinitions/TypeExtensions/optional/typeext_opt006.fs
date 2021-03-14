@@ -1,5 +1,5 @@
 // #Regression #Conformance #ObjectOrientedTypes #TypeExtensions  
-//<Expects id="FS0909" span="(7,17-7,19)" status="error">All implemented interfaces should be declared on the initial declaration of the type</Expects>
+//<Expects id="FS0090" span="(7,17-7,19)" status="error">Interface implementations should be given on the initial declaration of a type.</Expects>
 
 namespace NS
   module M = 
