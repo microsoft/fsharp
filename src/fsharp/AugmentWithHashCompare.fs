@@ -60,6 +60,8 @@ let mkHashTy             g ty = (mkThisTy g ty) --> (g.unit_ty --> g.int_ty)
 
 let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.IEqualityComparer_ty --> g.int_ty)
 
+let mkIsCaseTy           g ty = (mkThisTy g ty) --> (g.unit_ty --> g.bool_ty)
+
 //-------------------------------------------------------------------------
 // Polymorphic comparison
 //------------------------------------------------------------------------- 
@@ -867,25 +869,29 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
-let nonVirtualMethod c : ValMemberInfo = 
+let nonVirtualMethod mk c : ValMemberInfo =
   { ImplementedSlotSigs=[]
     MemberFlags={ IsInstance=true 
                   IsDispatchSlot=false
                   IsFinal=false
                   IsOverrideOrExplicitImpl=false
-                  MemberKind=SynMemberKind.Member}
+                  MemberKind=mk}
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
 let unitArg = ValReprInfo.unitArgData
 let unaryArg = [ ValReprInfo.unnamedTopArg ]
 let tupArg = [ [ ValReprInfo.unnamedTopArg1; ValReprInfo.unnamedTopArg1 ] ]
-let mkValSpec g (tcref: TyconRef) tmty vis slotsig methn ty argData = 
+let mkValSpec g (tcref: TyconRef) tmty vis slotsig (methn: string) ty argData =
     let m = tcref.Range 
     let tps = tcref.Typars m
     let membInfo = 
         match slotsig with 
-        | None -> nonVirtualMethod tcref 
+        | None ->
+            let mk =
+                if methn.StartsWith("get_", System.StringComparison.Ordinal) then SynMemberKind.PropertyGet
+                else SynMemberKind.Member
+            nonVirtualMethod mk tcref
         | Some slotsig -> 
             let final = isUnionTy g tmty || isRecdTy g tmty || isStructTy g tmty 
             slotImplMethod(final, tcref, slotsig)
@@ -1097,3 +1103,29 @@ let rec TypeDefinitelyHasEquality g ty =
                    (tinst, tcref.TyparsNoRange) 
                    ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)
                | _ -> false
+
+let MakeValsForUnionAugmentation g (tcref: TyconRef) =
+    let m = tcref.Range
+    let _, tmty = mkMinimalTy g tcref
+    let vis = tcref.TypeReprAccessibility
+    let tps = tcref.Typars m
+
+    tcref.UnionCasesAsList
+    |> List.map (fun uc ->
+        mkValSpec g tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg
+    )
+
+let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
+    let tcref = mkLocalTyconRef tycon
+    let m = tycon.Range
+    let tps = tycon.Typars m
+    let tinst, ty = mkMinimalTy g tcref
+    let thisv, thise = mkThisVar g m ty
+    let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
+
+    (tcref.UnionCasesAsRefList, vals)
+    ||> List.map2 (fun ucr v ->
+        let isdata = mkUnionCaseTest (thise, ucr, tinst, m)
+        let expr = mkLambdas m tps [thisv;unitv] (isdata, g.bool_ty)
+        mkCompGenBind v.Deref expr
+    )

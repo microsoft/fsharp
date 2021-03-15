@@ -35,3 +35,6 @@ val MakeBindingsForEqualityWithComparerAugmentation: TcGlobals -> Tycon -> Bindi
 /// that doesn't assert any new constraints
 val TypeDefinitelyHasEquality: TcGlobals -> TType -> bool
 
+val MakeValsForUnionAugmentation: TcGlobals -> TyconRef -> Val list
+
+val MakeBindingsForUnionAugmentation: TcGlobals -> Tycon -> ValRef list -> Binding list

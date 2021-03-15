@@ -2589,6 +2589,13 @@ module AddAugmentationDeclarations =
             else []
         else []
 
+    let AddUnionAugmentationBindings (cenv: cenv) (env: TcEnv) tycon =
+        let g = cenv.g
+        let tcref = mkLocalTyconRef tycon
+        let vals = AugmentWithHashCompare.MakeValsForUnionAugmentation g tcref
+        for v in vals do
+            PublishValueDefnMaybeInclCompilerGenerated cenv env true ModuleOrMemberBinding v
+        AugmentWithHashCompare.MakeBindingsForUnionAugmentation g tycon (List.map mkLocalValRef vals)
 
 
 /// Infer 'comparison' and 'equality' constraints from type definitions
@@ -4872,7 +4879,11 @@ module TcDeclarations =
                     // in, and there are code generation tests to check that.
                     let binds = AddAugmentationDeclarations.AddGenericHashAndComparisonBindings cenv tycon 
                     let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envForDecls tycon
-                    binds, binds3)
+                    let unionBinds =
+                        if tycon.IsUnionTycon then
+                            AddAugmentationDeclarations.AddUnionAugmentationBindings cenv envForDecls tycon
+                        else []
+                    binds, binds3 @ unionBinds)
 
         // Check for cyclic structs and inheritance all over again, since we may have added some fields to the struct when generating the implicit construction syntax 
         EstablishTypeDefinitionCores.TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons

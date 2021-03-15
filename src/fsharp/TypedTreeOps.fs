@@ -1366,6 +1366,9 @@ let mkRecdFieldSetViaExprAddr (e1, fref, tinst, e2, m) = Expr.Op (TOp.ValFieldSe
 
 let mkUnionCaseTagGetViaExprAddr (e1, cref, tinst, m) = Expr.Op (TOp.UnionCaseTagGet cref, tinst, [e1], m)
 
+/// Make a 'TOp.UnionCaseTest' expression, which tests that a union value is of a particular union case.
+let mkUnionCaseTest (e1, cref: UnionCaseRef, tinst, m) = Expr.Op (TOp.UnionCaseTest cref, tinst, [e1], m)
+
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
 let mkUnionCaseProof (e1, cref: UnionCaseRef, tinst, m) = if cref.Tycon.IsStructOrEnumTycon then e1 else Expr.Op (TOp.UnionCaseProof cref, tinst, [e1], m)
 
@@ -4791,7 +4794,8 @@ and accFreeInOp opts op acc =
     
     // Things containing just a union case reference
     | TOp.UnionCaseProof ucref 
-    | TOp.UnionCase ucref 
+    | TOp.UnionCase ucref
+    | TOp.UnionCaseTest ucref
     | TOp.UnionCaseFieldGetAddr (ucref, _, _) 
     | TOp.UnionCaseFieldGet (ucref, _) 
     | TOp.UnionCaseFieldSet (ucref, _) -> 
@@ -5929,6 +5933,7 @@ let rec tyOfExpr g e =
         | TOp.ValFieldGet fref -> actualTyOfRecdFieldRef fref tinst
         | (TOp.ValFieldSet _ | TOp.UnionCaseFieldSet _ | TOp.ExnFieldSet _ | TOp.LValueOp ((LSet | LByrefSet), _)) ->g.unit_ty
         | TOp.UnionCaseTagGet _ -> g.int_ty
+        | TOp.UnionCaseTest _ -> g.bool_ty
         | TOp.UnionCaseFieldGetAddr (cref, j, readonly) -> mkByrefTyWithFlag g readonly (actualTyOfRecdField (mkTyconRefInst cref.TyconRef tinst) (cref.FieldByIndex j))
         | TOp.UnionCaseFieldGet (cref, j) -> actualTyOfRecdField (mkTyconRefInst cref.TyconRef tinst) (cref.FieldByIndex j)
         | TOp.ExnFieldGet (ecref, j) -> recdFieldTyOfExnDefRefByIdx ecref j

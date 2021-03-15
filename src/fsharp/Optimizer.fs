@@ -1361,6 +1361,7 @@ and OpHasEffect g m op =
     | TOp.ExnConstr ecref -> isExnDefinitelyMutable ecref
     | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true // mutable
     | TOp.UnionCaseTagGet _ -> false
+    | TOp.UnionCaseTest _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
     | TOp.ILAsm (instrs, _) -> IlAssemblyCodeHasEffect instrs
@@ -2149,7 +2150,8 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   
       | TOp.ExnFieldGet _
-      | TOp.UnionCaseTagGet _ -> 
+      | TOp.UnionCaseTagGet _
+      | TOp.UnionCaseTest _ -> 
           // REVIEW: reduction possible here, and may be very effective
           1, valu 
       | TOp.UnionCaseProof _ -> 
