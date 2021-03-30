@@ -1112,7 +1112,9 @@ let MakeValsForUnionAugmentation g (tcref: TyconRef) =
 
     tcref.UnionCasesAsList
     |> List.map (fun uc ->
-        mkValSpec g tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg
+        let v = mkValSpec g tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg
+        g.AddValGeneratedAttributes v m
+        v
     )
 
 let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
