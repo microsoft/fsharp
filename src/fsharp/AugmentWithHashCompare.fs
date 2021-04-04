@@ -823,7 +823,7 @@ let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon: Tycon) =
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
     let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
     not isUnit && 
-    not (TyconRefHasAttribute g tycon.Range g.attrib_IsByRefLikeAttribute (mkLocalTyconRef tycon)) &&
+    not (isByrefLikeTyconRef g tycon.Range (mkLocalTyconRef tycon)) &&
     match getAugmentationAttribs g tycon with 
     // [< >] 
     | true, true, None, None, None, None, None, None, None
@@ -838,7 +838,7 @@ let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon: Tycon) =
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
     let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
     not isUnit && 
-    not (TyconRefHasAttribute g tycon.Range g.attrib_IsByRefLikeAttribute (mkLocalTyconRef tycon)) &&
+    not (isByrefLikeTyconRef g tycon.Range (mkLocalTyconRef tycon)) &&
 
     match getAugmentationAttribs g tycon with 
     // [< >] 
