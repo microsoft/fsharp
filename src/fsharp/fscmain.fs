@@ -39,7 +39,7 @@ let main(argv) =
         // The F# compiler expects 'argv' to include the executable name, though it makes no use of it.
         let argv = Array.append [| "fsc.exe" |] argv
         
-        // Check for --pause as the very first step so that a compiler can be attached here.
+        // Check for --pause as the very first step so that a debugger can be attached here.
         let pauseFlag = argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause")
         if pauseFlag then 
             System.Console.WriteLine("Press return to continue...")
