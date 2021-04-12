@@ -2605,12 +2605,17 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
               MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds, fixupFinalAttrs))
       
       let withBindings, env = MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem mutRecNSInfo envMutRec binds
-      (env, withBindings) ||> MutRecShapes.expandTyconsWithEnv (fun _ (tyconOpt, _) ->
-          let mutable binds = Unchecked.defaultof<_>
-          match tyconOpt with 
-          | Some tycon when extraBindings.TryGetValue(tycon, &binds) -> binds, []
-          | _ -> [], [] 
-      ), env
+      let withBindings =
+          if extraBindings.Count = 0 then
+              withBindings
+          else
+              (env, withBindings) ||> MutRecShapes.expandTyconsWithEnv (fun _ (tyconOpt, _) ->
+                  let mutable binds = Unchecked.defaultof<_>
+                  match tyconOpt with 
+                  | Some tycon when extraBindings.TryGetValue(tycon, &binds) -> binds, []
+                  | _ -> [], [] 
+              )
+      withBindings, env
 
     with e -> errorRecovery e scopem; [], envMutRec
 
