@@ -2585,7 +2585,15 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                 | Some tycon when declKind = DeclKind.ModuleOrMemberBinding ->
                     let envForDecls = MakeInnerEnvForTyconRef envForDecls tcref false
                     if tycon.IsUnionTycon then
-                        extraBindings.Add(tycon, AddAugmentationDeclarations.AddUnionAugmentationBindings cenv envForDecls tycon)
+                        let shouldAugment =
+                            match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
+                            | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
+                            | Some (Attrib(_, _, _, _, _, _, m)) ->
+                                errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
+                                true
+                            | _ -> true
+                        if shouldAugment then
+                            extraBindings.Add(tycon, AddAugmentationDeclarations.AddUnionAugmentationBindings cenv envForDecls tycon)
                     envForDecls
                 | _ -> 
                     envForDecls
