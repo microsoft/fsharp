@@ -196,7 +196,12 @@ let main argv = 0"""
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+            let args =
+                if entryPoint.GetParameters().Length = 1 then
+                    [| box(Array.empty<string>) |]
+                else
+                    [||]
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
             ctxt.Unload()
 #else
