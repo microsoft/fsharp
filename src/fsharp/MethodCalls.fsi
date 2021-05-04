@@ -289,7 +289,7 @@ val ILFieldStaticChecks: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader 
 
 val ILFieldInstanceChecks: g:TcGlobals -> amap:ImportMap -> ad:AccessorDomain -> m:range -> finfo:ILFieldInfo -> unit
 
-val MethInfoChecks: g:TcGlobals -> amap:ImportMap -> isInstance:bool -> tyargsOpt:'a option -> objArgs:Expr list -> ad:AccessorDomain -> m:range -> minfo:MethInfo -> unit
+val MethInfoChecks: g:TcGlobals -> amap:ImportMap -> isInstance:bool -> tyargsOpt:'a option -> objArgs:Expr list -> ad:AccessorDomain -> m:range -> minfo:MethInfo -> hasUnammedCallerArgs:bool option -> unit
 
 exception FieldNotMutable of TypedTreeOps.DisplayEnv * RecdFieldRef * range
 

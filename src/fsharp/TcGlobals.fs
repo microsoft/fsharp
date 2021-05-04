@@ -1199,6 +1199,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   
   member val attrib_AutoSerializableAttribute              = mk_MFCore_attrib "AutoSerializableAttribute"
   member val attrib_RequireQualifiedAccessAttribute        = mk_MFCore_attrib "RequireQualifiedAccessAttribute"
+  member val attrib_RequireArgumentNameAttribute           = mk_MFCore_attrib "RequireArgumentNameAttribute"
   member val attrib_EntryPointAttribute                    = mk_MFCore_attrib "EntryPointAttribute"
   member val attrib_DefaultAugmentationAttribute           = mk_MFCore_attrib "DefaultAugmentationAttribute"
   member val attrib_CompilerMessageAttribute               = mk_MFCore_attrib "CompilerMessageAttribute"

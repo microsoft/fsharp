@@ -1592,7 +1592,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                           else
                               ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
                   else 
-                      do! CheckMethInfoAttributes g m None minfo
+                      do! CheckMethInfoAttributes g m None minfo None
                       return TTraitSolved (minfo, calledMeth.CalledTyArgs)
                           
               | _ -> 

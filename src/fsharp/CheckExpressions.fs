@@ -8324,7 +8324,7 @@ and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (ein
     let delegateType = einfo.GetDelegateType(cenv.amap, mItem)
     let (SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delegateType mItem ad
     let objArgs = Option.toList (Option.map fst objDetails)
-    MethInfoChecks cenv.g cenv.amap true None objArgs env.eAccessRights mItem invokeMethInfo
+    MethInfoChecks cenv.g cenv.amap true None objArgs env.eAccessRights mItem invokeMethInfo None
     
     // This checks for and drops the 'object' sender 
     let argsTy = ArgsTypOfEventInfo cenv.infoReader mItem ad einfo
@@ -8790,7 +8790,13 @@ and TcMethodApplication
     finalCalledMeth.AssociatedPropertyInfo |> Option.iter (fun pinfo -> CheckPropInfoAttributes pinfo mItem |> CommitOperationResult) 
 
     let isInstance = not (isNil objArgs)
-    MethInfoChecks cenv.g cenv.amap isInstance tyargsOpt objArgs ad mItem finalCalledMethInfo
+
+    let hasUnammedCallerArgs =
+        match unnamedCurriedCallerArgs with
+        | [] | [[]] -> false
+        | _ -> true
+
+    MethInfoChecks cenv.g cenv.amap isInstance tyargsOpt objArgs ad mItem finalCalledMethInfo (Some hasUnammedCallerArgs)
 
     // Adhoc constraints on use of .NET methods
     begin 
@@ -8927,7 +8933,7 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
     let argExprPrebinder, action, defnItem = 
         match setter with 
         | AssignedPropSetter (pinfo, pminfo, pminst) -> 
-            MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
+            MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo None
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
             let argExprPrebinder, argExpr = MethodCalls.AdjustCallerArgExprForCoercions cenv.g cenv.amap cenv.infoReader ad false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
             let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
@@ -9042,7 +9048,7 @@ and TcNewDelegateThen cenv overallTy env tpenv mDelTy mExprAndArg delegateTy arg
     UnifyTypes cenv env mExprAndArg overallTy delegateTy
     let (SigOfFunctionForDelegate(invokeMethInfo, delArgTys, _, fty)) = GetSigOfFunctionForDelegate cenv.infoReader delegateTy mDelTy ad
     // We pass isInstance = true here because we're checking the rights to access the "Invoke" method
-    MethInfoChecks cenv.g cenv.amap true None [] env.eAccessRights mExprAndArg invokeMethInfo
+    MethInfoChecks cenv.g cenv.amap true None [] env.eAccessRights mExprAndArg invokeMethInfo None
     let args = GetMethodArgs arg
     match args with 
     | [farg], [] -> 

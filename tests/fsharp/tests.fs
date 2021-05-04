@@ -3063,3 +3063,8 @@ module OverloadResolution =
         let [<Test>] ``neg_generic_known_argument_types`` () = singleNegTest (testConfig "typecheck/overloads") "neg_generic_known_argument_types"
         let [<Test>] ``neg_tupled_arguments`` () = singleNegTest (testConfig "typecheck/overloads") "neg_tupled_arguments"
 #endif
+
+module RequireNamedArgument =
+    [<Test>]
+    let ``type check neg_requirenamedargument same file`` () =
+        singleNegTest (testConfig "typecheck/requirenamedargument") "test1"

@@ -876,7 +876,7 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
         | [] -> [g.unit_ty] 
         | _ -> compiledViewOfDelArgTys
     let delRetTy = invokeMethInfo.GetFSharpReturnTy(amap, m, minst)
-    CheckMethInfoAttributes g m None invokeMethInfo |> CommitOperationResult
+    CheckMethInfoAttributes g m None invokeMethInfo None |> CommitOperationResult
     let fty = mkIteratedFunTy fsharpViewOfDelArgTys delRetTy
     SigOfFunctionForDelegate(invokeMethInfo, compiledViewOfDelArgTys, delRetTy, fty)
 

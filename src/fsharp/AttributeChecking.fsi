@@ -59,7 +59,7 @@ val CheckPropInfoAttributes: pinfo:PropInfo -> m:range -> OperationResult<unit>
 
 val CheckILFieldAttributes: g:TcGlobals -> finfo:ILFieldInfo -> m:range -> unit
 
-val CheckMethInfoAttributes: g:TcGlobals -> m:range -> tyargsOpt:'a option -> minfo:MethInfo -> OperationResult<unit>
+val CheckMethInfoAttributes: g:TcGlobals -> m:range -> tyargsOpt:'a option -> minfo:MethInfo -> hasUnammedCallerArgs:bool option -> OperationResult<unit>
 
 val MethInfoIsUnseen: g:TcGlobals -> m:range -> ty:TType -> minfo:MethInfo -> bool
 

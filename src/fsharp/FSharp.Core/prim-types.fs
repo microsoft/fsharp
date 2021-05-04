@@ -346,7 +346,12 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit System.Attribute()
-
+    
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type RequireNamedArgumentAttribute() =
+        inherit System.Attribute()
+        
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly, AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =

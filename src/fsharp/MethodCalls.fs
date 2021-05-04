@@ -1766,7 +1766,7 @@ let ILFieldInstanceChecks  g amap ad m (finfo : ILFieldInfo) =
     CheckILFieldInfoAccessible g amap m ad finfo
     CheckILFieldAttributes g finfo m
 
-let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
+let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo) (hasUnammedCallerArgs: bool option) =
     if minfo.IsInstance <> isInstance then
       if isInstance then 
         error (Error (FSComp.SR.csMethodIsNotAnInstanceMethod(minfo.LogicalName), m))
@@ -1798,7 +1798,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo: MethInfo)  =
         (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
       warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
 
-    CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
+    CheckMethInfoAttributes g m tyargsOpt minfo hasUnammedCallerArgs |> CommitOperationResult
 
 exception FieldNotMutable of DisplayEnv * RecdFieldRef * range
 

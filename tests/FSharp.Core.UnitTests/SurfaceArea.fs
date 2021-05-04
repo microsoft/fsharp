@@ -2274,6 +2274,7 @@ Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean IncludeValue
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Boolean get_IncludeValue()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Void .ctor()
 Microsoft.FSharp.Core.ReflectedDefinitionAttribute: Void .ctor(Boolean)
+Microsoft.FSharp.Core.RequireNamedArgumentAttribute: Void .ctor()
 Microsoft.FSharp.Core.RequireQualifiedAccessAttribute: Void .ctor()
 Microsoft.FSharp.Core.RequiresExplicitTypeArgumentsAttribute: Void .ctor()
 Microsoft.FSharp.Core.ResultModule: Microsoft.FSharp.Core.FSharpResult`2[T,TResult] MapError[TError,TResult,T](Microsoft.FSharp.Core.FSharpFunc`2[TError,TResult], Microsoft.FSharp.Core.FSharpResult`2[T,TError])
