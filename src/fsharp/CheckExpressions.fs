@@ -784,11 +784,11 @@ let TcConst cenv ty m env c =
     | SynConst.Unit -> unif cenv.g.unit_ty; Const.Unit
     | SynConst.Bool i -> unif cenv.g.bool_ty; Const.Bool i
     | SynConst.Single f -> unif cenv.g.float32_ty; Const.Single f
-    | SynConst.Double f -> unif cenv.g.float_ty; Const.Double f 
+    | SynConst.Double (_,f) -> unif cenv.g.float_ty; Const.Double f 
     | SynConst.Decimal f -> unif (mkAppTy cenv.g.decimal_tcr []); Const.Decimal f 
     | SynConst.SByte i -> unif cenv.g.sbyte_ty; Const.SByte i
     | SynConst.Int16 i -> unif cenv.g.int16_ty; Const.Int16 i
-    | SynConst.Int32 i -> unif cenv.g.int_ty; Const.Int32 i
+    | SynConst.Int32 (_, i) -> unif cenv.g.int_ty; Const.Int32 i
     | SynConst.Int64 i -> unif cenv.g.int64_ty; Const.Int64 i
     | SynConst.IntPtr i -> unif cenv.g.nativeint_ty; Const.IntPtr i
     | SynConst.Byte i -> unif cenv.g.byte_ty; Const.Byte i
@@ -797,11 +797,11 @@ let TcConst cenv ty m env c =
     | SynConst.UInt64 i -> unif cenv.g.uint64_ty; Const.UInt64 i
     | SynConst.UIntPtr i -> unif cenv.g.unativeint_ty; Const.UIntPtr i
     | SynConst.Measure(SynConst.Single f, _, _) -> unifyMeasureArg (f=0.0f) cenv.g.pfloat32_tcr c; Const.Single f
-    | SynConst.Measure(SynConst.Double f, _, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
+    | SynConst.Measure(SynConst.Double (_, f), _, _) -> unifyMeasureArg (f=0.0) cenv.g.pfloat_tcr c; Const.Double f
     | SynConst.Measure(SynConst.Decimal f, _, _) -> unifyMeasureArg false cenv.g.pdecimal_tcr c; Const.Decimal f
     | SynConst.Measure(SynConst.SByte i, _, _) -> unifyMeasureArg (i=0y) cenv.g.pint8_tcr c; Const.SByte i
     | SynConst.Measure(SynConst.Int16 i, _, _) -> unifyMeasureArg (i=0s) cenv.g.pint16_tcr c; Const.Int16 i
-    | SynConst.Measure(SynConst.Int32 i, _, _) -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
+    | SynConst.Measure(SynConst.Int32 (_, i), _, _) -> unifyMeasureArg (i=0) cenv.g.pint_tcr c; Const.Int32 i
     | SynConst.Measure(SynConst.Int64 i, _, _) -> unifyMeasureArg (i=0L) cenv.g.pint64_tcr c; Const.Int64 i
     | SynConst.Measure(SynConst.IntPtr i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0L) cenv.g.pnativeint_tcr c; Const.IntPtr i
     | SynConst.Measure(SynConst.Byte i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0uy) cenv.g.puint8_tcr c; Const.Byte i
@@ -809,7 +809,7 @@ let TcConst cenv ty m env c =
     | SynConst.Measure(SynConst.UInt32 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0u) cenv.g.puint_tcr c; Const.UInt32 i
     | SynConst.Measure(SynConst.UInt64 i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.puint64_tcr c; Const.UInt64 i
     | SynConst.Measure(SynConst.UIntPtr i, _, _) when expandedMeasurablesEnabled -> unifyMeasureArg (i=0UL) cenv.g.punativeint_tcr c; Const.UIntPtr i
-    | SynConst.Char c -> unif cenv.g.char_ty; Const.Char c
+    | SynConst.Char (_, c) -> unif cenv.g.char_ty; Const.Char c
     | SynConst.String (s, _, _)
     | SynConst.SourceIdentifier (_, s, _) -> unif cenv.g.string_ty; Const.String s
     | SynConst.UserNum _ -> error (InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))
@@ -4279,7 +4279,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv: UnscopedTyparEnv
         | _, Some TyparKind.Type -> 
             errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
             NewErrorType (), tpenv
-        | SynConst.Int32 1, _ -> 
+        | SynConst.Int32 (_,1), _ -> 
             TType_measure Measure.One, tpenv
         | _ -> 
             errorR(Error(FSComp.SR.parsInvalidLiteralInType(), m)) 
@@ -4405,7 +4405,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             match sc with
             | SynConst.Byte n when typeEquiv g g.byte_ty kind -> record(g.byte_ty); box (n: byte)
             | SynConst.Int16 n when typeEquiv g g.int16_ty kind -> record(g.int16_ty); box (n: int16)
-            | SynConst.Int32 n when typeEquiv g g.int32_ty kind -> record(g.int32_ty); box (n: int)
+            | SynConst.Int32 (_,n) when typeEquiv g g.int32_ty kind -> record(g.int32_ty); box (n: int)
             | SynConst.Int64 n when typeEquiv g g.int64_ty kind -> record(g.int64_ty); box (n: int64)
             | SynConst.SByte n when typeEquiv g g.sbyte_ty kind -> record(g.sbyte_ty); box (n: sbyte)
             | SynConst.UInt16 n when typeEquiv g g.uint16_ty kind -> record(g.uint16_ty); box (n: uint16)
@@ -4413,8 +4413,8 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
             | SynConst.UInt64 n when typeEquiv g g.uint64_ty kind -> record(g.uint64_ty); box (n: uint64)
             | SynConst.Decimal n when typeEquiv g g.decimal_ty kind -> record(g.decimal_ty); box (n: decimal)
             | SynConst.Single n when typeEquiv g g.float32_ty kind -> record(g.float32_ty); box (n: single)
-            | SynConst.Double n when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
-            | SynConst.Char n when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
+            | SynConst.Double (_,n) when typeEquiv g g.float_ty kind -> record(g.float_ty); box (n: double)
+            | SynConst.Char (_,n) when typeEquiv g g.char_ty kind -> record(g.char_ty); box (n: char)
             | SynConst.String (s, _, _) when s <> null && typeEquiv g g.string_ty kind -> record(g.string_ty); box (s: string)
             | SynConst.Bool b when typeEquiv g g.bool_ty kind -> record(g.bool_ty); box (b: bool)
             | _ -> fail()
@@ -5628,7 +5628,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.TryWith (synBodyExpr, _mTryToWith, synWithClauses, mWithToLast, mTryToLast, spTry, spWith) ->
         let bodyExpr, tpenv = TcExpr cenv overallTy env tpenv synBodyExpr
         // Compile the pattern twice, once as a List.filter with all succeeding targets returning "1", and once as a proper catch block. 
-        let filterClauses = synWithClauses |> List.map (function (SynMatchClause(pat, optWhenExpr, _, m, _)) -> SynMatchClause(pat, optWhenExpr, (SynExpr.Const (SynConst.Int32 1, m)), m, DebugPointForTarget.No))
+        let filterClauses = synWithClauses |> List.map (function (SynMatchClause(pat, optWhenExpr, _, m, _)) -> SynMatchClause(pat, optWhenExpr, (SynExpr.Const (SynConst.Int32 ("1",1), m)), m, DebugPointForTarget.No))
         let checkedFilterClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty cenv.g.int_ty env tpenv filterClauses
         let checkedHandlerClauses, tpenv = TcMatchClauses cenv cenv.g.exn_ty overallTy env tpenv synWithClauses
         let v1, filterExpr = CompilePatternForMatchClauses cenv env mWithToLast mWithToLast true FailFilter None cenv.g.exn_ty cenv.g.int_ty checkedFilterClauses
@@ -5881,7 +5881,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
 
     // xs.GetReverseIndex rank offset - 1
     let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) = 
-        let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
+        let rankExpr = SynExpr.Const(SynConst.Int32(string rank, rank), range)
         let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
         let xsId = e1
 
@@ -6606,7 +6606,7 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
             | SynInterpolatedStringPart.FillExpr (fillExpr, _)  ->
                 match fillExpr with 
                 // Detect "x" part of "...{x,3}..."
-                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 _align, _)], _, _) -> Some e
+                | SynExpr.Tuple (false, [e; SynExpr.Const (SynConst.Int32 (_, _align), _)], _, _) -> Some e
                 | e -> Some e)
 
     let stringFragmentRanges =
@@ -6688,7 +6688,7 @@ and TcInterpolatedStringExpr cenv overallTy env m tpenv (parts: SynInterpolatedS
                     // Validate and detect ",3" part of "...{x,3}..."
                     | SynExpr.Tuple (false, args, _, _) -> 
                         match args with 
-                        | [_; SynExpr.Const (SynConst.Int32 align, _)] -> string align
+                        | [_; SynExpr.Const (SynConst.Int32 (_, align), _)] -> string align
                         | _ -> errorR(Error(FSComp.SR.tcInvalidAlignmentInInterpolatedString(), m)); ""
                     | _ -> ""
                 let formatText = match format with None -> "()" | Some n -> "(" + n.idText + ")"
@@ -6805,7 +6805,7 @@ and TcConstExpr cenv overallTy env m tpenv c =
                         match int32 s with
                         | 0 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromZero", SynExpr.Const (SynConst.Unit, m), m)
                         | 1 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromOne", SynExpr.Const (SynConst.Unit, m), m)
-                        | i32 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt32", SynExpr.Const (SynConst.Int32 i32, m), m)
+                        | i32 -> SynExpr.App (ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt32", SynExpr.Const (SynConst.Int32 (string i32, i32), m), m)
                     with _ -> 
                         try 
                             let i64 = int64 s  

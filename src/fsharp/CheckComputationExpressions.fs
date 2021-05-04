@@ -82,7 +82,7 @@ let (|JoinRelation|_|) cenv env (e: SynExpr) =
 let elimFastIntegerForLoop (spBind, id, start, dir, finish, innerExpr, m) = 
     let pseudoEnumExpr = 
         if dir then mkSynInfix m start ".." finish
-        else mkSynTrifix m ".. .." start (SynExpr.Const (SynConst.Int32 -1, start.Range)) finish
+        else mkSynTrifix m ".. .." start (SynExpr.Const (SynConst.Int32 ("-1", -1), start.Range)) finish
     SynExpr.ForEach (spBind, SeqExprOnly false, true, mkSynPatVar None id, pseudoEnumExpr, innerExpr, m)
 
 /// Check if a computation or sequence expression is syntactically free of 'yield' (though not yield!)

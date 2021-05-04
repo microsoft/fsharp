@@ -103,7 +103,7 @@ type SynConst =
     | UInt16 of uint16
 
     /// F# syntax: 13, 0x4000, 0o0777
-    | Int32 of int32
+    | Int32 of notation:string * value:int32
 
     /// F# syntax: 13u, 0x4000u, 0o0777u
     | UInt32 of uint32
@@ -124,10 +124,10 @@ type SynConst =
     | Single of single
 
     /// F# syntax: 1.30, 1.40e10 etc.
-    | Double of double
+    | Double of notation:string * value:double
 
     /// F# syntax: 'a'
-    | Char of char
+    | Char of notation:string * value:char
 
     /// F# syntax: 23.4M
     | Decimal of System.Decimal

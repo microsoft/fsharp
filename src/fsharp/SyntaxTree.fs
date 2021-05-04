@@ -87,7 +87,7 @@ type SynConst =
 
     | UInt16 of uint16
 
-    | Int32 of int32
+    | Int32 of notation:string * value:int32
 
     | UInt32 of uint32
 
@@ -101,9 +101,9 @@ type SynConst =
 
     | Single of single
 
-    | Double of double
+    | Double of notation:string * value:double
 
-    | Char of char
+    | Char of notation:string * value:char
 
     | Decimal of System.Decimal
 

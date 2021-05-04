@@ -405,29 +405,31 @@ rule token args skip = parse
  | int '.' '.' 
      { let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if Ranges.isInt32BadMax s then INT32_DOT_DOT(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       if Ranges.isInt32BadMax s then INT32_DOT_DOT(s, Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n = try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32_DOT_DOT(n, false)
+       INT32_DOT_DOT(s, n, false)
      } 
 
  | xint 
  | int 
-     { let s = removeUnderscores (lexeme lexbuf)
+     { let buf = lexeme lexbuf
+       let s = removeUnderscores buf
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       if Ranges.isInt32BadMax s then INT32(buf, Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32(n, false)
+       INT32(buf, n, false)
      } 
 
  | xint32 
  | int32 
-     { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
+     { let buf = lexeme lexbuf
+       let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
-       if Ranges.isInt32BadMax s then INT32(Int32.MinValue, true (* 'true' = 'bad'*) ) else
+       if Ranges.isInt32BadMax s then INT32(buf, Int32.MinValue, true (* 'true' = 'bad'*) ) else
        let n =
            try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
-       INT32(n, false)
+       INT32(buf, n, false)
      } 
 
  | uint32
@@ -486,7 +488,8 @@ rule token args skip = parse
      }
 
  | ieee64
-     { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
+     { let v = lexeme lexbuf
+       IEEE64 (v, try float v with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal    
      { try 
@@ -506,20 +509,20 @@ rule token args skip = parse
        IEEE32 (System.BitConverter.ToSingle(System.BitConverter.GetBytes(int32 (uint32 (uint64 n64))),0)) }
 
  | xieee64     
-     { 
-       let n64 = (try int64 (removeUnderscores (lexemeTrimRight lexbuf 2)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
-       IEEE64 (System.BitConverter.Int64BitsToDouble(n64)) }
+     { let v = lexemeTrimRight lexbuf 2
+       let n64 = (try int64 (removeUnderscores v) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
+       IEEE64 (String.Concat(v, "LF"), System.BitConverter.Int64BitsToDouble(n64)) }
        
  | bignum     
        { let s = lexeme lexbuf 
          BIGNUM (removeUnderscores (lexemeTrimRight lexbuf 1), s.[s.Length-1..s.Length-1]) }
 
  | (int | xint | float) ident_char+
-       { fail args lexbuf (FSComp.SR.lexInvalidNumericLiteral()) (INT32(0,false)) }
+       { fail args lexbuf (FSComp.SR.lexInvalidNumericLiteral()) (INT32("0", 0,false)) }
  
  | char
      { let s = lexeme lexbuf 
-       CHAR (if s.[1] = '\\' then escape s.[2] else s.[1])  }
+       CHAR (s, if s.[1] = '\\' then escape s.[2] else s.[1])  }
 
  | char 'B' 
      { let s = lexeme lexbuf 
@@ -534,9 +537,9 @@ rule token args skip = parse
        let c = trigraph s.[2] s.[3] s.[4] 
        let x = int32 c
        if x < 0 || x > 255 then 
-           fail args lexbuf (FSComp.SR.lexInvalidCharLiteral()) (CHAR c)
+           fail args lexbuf (FSComp.SR.lexInvalidCharLiteral()) (CHAR (s,c))
        else
-           CHAR c }
+           CHAR (s  , c) }
 
  | '\'' trigraph '\'' 'B'
      { let s = lexeme lexbuf 
@@ -553,14 +556,20 @@ rule token args skip = parse
        else
            UINT8 (byte(x))  }
      
- | '\'' hexGraphShort '\'' { CHAR (char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
+ | '\'' hexGraphShort '\'' 
+     { let notation = lexeme lexbuf 
+       CHAR (notation, char (int32 (hexGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
- | '\'' unicodeGraphShort '\'' { CHAR (char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
+ | '\'' unicodeGraphShort '\'' 
+     { let notation = lexeme lexbuf
+       CHAR (notation ,char (int32 (unicodeGraphShort (lexemeTrimBoth lexbuf 3 1)))) }
 
  | '\'' unicodeGraphLong '\''  
-     { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
-       | SingleChar(c) -> CHAR (char c)
-       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
+     { let s = lexemeTrimBoth lexbuf 3 1
+       let notation = lexeme lexbuf 
+       match unicodeGraphLong s with
+       | SingleChar(c) -> CHAR (notation, char c)
+       | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (notation, char 0)) }
 
  | "(*IF-FSHARP"    
      { if not skip then COMMENT (LexCont.Token (args.ifdefStack, args.stringNest))

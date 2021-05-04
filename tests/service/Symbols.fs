@@ -569,6 +569,255 @@ let m = 7.000<cm>
             assertRange (3, 8) (3, 13) r2
         | _ -> Assert.Fail "Could not get valid AST"
 
+    [<Test>]
+    let ``original Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let n = 1.
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("1.", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original xieee64 Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let n = 0x1_4LF
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0x1_4LF", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original negative Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let b = -2.
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("-2.", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original positive Double notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let c = +3.
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Double(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("+3.", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original char notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let d = '\t'
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Char(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual(@"'\t'", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
+    let ``original char unicodeGraphShort notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let d = '\u0000'
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Char(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual(@"'\u0000'", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original char unicodeGraphLong notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let d = '\U000003A9'
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Char(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual(@"'\U000003A9'", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+    
+    [<Test>]
+    let ``original char trigraph notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let d = '\192'
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Char(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual(@"'\192'", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original char hexGraphShort notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let d = '\xAE'
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Char(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual(@"'\xAE'", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original int32 l notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = 2l
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Int32(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("2l", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original int32 hex notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = 0xA
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Int32(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0xA", notation)
+        | _ -> Assert.Fail "Could not get valid AST"    
+
+    [<Test>]
+    let ``original int32 hex l notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = 0xBl
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Int32(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0xBl", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original int32 leading zero with underscore notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = 0_30
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Int32(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0_30", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original int32 binary notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = 0b10
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Int32(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0b10", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original int32 o notation is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = 0o2
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Int32(notation, _), _)) ])
+        ]) ])) ->
+            Assert.AreEqual("0o2", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``original int32 dot dot is captured in SynConst`` () =
+        let parseResults = 
+            getParseResults
+                """
+let v = [ 100l .. 200l ]
+"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+            SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                SynModuleDecl.Let(bindings = [
+                    SynBinding.SynBinding
+                        (expr =
+                            SynExpr.ArrayOrListOfSeqExpr(expr =
+                                SynExpr.App(funcExpr =
+                                    SynExpr.App(argExpr =
+                                        SynExpr.Const (SynConst.Int32 (notation, _), _)))))
+                        ])
+                ])
+            ])) ->
+            Assert.AreEqual("100l", notation)
+        | _ -> Assert.Fail "Could not get valid AST"
+
 module SynModuleOrNamespaceSig =
     [<Test>]
     let ``Range member returns range of SynModuleOrNamespaceSig`` () =

@@ -223,7 +223,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 /* bool indicates if INT8 was 'bad' max_int+1, e.g. '128'  */
 %token <sbyte * bool> INT8 
 %token <int16 * bool> INT16
-%token <int32 * bool> INT32 INT32_DOT_DOT
+%token <string * int32 * bool> INT32 INT32_DOT_DOT
 %token <int64 * bool> INT64
 %token <int64 * bool> NATIVEINT
 
@@ -233,8 +233,8 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token <uint64> UINT64
 %token <uint64> UNATIVEINT
 %token <single> IEEE32
-%token <double> IEEE64
-%token <char> CHAR
+%token <string * double> IEEE64
+%token <string * char> CHAR
 %token <System.Decimal> DECIMAL 
 %token <(string * string)> BIGNUM
 %token <bool> LET YIELD YIELD_BANG AND_BANG
@@ -2901,8 +2901,9 @@ rawConstant:
     { SynConst.UInt16 $1 } 
 
   | INT32
-    { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynConst.Int32 (fst $1) } 
+    { let (n, v, bad) = $1
+      if bad then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
+      SynConst.Int32 (n, v) } 
 
   | UINT32
     { SynConst.UInt32 $1 } 
@@ -2951,27 +2952,35 @@ rawConstant:
 rationalConstant:
   | INT32 INFIX_STAR_DIV_MOD_OP INT32
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-      if fst $3 = 0 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
-      if (snd $1) || (snd $3) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Rational(fst $1, fst $3, lhs parseState) }
+      let _, v1, b1 = $1
+      let _, v2, b2 = $3
+      if v2 = 0 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
+      if b1 || b2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
+      SynRationalConst.Rational(v1, v2, lhs parseState) }
 
   | MINUS INT32 INFIX_STAR_DIV_MOD_OP INT32 
     { if $3 <> "/" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedOperatorForUnitOfMeasure())
-      if fst $4 = 0 then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
-      if (snd $2) || (snd $4) then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Rational(fst $2, fst $4, lhs parseState)) }
+      let _, v1, b1 = $2
+      let _, v2, b2 = $4
+      if v2 = 0 then reportParseErrorAt (rhs parseState 4) (FSComp.SR.parsIllegalDenominatorForMeasureExponent())
+      if b1 || b2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
+      SynRationalConst.Negate(SynRationalConst.Rational(v1, v2, lhs parseState)) }
 
   | INT32
-    { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Integer(fst $1) }
+    { let (_, v, b) = $1
+      if b then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
+      SynRationalConst.Integer v }
 
   | MINUS INT32
-    { if snd $2 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-      SynRationalConst.Negate(SynRationalConst.Integer(fst $2)) }
+    { let (_, v, b) = $2
+      if b then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
+      SynRationalConst.Negate(SynRationalConst.Integer v) }
 
 atomicUnsignedRationalConstant:
-  | INT32 { if snd $1 then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
-            SynRationalConst.Integer(fst $1) }
+  | INT32 
+    { let (_, v, b) = $1
+      if b then errorR(Error(FSComp.SR.lexOutsideThirtyTwoBitSigned(), lhs parseState))
+      SynRationalConst.Integer v }
 
   | LPAREN rationalConstant rparen
     { $2 }
@@ -3145,7 +3154,9 @@ atomicPattern:
       { SynPat.QuoteExpr($1, lhs parseState) } 
 
   | CHAR DOT_DOT CHAR
-      { SynPat.DeprecatedCharRange ($1, $3, rhs2 parseState 1 3) }
+      { let _, c1 = $1
+        let _, c2 = $3
+        SynPat.DeprecatedCharRange (c1, c2, rhs2 parseState 1 3) }
 
   | LBRACE recordPatternElementsAux rbrace
       { let rs, m = $2 in SynPat.Record (rs, rhs2 parseState 1 3) }
@@ -4191,7 +4202,8 @@ atomicExprQualification:
   | LPAREN COLON_COLON rparen DOT INT32  
       { (fun e lhsm dotm -> 
             libraryOnlyError(lhs parseState)
-            SynExpr.LibraryOnlyUnionCaseFieldGet (e, mkSynCaseName lhsm opNameCons, (fst $5), lhsm)) }
+            let _, v, _ = $5
+            SynExpr.LibraryOnlyUnionCaseFieldGet (e, mkSynCaseName lhsm opNameCons, v, lhsm)) }
 
   | LPAREN  typedSeqExpr rparen  
       { (fun e lhsm dotm -> 
@@ -4950,7 +4962,7 @@ tupleType:
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple(false, (true, SynType.StaticConstant (SynConst.Int32 1, lhs parseState)) :: $2, lhs parseState) }
+      SynType.Tuple(false, (true, SynType.StaticConstant (SynConst.Int32("1",1), lhs parseState)) :: $2, lhs parseState) }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
@@ -5210,7 +5222,7 @@ typeArgActual:
 
   | typ EQUALS /* NOTE: no "recover" */
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsMissingTypeArgs())
-       let dummy = SynType.StaticConstant(SynConst.Int32(0), rhs parseState 2)
+       let dummy = SynType.StaticConstant(SynConst.Int32("0", 0), rhs parseState 2)
        SynType.StaticConstantNamed($1, dummy, (rhs2 parseState 1 2))
      }
 
@@ -5225,7 +5237,7 @@ typeArgActualOrDummyIfEmpty:
 dummyTypeArg:
   |  /* EMPTY */
      { let m = rhs parseState 1
-       let dummyStatVal = SynType.StaticConstant(SynConst.Int32(0), m)
+       let dummyStatVal = SynType.StaticConstant(SynConst.Int32("0", 0), m)
        let dummyName = SynType.LongIdent(LongIdentWithDots([ident("", m)], []))
        let dummyTypeArg = SynType.StaticConstantNamed(dummyName, dummyStatVal, m)
        dummyTypeArg }
@@ -5257,7 +5269,7 @@ measureTypePower:
        else SynMeasure.Power($1, $3, lhs parseState) }
 
   | INT32
-     { if fst $1 <> 1 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedIntegerLiteralForUnitOfMeasure());
+     { if (let _, v, _ = $1 in v <> 1) then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedIntegerLiteralForUnitOfMeasure());
        SynMeasure.One }
 
 measureTypeSeq:

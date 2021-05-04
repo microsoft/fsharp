@@ -2269,10 +2269,10 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
               true
 
           // Split this token to allow "1..2" for range specification 
-          | INT32_DOT_DOT (i, v) ->
+          | INT32_DOT_DOT (n, i, v) ->
               let dotDotPos = new LexbufState(tokenTup.EndPos.ShiftColumnBy(-2), tokenTup.EndPos, false)
               delayToken(let rented = pool.Rent() in rented.Token <- DOT_DOT; rented.LexbufState <- dotDotPos; rented.LastTokenPos <- tokenTup.LastTokenPos; rented)
-              delayToken(pool.UseShiftedLocation(tokenTup, INT32(i, v), 0, -2))
+              delayToken(pool.UseShiftedLocation(tokenTup, INT32(n, i, v), 0, -2))
               pool.Return tokenTup
               true
           // Split @>. and @@>. into two 
@@ -2330,12 +2330,12 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                   match nextTokenTup.Token with 
                   | INT8(v, bad) -> delayMergedToken(INT8((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | INT16(v, bad) -> delayMergedToken(INT16((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
-                  | INT32(v, bad) -> delayMergedToken(INT32((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
-                  | INT32_DOT_DOT(v, bad) -> delayMergedToken(INT32_DOT_DOT((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
+                  | INT32(n, v, bad) -> delayMergedToken(INT32(n, (if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
+                  | INT32_DOT_DOT(n, v, bad) -> delayMergedToken(INT32_DOT_DOT(n, (if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | INT64(v, bad) -> delayMergedToken(INT64((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | NATIVEINT(v, bad) -> delayMergedToken(NATIVEINT((if plus then v else -v), (plus && bad))) // note: '-' makes a 'bad' max int 'good'. '+' does not
                   | IEEE32 v -> delayMergedToken(IEEE32(if plus then v else -v))
-                  | IEEE64 v -> delayMergedToken(IEEE64(if plus then v else -v))
+                  | IEEE64 (n,v) -> delayMergedToken(IEEE64(System.String.Concat((if plus then '+' else '-'),n), if plus then v else -v))
                   | DECIMAL v -> delayMergedToken(DECIMAL(if plus then v else System.Decimal.op_UnaryNegation v))
                   | BIGNUM(v, s) -> delayMergedToken(BIGNUM((if plus then v else "-" + v), s))
                   | _ -> noMerge()
