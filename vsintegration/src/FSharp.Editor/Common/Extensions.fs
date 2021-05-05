@@ -105,6 +105,13 @@ module private SourceText =
                     member _.GetSubTextString(start, length) =
                         sourceText.GetSubText(TextSpan(start, length)).ToString()
 
+                    member this.GetSubTextString(startLine, startColumn, endLine, endColumn) =
+                        // Roslyn TextLineCollection is zero-based, F# range lines are one-based
+                        let startOffset = sourceText.Lines.[max 0 (startLine - 1)].Start + startColumn
+                        let endOffset = sourceText.Lines.[min (endLine - 1) (sourceText.Lines.Count - 1)].Start + endColumn
+                        let span = TextSpan(startOffset, endOffset - startOffset)
+                        sourceText.GetSubText(span).ToString()
+
                     member _.SubTextEquals(target, startIndex) =
                         if startIndex < 0 || startIndex >= sourceText.Length then
                             invalidArg "startIndex" "Out of range."

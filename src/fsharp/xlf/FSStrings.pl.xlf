@@ -2,6 +2,16 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ErrorFromAddingTypeEquationFunctionApplication">
+        <source>Type mismatch.\n\nThe function '{0}' expected a parameter of type:\n    '{1}'    \nbut here was given a parameter of type:\n    '{2}'    {3}</source>
+        <target state="new">Type mismatch.\n\nThe function '{0}' expected a parameter of type:\n    '{1}'    \nbut here was given a parameter of type:\n    '{2}'    {3}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquationOperatorApplication">
+        <source>Type mismatch.\n\nThe operator '{0}' expected an input of type:\n    '{1}'    \nbut here was given an input of type:\n    '{2}'    {3}</source>
+        <target state="new">Type mismatch.\n\nThe operator '{0}' expected an input of type:\n    '{1}'    \nbut here was given an input of type:\n    '{2}'    {3}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">symbol „..^”</target>

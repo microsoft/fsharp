@@ -529,7 +529,8 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.YieldInComputationExpression
     | ContextInfo.RuntimeTypeTest _
     | ContextInfo.DowncastUsedInsteadOfUpcast _ 
-    | ContextInfo.SequenceExpression _ ->
+    | ContextInfo.SequenceExpression _
+    | ContextInfo.Application _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
         if not (Range.equals m oldRange) then env else
@@ -5360,7 +5361,18 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
         | _ -> TcLongIdentThen cenv overallTy env tpenv longId delayed
 
     // f x
-    | SynExpr.App (hpa, _, func, arg, mFuncAndArg) ->
+    | SynExpr.App (hpa, isInfix, func, arg, mFuncAndArg) ->
+        let context =
+            cenv.tcSink.CurrentSink
+            |> Option.map (fun sink ->
+                sink.CurrentSourceText)
+            |> Option.flatten
+            |> Option.map (fun sourceText ->
+                let subText = sourceText.GetSubTextString(func.Range.StartLine, func.Range.StartColumn, func.Range.EndLine, func.Range.EndColumn)
+                ContextInfo.Application(isInfix, subText))
+            |> Option.defaultValue ContextInfo.NoContext
+
+        let env = { env with eContextInfo = context }
         TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, arg, mFuncAndArg)) :: delayed)
 
     // e<tyargs>

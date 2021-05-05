@@ -420,6 +420,8 @@ let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("Cons
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
 let ErrorFromAddingTypeEquation1E() = DeclareResourceString("ErrorFromAddingTypeEquation1", "%s%s%s")
 let ErrorFromAddingTypeEquation2E() = DeclareResourceString("ErrorFromAddingTypeEquation2", "%s%s%s")
+let ErrorFromAddingTypeEquationFunctionApplication() = DeclareResourceString("ErrorFromAddingTypeEquationFunctionApplication", "%s%s%s%s")
+let ErrorFromAddingTypeEquationOperatorApplication() = DeclareResourceString("ErrorFromAddingTypeEquationOperatorApplication", "%s%s%s%s")
 let ErrorFromApplyingDefault1E() = DeclareResourceString("ErrorFromApplyingDefault1", "%s")
 let ErrorFromApplyingDefault2E() = DeclareResourceString("ErrorFromApplyingDefault2", "")
 let ErrorsFromAddingSubsumptionConstraintE() = DeclareResourceString("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
@@ -631,7 +633,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | ConstraintSolverTypesNotInEqualityRelation(denv, t1, t2, m, m2, contextInfo) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
+          let t1, t2, cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
           match contextInfo with
           | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
@@ -644,7 +646,13 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | ContextInfo.ElseBranchResult range when Range.equals range m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when Range.equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
           | ContextInfo.PatternMatchGuard range when Range.equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
-          | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
+          | ContextInfo.Application (isInfix, funcName) ->
+                if isInfix then
+                    os.Append(ErrorFromAddingTypeEquationOperatorApplication().Format funcName t1 t2 cxs) |> ignore
+                else
+                    os.Append(ErrorFromAddingTypeEquationFunctionApplication().Format funcName t1 t2 cxs) |> ignore
+          | _ ->
+            os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
@@ -684,6 +692,11 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
+          | ContextInfo.Application (isInfix, funcName) ->
+                if isInfix then
+                    os.Append(ErrorFromAddingTypeEquationOperatorApplication().Format funcName t1 t2 tpcs) |> ignore
+                else
+                    os.Append(ErrorFromAddingTypeEquationFunctionApplication().Format funcName t1 t2 tpcs) |> ignore
           | _ when t2 = "bool" && t1.EndsWithOrdinal(" ref") ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore

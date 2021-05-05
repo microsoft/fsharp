@@ -518,13 +518,13 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Il tipo di tutti gli elementi di un'espressione di costruttore di elenco deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
+        <source>Type mistmatch.\n\nAll elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Il tipo di tutti gli elementi di un'espressione di costruttore di elenco deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
-        <target state="translated">Il tipo di tutti gli elementi di un'espressione di costruttore di matrice deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
+        <source>Type mismatch.\n\nAll elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <target state="needs-review-translation">Il tipo di tutti gli elementi di un'espressione di costruttore di matrice deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
@@ -533,23 +533,23 @@
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
-        <source>The 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</source>
-        <target state="translated">Per soddisfare i requisiti relativi al tipo di contesto, il tipo dell'espressione 'if' deve essere '{0}', ma è attualmente '{1}'.</target>
+        <source>Type mismatch.\n\nThe 'if' expression needs to have type '{0}' to satisfy context type requirements. It currently has type '{1}'.</source>
+        <target state="needs-review-translation">Per soddisfare i requisiti relativi al tipo di contesto, il tipo dell'espressione 'if' deve essere '{0}', ma è attualmente '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Il tipo di tutti i rami di un'espressione 'if' deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
+        <source>Type mismatch.\n\nAll branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Il tipo di tutti i rami di un'espressione 'if' deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
-        <target state="translated">Tutti i rami di un'espressione di criteri di ricerca devono restituire valori dello stesso tipo. Il primo ramo ha restituito un valore di tipo '{0}', ma questo ramo ha restituito un valore di tipo '{1}'.</target>
+        <source>Type mismatch.\n\nAll branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="needs-review-translation">Tutti i rami di un'espressione di criteri di ricerca devono restituire valori dello stesso tipo. Il primo ramo ha restituito un valore di tipo '{0}', ma questo ramo ha restituito un valore di tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
-        <source>A pattern match guard must be of type 'bool', but this 'when' expression is of type '{0}'.</source>
-        <target state="translated">Il guard dei criteri di ricerca deve essere di tipo 'bool', ma questa espressione 'when' è di tipo '{0}'.</target>
+        <source>Type mismatch.\n\nA pattern match guard must be of type 'bool', but this 'when' expression is of type '{0}'.</source>
+        <target state="needs-review-translation">Il guard dei criteri di ricerca deve essere di tipo 'bool', ma questa espressione 'when' è di tipo '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="commaInsteadOfSemicolonInRecord">

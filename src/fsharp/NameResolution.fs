@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.NameResolution
 
 open System.Collections.Generic
+open System.Linq
 
 open Internal.Utilities
 open Internal.Utilities.Collections

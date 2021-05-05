@@ -23,6 +23,9 @@ type ISourceText =
     /// Gets a section of the input
     abstract GetSubTextString: start: int * length: int -> string
 
+    /// Gets a section of the input based on start and end line/column pairs
+    abstract GetSubTextString: startLine: int * startColumn: int * endLine: int * endColumn: int -> string
+
     /// Checks if a section of the input is equal to the given string
     abstract SubTextEquals: target: string * startIndex: int -> bool
 

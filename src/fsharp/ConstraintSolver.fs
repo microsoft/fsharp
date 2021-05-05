@@ -191,6 +191,9 @@ type ContextInfo =
     /// The type equation comes from a sequence expression.
     | SequenceExpression of TType
 
+    /// The tye equation comes from an application.
+    | Application of isInfix: bool * funcName: string
+
 /// Captures relevant information for a particular failed overload resolution.
 type OverloadInformation = 
     {
