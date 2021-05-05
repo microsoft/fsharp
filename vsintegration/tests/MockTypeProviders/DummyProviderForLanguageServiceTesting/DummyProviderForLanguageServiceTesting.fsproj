@@ -5,7 +5,7 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
+    <NoWarn>$(NoWarn);3390;3218;1182</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -18,7 +18,7 @@ let variance xs = let m = mean xs in meanMap (fun x -> sqr (x-m)) xs
 let sdeviation xs = sqrt (variance xs)
 
 let skewness xs = 
-  let n = float (List.length xs)
+  let _n = float (List.length xs)
   let m = mean xs
   let s = sdeviation xs
   meanMap (fun x -> cube(x-m)) xs / (cube s)

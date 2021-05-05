@@ -37,15 +37,12 @@ type public Fsi () as this =
     let mutable provideCommandLineArgs = false
     let mutable references : ITaskItem[] = [||]
     let mutable referencePath : string = null
-    let mutable resources : ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
     let mutable sources : ITaskItem[] = [||]
     let mutable loadSources : ITaskItem[] = [||]
     let mutable useSources : ITaskItem[] = [||]
     let mutable tailcalls : bool = true
     let mutable targetProfile : string = null
-    let mutable targetType : string = null
-    let mutable toolExe : string = "fsi.exe"
     let mutable toolPath : string =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsi>.Assembly.Location))
@@ -84,11 +81,6 @@ type public Fsi () as this =
         if references <> null then 
             for item in references do
                 builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
-
-        let referencePathArray = // create a array of strings
-            match referencePath with
-            | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         // NoWarn
         match disabledWarnings with
@@ -293,7 +285,6 @@ type public Fsi () as this =
             match host with
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
-                let sources = sources|>Array.map(fun i->i.ItemSpec)
                 let invokeCompiler baseCallDelegate =
                     try
                         let ret =
@@ -306,8 +297,8 @@ type public Fsi () as this =
                     // Do a string compare on the type name to do eliminate a compile time dependency on Microsoft.Build.dll
                     | :? TargetInvocationException as tie when not (isNull tie.InnerException) && (tie.InnerException).GetType().FullName = "Microsoft.Build.Exceptions.BuildAbortedException" ->
                         fsi.Log.LogError(tie.InnerException.Message, [| |])
-                        -1
-                    | e -> reraise()
+                        -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                    | _ -> reraise()
 
                 let baseCallDelegate = Func<int>(fun () -> fsi.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
                 try

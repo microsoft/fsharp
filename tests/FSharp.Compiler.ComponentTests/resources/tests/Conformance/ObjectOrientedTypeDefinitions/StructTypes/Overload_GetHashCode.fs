@@ -4,9 +4,9 @@
 
 [<Struct>]
 type S2 =
-    member this.GetHashCode(s:char) =  1
+    member this.GetHashCode(_s:char) =  1
     //member this.GetHashCode() = 1.
-    member this.GetHashCode(?s:char) = 1 
+    member this.GetHashCode(?_s:char) = 1 
 
 #if INTERACTIVE
 ;;

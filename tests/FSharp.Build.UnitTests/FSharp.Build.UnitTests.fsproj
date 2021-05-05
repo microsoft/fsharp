@@ -8,6 +8,7 @@
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>nunit</UnitTestType>
+    <NoWarn>$(NoWarn);1182</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -70,7 +70,7 @@ let changeProperty() =
     [<Fact>]
     let ``Don't Warn If Property Without Setter``() =
         FSharp """
-type MyClass(property1 : int) =
+type MyClass(_property1 : int) =
     member val Property2 = "" with get
 
 let x = MyClass(1)

@@ -4,9 +4,9 @@
 
 [<Struct>]
 type S1 =
-    member this.ToString(s:char) = true
+    member this.ToString(_s:char) = true
     member this.ToString() =       true
-    member this.ToString(?s:char) = true
+    member this.ToString(?_s:char) = true
 
 #if INTERACTIVE
 exit 0;;

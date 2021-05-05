@@ -374,8 +374,7 @@ let warningOn err level specificWarnOn =
     let n = GetDiagnosticNumber err
     List.contains n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
-    match n with 
-    | 1182 -> false // chkUnusedValue - off by default
+    match n with
     | 3180 -> false // abImplicitHeapAllocation - off by default
     | _ -> level >= GetWarningLevel err 
 

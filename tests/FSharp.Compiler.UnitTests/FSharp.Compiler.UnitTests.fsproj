@@ -9,7 +9,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
     <UnitTestType>xunit</UnitTestType>
-    <NoWarn>$(NoWarn);3186;1104</NoWarn>
+    <NoWarn>$(NoWarn);3186;1104;1182</NoWarn>
   </PropertyGroup>
 
     <ItemGroup>

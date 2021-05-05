@@ -9,4 +9,4 @@
 type ID<'T> =
     static member id (x:'T) = x
 
-let f x = ID<ID<int>> .id  (* ok *)
+let f _x = ID<ID<int>> .id  (* ok *)

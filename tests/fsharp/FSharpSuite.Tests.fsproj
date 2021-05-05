@@ -11,9 +11,8 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
-    <NoWarn>3186</NoWarn>
+    <NoWarn>$(NoWarn);3186</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

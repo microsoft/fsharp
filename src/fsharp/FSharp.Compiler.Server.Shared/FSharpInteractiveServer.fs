@@ -37,7 +37,7 @@ type internal FSharpInteractiveServer() =
         LifetimeServices.RenewOnCallTime      <- TimeSpan(7,0,0,0);
         LifetimeServices.SponsorshipTimeout   <- TimeSpan(7,0,0,0);
         ChannelServices.RegisterChannel(chan,false);
-        let objRef = RemotingServices.Marshal(server,"FSIServer") 
+        RemotingServices.Marshal(server,"FSIServer") |> ignore
         ()
 
     static member StartClient(channelName) =

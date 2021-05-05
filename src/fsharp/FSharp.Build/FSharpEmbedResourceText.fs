@@ -356,7 +356,7 @@ open Printf
             printMessage (sprintf "Reading %s" filename)
             let lines = File.ReadAllLines(filename) 
                         |> Array.mapi (fun i s -> i,s) // keep line numbers
-                        |> Array.filter (fun (i,s) -> not(s.StartsWith "#"))  // filter out comments
+                        |> Array.filter (fun (_,s) -> not(s.StartsWith "#"))  // filter out comments
 
             printMessage (sprintf "Parsing %s" filename)
             let stringInfos = lines |> Array.map (fun (i,s) -> ParseLine filename i s)
@@ -391,7 +391,7 @@ open Printf
 
             printMessage (sprintf "Generating resource methods for %s" outFilename)
             // gen each resource method
-            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
+            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, _) ->
                 let formalArgs = new System.Text.StringBuilder()
                 let actualArgs = new System.Text.StringBuilder()
                 let mutable firstTime = true
@@ -428,14 +428,14 @@ open Printf
             // gen validation method
             fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
             fprintfn out "    static member RunStartupValidation() ="
-            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
+            stringInfos |> Seq.iter (fun (_, (_,ident), _, _, _) ->
                 fprintfn out "        ignore(GetString(\"%s\"))" ident
             )
             fprintfn out "        ()"  // in case there are 0 strings, we need the generated code to parse
             // gen to resx
             let xd = new System.Xml.XmlDocument()
             xd.LoadXml(xmlBoilerPlateString)
-            stringInfos |> Seq.iter (fun (lineNum, (optErrNum,ident), str, holes, netFormatString) ->
+            stringInfos |> Seq.iter (fun (_, (_,ident), _, _, netFormatString) ->
                 let xn = xd.CreateElement("data")
                 xn.SetAttribute("name",ident) |> ignore
                 xn.SetAttribute("xml:space","preserve") |> ignore

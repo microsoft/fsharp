@@ -122,7 +122,7 @@ type MapSourceRoots () =
 
                     for root in mappedSourceRoots do
                         match root.GetMetadata SourceControl with
-                        | HasValue v when isSourceControlled -> mapNestedRootIfEmpty root
+                        | HasValue _ when isSourceControlled -> mapNestedRootIfEmpty root
                         | NullOrEmpty when not isSourceControlled -> mapNestedRootIfEmpty root
                         | _ -> ()
 

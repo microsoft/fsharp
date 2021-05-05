@@ -10,7 +10,7 @@ async {
                     return 5 
                 }
               )
-    let! b = a
-    for i in 1..10000 do
+    let! _b = a
+    for _ in 1..10000 do
         ()
 } |> Async.RunSynchronously

@@ -6,6 +6,7 @@
     <TargetFrameworks>net472;net5.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net5.0</TargetFrameworks>
     <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);1182</NoWarn>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
     <PackageId>Microsoft.FSharp.Core.UnitTests</PackageId>

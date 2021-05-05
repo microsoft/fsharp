@@ -19,7 +19,7 @@ type CreateFSharpManifestResourceName public () =
                     (linkFileName:string),
                     (rootNamespace:string), (* may be null *)  
                     (dependentUponFileName:string), (* may be null *) 
-                    (binaryStream:System.IO.Stream) (* may be null *)) : string = 
+                    (_binaryStream:System.IO.Stream) (* may be null *)) : string = 
 
         // The Visual CSharp and XBuild CSharp toolchains transform resource names like this:
         //     SubDir\abc.resx --> SubDir.abc.resources

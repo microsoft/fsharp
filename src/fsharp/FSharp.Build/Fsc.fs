@@ -63,7 +63,6 @@ type public Fsc () as this =
     let mutable tailcalls : bool = true
     let mutable targetProfile : string = null
     let mutable targetType : string = null
-    let mutable toolExe : string = "fsc.exe"
     let defaultToolPath =
         let locationOfThisDll =
             try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
@@ -577,7 +576,6 @@ type public Fsc () as this =
             match host with
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
-                let sources = sources|>Array.map(fun i->i.ItemSpec)
                 let invokeCompiler baseCallDelegate =
                     try
                         let ret =
@@ -590,8 +588,8 @@ type public Fsc () as this =
                     // Do a string compare on the type name to do eliminate a compile time dependency on Microsoft.Build.dll
                     | :? TargetInvocationException as tie when not (isNull tie.InnerException) && (tie.InnerException).GetType().FullName = "Microsoft.Build.Exceptions.BuildAbortedException" ->
                         fsc.Log.LogError(tie.InnerException.Message, [| |])
-                        -1
-                    | e -> reraise()
+                        -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                    | _ -> reraise()
 
                 let baseCallDelegate = Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
                 try

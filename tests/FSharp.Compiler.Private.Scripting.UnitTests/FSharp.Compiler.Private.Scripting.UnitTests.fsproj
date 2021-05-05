@@ -8,6 +8,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>xunit</UnitTestType>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <NoWarn>$(NoWarn);1182</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

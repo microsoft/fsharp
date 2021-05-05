@@ -6,7 +6,7 @@
     <TargetFramework>net472</TargetFramework>
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Library</OutputType>
-    <NoWarn>$(NoWarn);44;58;75;3005</NoWarn>
+    <NoWarn>$(NoWarn);44;58;75;3005;1182</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

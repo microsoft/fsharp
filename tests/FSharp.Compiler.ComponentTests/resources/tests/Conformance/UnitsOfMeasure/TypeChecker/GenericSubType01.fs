@@ -5,7 +5,7 @@
 
 type SC< [<Measure>] 'u>() = class end
 type TC< [<Measure>] 'u>() = inherit SC<'u>()
-let wff (x:SC<'u>) = ()
+let wff (_x:SC<'u>) = ()
 
 
 let wgg (x:TC<'v>) = wff x      // OK
