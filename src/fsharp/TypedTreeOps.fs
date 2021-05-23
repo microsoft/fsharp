@@ -3147,7 +3147,6 @@ let TyconRefHasAttribute g m attribSpec tcref =
 /// Check if a type definition has an attribute with a specific full name
 let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
     ignore m
-    let (attrEnclosing, attrName) as attrNameSplitted = IL.splitILTypeName attrFullName
     match metadataOfTycon tcref.Deref with 
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> 
@@ -3157,14 +3156,14 @@ let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) =
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
         tdef.CustomAttrs.AsArray
-        |> Array.exists (fun attr -> isILAttribByName attrNameSplitted attr)
+        |> Array.exists (fun attr -> isILAttribByName ([], attrFullName) attr)
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         tcref.Attribs
         |> List.exists (fun attr ->
             match attr.TyconRef.CompiledRepresentation with
             | CompiledTypeRepr.ILAsmNamed(typeRef, _, _) ->
-                typeRef.Enclosing = attrEnclosing
-                && typeRef.Name = attrName
+                typeRef.Enclosing.IsEmpty
+                && typeRef.Name = attrFullName
             | CompiledTypeRepr.ILAsmOpen _ -> false)
 
 let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) = 
