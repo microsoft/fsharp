@@ -287,6 +287,10 @@ type DisposablesTracker =
 [<RequireQualifiedAccess>]
 module ArrayParallel =
 
+    val inline iter : ('T -> unit) -> 'T [] -> unit
+    
+    val inline iteri : (int -> 'T -> unit) -> 'T [] -> unit
+
     val inline map : ('T -> 'U) -> 'T [] -> 'U []
 
     val inline mapi : (int -> 'T -> 'U) -> 'T [] -> 'U []

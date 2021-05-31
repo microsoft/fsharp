@@ -6,6 +6,7 @@ module internal FSharp.Compiler.IlxGen
 open System.IO
 open System.Reflection
 open System.Collections.Generic
+open System.Collections.Immutable
 
 open FSharp.Compiler.IO
 open Internal.Utilities
@@ -967,6 +968,10 @@ and IlxGenEnv =
 
       /// Are we inside of a recursive let binding, while loop, or a for loop?
       isInLoop: bool
+
+      delayCodeGen: bool
+
+      delayedFileGen: ImmutableArray<(cenv -> unit) []>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -2322,7 +2327,7 @@ let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
 
     cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
 
-    if cenv.exprRecursionDepth = 0 then
+    if cenv.exprRecursionDepth = 0 && not eenv.delayCodeGen then
         ProcessDelayedGenMethods cenv
 
 and ProcessDelayedGenMethods cenv =
@@ -2517,6 +2522,22 @@ and CodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, al
                                    (fun cgbuf eenv -> GenExpr cenv cgbuf eenv spReq expr0 sequel0),
                                    expr0.Range)
     code
+<<<<<<< HEAD
+    
+and DelayCodeGenMethodForExpr cenv mgbuf (spReq, entryPointInfo, methodName, eenv, alreadyUsedArgs, expr0, sequel0) =
+    let ilLazyCode =
+        lazy
+            CodeGenMethodForExpr { cenv with exprRecursionDepth = 0; delayedGenMethods = Queue() } mgbuf (spReq, entryPointInfo, methodName, { eenv with delayCodeGen = false }, alreadyUsedArgs, expr0, sequel0)
+            
+    if cenv.exprRecursionDepth > 0 || eenv.delayCodeGen then
+        cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
+    else
+        // Eagerly codegen if we are not in an expression depth.
+        ilLazyCode.Force() |> ignore
+
+    ilLazyCode
+=======
+>>>>>>> remote/main
 
 //--------------------------------------------------------------------------
 // Generate sequels
@@ -5673,8 +5694,14 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef, m)
 
         let ilMethodDef =
-            let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
-            let ilMethodBody = MethodBody.IL(lazy ilCode)
+            let ilLazyCode =
+                if eenv.delayCodeGen then
+                    DelayCodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
+                else
+                    let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, rhsExpr, Return)
+                    lazy ilCode
+
+            let ilMethodBody = MethodBody.IL(ilLazyCode)
             (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs g
 
@@ -6126,9 +6153,6 @@ and ComputeMethodImplAttribs cenv (_v: Val) attrs =
     let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
 
-and DelayGenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs =
-    cenv.delayedGenMethods.Enqueue (fun cenv -> GenMethodForBinding cenv mgbuf eenv ilxMethInfoArgs)
-
 and GenMethodForBinding
         cenv mgbuf eenv
         (v: Val, mspec, hasWitnessEntry, generateWitnessArgs, access, ctps, mtps, witnessInfos, curriedArgInfos, paramInfos, argTys, retInfo, topValInfo,
@@ -6216,21 +6240,11 @@ and GenMethodForBinding
                     mkThrow m returnTy exnExpr
                 else
                     body
-
-            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
+            
+            let ilLazyCode = DelayCodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
             // This is the main code generation for most methods
-            false, MethodBody.IL(ilCodeLazy), false
-
-    match ilMethodBody with
-    | MethodBody.IL(ilCodeLazy) ->
-        if cenv.exprRecursionDepth > 0 then
-            cenv.delayedGenMethods.Enqueue(fun _ -> ilCodeLazy.Force() |> ignore)
-        else
-            // Eagerly codegen if we are not in an expression depth.
-            ilCodeLazy.Force() |> ignore
-    | _ ->
-        ()
+            false, MethodBody.IL(ilLazyCode), false
 
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =
@@ -7127,7 +7141,9 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
         let allocVal = ComputeAndAddStorageForLocalTopVal (cenv.amap, g, cenv.intraAssemblyInfo, cenv.opts.isInteractive, NoShadowLocal)
         AddBindingsForLocalModuleType allocVal clocCcu eenv mexpr.Type
 
-    eenvafter
+    let eenvfinal = { eenvafter with delayedFileGen = eenvafter.delayedFileGen.Add(cenv.delayedGenMethods |> Array.ofSeq) }
+    cenv.delayedGenMethods.Clear()
+    eenvfinal
 
 and GenForceWholeFileInitializationAsPartOfCCtor cenv (mgbuf: AssemblyBuilder) (lazyInitInfo: ResizeArray<_>) tref m =
     // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
@@ -8007,6 +8023,14 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv a
         let eenv = GenImplFile cenv mgbuf cenv.opts.mainMethodInfo eenv b
 
+        let genMeths = eenv.delayedFileGen |> Array.ofSeq
+
+        genMeths
+        |> ArrayParallel.iter (fun genMeths ->
+            genMeths
+            |> Array.iter (fun gen -> gen cenv) 
+        )
+
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
         let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
@@ -8044,7 +8068,9 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
       innerVals = []
       sigToImplRemapInfo = [] (* "module remap info" *)
       withinSEH = false
-      isInLoop = false }
+      isInLoop = false
+      delayCodeGen = true
+      delayedFileGen = ImmutableArray.Empty }
 
 type IlxGenResults =
     { ilTypeDefs: ILTypeDef list

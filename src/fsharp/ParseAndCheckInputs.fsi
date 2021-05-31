@@ -78,6 +78,8 @@ type TcState =
 
     member CreatesGeneratedProvidedTypes: bool
 
+    member RemoveImpl: QualifiedNameOfFile -> TcState
+
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: 
     range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv -> TcState
