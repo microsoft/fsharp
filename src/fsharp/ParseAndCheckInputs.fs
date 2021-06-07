@@ -711,7 +711,14 @@ type TcState =
         { x with tcsTcSigEnv = tcEnvAtEndOfLastInput
                  tcsTcImplEnv = tcEnvAtEndOfLastInput }
 
+<<<<<<< HEAD
+    member x.RemoveImpl qualifiedNameOfFile =
+        { x with tcsRootImpls = x.tcsRootImpls.Remove(qualifiedNameOfFile) }
 
+ 
+=======
+
+>>>>>>> remote/main
 /// Create the initial type checking state for compiling an assembly
 let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcImports, niceNameGen, tcEnv0) =
     ignore tcImports
@@ -875,18 +882,25 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
             return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
     }
 
-/// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+let TypeCheckOneInputAux (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp skipImplIfSigExists =
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL = PushErrorLoggerPhaseUntilUnwind(fun oldLogger -> GetErrorLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput inp, oldLogger) )
     use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     RequireCompilationThread ctok
-    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, false)
+    TypeCheckOneInputEventually (checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, inp, skipImplIfSigExists) 
         |> Eventually.force CancellationToken.None
         |> function
            | ValueOrCancelled.Value v -> v
            | ValueOrCancelled.Cancelled ce ->  raise ce // this condition is unexpected, since CancellationToken.None was passed
+
+/// Typecheck a single file (or interactive entry into F# Interactive)
+let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+    TypeCheckOneInputAux(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp false
+
+/// Typecheck a single file but skip it if the file is an impl and has a backing sig
+let TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+    TypeCheckOneInputAux(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp true
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
@@ -916,10 +930,40 @@ let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
     tcState, declaredImpls
+    
+let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
+    // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
+    let results, tcState =
+        if tcConfig.concurrentBuild then
+            let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputSkipImpl (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
 
-let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
-    let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
+            let inputs = Array.ofList inputs
+            let newResults = Array.ofList results
+            let results = Array.ofList results
+
+            (inputs, results) 
+            ||> Array.zip
+            |> Array.mapi (fun i (input, (_, _, implOpt, _)) ->
+                match implOpt with
+                | None -> None
+                | Some impl ->
+                    match impl with
+                    | TypedImplFile.TImplFile(qualifiedNameOfFile=qualifiedNameOfFile;implementationExpressionWithSignature=ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(contents=ModuleOrNamespaceExpr.TMDefs [])) ->
+                        Some(i, input, qualifiedNameOfFile)
+                    | _ ->
+                        None
+            )
+            |> Array.choose id
+            |> ArrayParallel.iter (fun (i, input, qualifiedNameOfFile) ->
+                let tcState = tcState.RemoveImpl(qualifiedNameOfFile)
+                let result, _ = TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState input
+                newResults.[i] <- result
+            )
+
+            newResults |> List.ofArray, tcState
+        else
+            (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
