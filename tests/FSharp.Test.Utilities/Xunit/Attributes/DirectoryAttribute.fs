@@ -42,12 +42,13 @@ type DirectoryAttribute(dir: string) =
                 Some { SourceFilename = Some (path ++ fs)
                        OutputBaseline = bslSource
                        ILBaseline     = ilSource }
-          Options        = []
-          OutputType     = Library
-          SourceKind     = SourceKind.Fsx
-          Name           = Some fs
-          IgnoreWarnings = false
-          References     = [] } |> FS
+          Options          = []
+          OutputType       = Library
+          SourceKind       = SourceKind.Fsx
+          Name             = Some fs
+          IgnoreWarnings   = false
+          References       = []
+          CompileDirectory = None} |> FS
 
     member x.Includes with get() = includes and set v = includes <- v
 

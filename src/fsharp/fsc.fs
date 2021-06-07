@@ -770,13 +770,6 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
             errorRecoveryNoRange e
             exiter.Exit 1
 
-    // Perform optimization
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
-
-    let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
-
-    let importMap = tcImports.GetImportMap()
-
     let metadataVersion =
         match tcConfig.metadataVersion with
         | Some v -> v
@@ -784,18 +777,35 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
             match frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
              | _ -> ""
+        
+    let optimizedImpls, optDataResources =
+        match tcConfig.emitMetadataAssembly with
+        | MetadataAssemblyGeneration.MetadataOnly
+        | MetadataAssemblyGeneration.TestSigOfImpl ->
+            let optimizedImpls =
+                typedImplFiles
+                |> List.map (fun x -> { ImplFile = x; OptimizeDuringCodeGen = (fun _ expr -> expr) })
+                |> TypedAssemblyAfterOptimization
+            optimizedImpls, []
+        | _ ->
+            // Perform optimization
+            use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
+    
+            let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
 
-    let optimizedImpls, optimizationData, _ =
-        ApplyAllOptimizations
-            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
-             importMap, false, optEnv0, generatedCcu, typedImplFiles)
+            let importMap = tcImports.GetImportMap()
 
-    AbortOnError(errorLogger, exiter)
+            let optimizedImpls, optimizationData, _ = 
+                ApplyAllOptimizations 
+                    (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, 
+                     importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
-    // Encode the optimization data
-    ReportTime tcConfig ("Encoding OptData")
+            AbortOnError(errorLogger, exiter)
+        
+            // Encode the optimization data
+            ReportTime tcConfig ("Encoding OptData")
 
-    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+            optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger,
@@ -896,28 +906,81 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     match dynamicAssemblyCreator with
     | None ->
         try
-            try
-                ILBinaryWriter.WriteILBinary
-                 (outfile,
-                  { ilg = tcGlobals.ilg
-                    pdbfile=pdbfile
-                    emitTailcalls = tcConfig.emitTailcalls
-                    deterministic = tcConfig.deterministic
-                    showTimes = tcConfig.showTimes
-                    portablePDB = tcConfig.portablePDB
-                    embeddedPDB = tcConfig.embeddedPDB
-                    embedAllSource = tcConfig.embedAllSource
-                    embedSourceList = tcConfig.embedSourceList
-                    sourceLink = tcConfig.sourceLink
-                    checksumAlgorithm = tcConfig.checksumAlgorithm
-                    signer = GetStrongNameSigner signingInfo
-                    dumpDebugInfo = tcConfig.dumpDebugInfo
-                    pathMap = tcConfig.pathMap },
-                  ilxMainModule,
-                  normalizeAssemblyRefs
-                  )
-            with Failure msg ->
-                error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.None -> ()
+            | _ ->
+                let outfile =
+                    match tcConfig.emitMetadataAssembly with
+                    | MetadataAssemblyGeneration.ReferenceOut outputPath ->
+                        outputPath
+                    | _ ->
+                        outfile
+                let referenceAssemblyAttribOpt =
+                    tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
+                    |> Option.map (fun ilTy ->
+                        mkILCustomAttribute (ilTy.TypeRef, [], [], [])
+                    )
+                try
+                    use stream =
+                        try
+                            // Ensure the output directory exists otherwise it will fail
+                            let dir = FileSystem.GetDirectoryNameShim outfile
+                            if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
+                            FileSystem.OpenFileForWriteShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
+                        with _ ->
+                            failwith ("Could not open file for writing (binary mode): " + outfile)
+
+                    ILBinaryWriter.WriteILBinaryStreamWithNoPDB
+                     (stream,
+                      { ilg = tcGlobals.ilg
+                        pdbfile=pdbfile
+                        emitTailcalls = tcConfig.emitTailcalls
+                        deterministic = tcConfig.deterministic
+                        showTimes = tcConfig.showTimes
+                        portablePDB = tcConfig.portablePDB
+                        embeddedPDB = tcConfig.embeddedPDB
+                        embedAllSource = tcConfig.embedAllSource
+                        embedSourceList = tcConfig.embedSourceList
+                        sourceLink = tcConfig.sourceLink
+                        checksumAlgorithm = tcConfig.checksumAlgorithm
+                        signer = GetStrongNameSigner signingInfo
+                        dumpDebugInfo = tcConfig.dumpDebugInfo
+                        pathMap = tcConfig.pathMap },
+                      true,
+                      referenceAssemblyAttribOpt,
+                      ilxMainModule,
+                      normalizeAssemblyRefs
+                      )
+                with Failure msg ->
+                    error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
+
+            match tcConfig.emitMetadataAssembly with
+            | MetadataAssemblyGeneration.MetadataOnly
+            | MetadataAssemblyGeneration.TestSigOfImpl
+            | MetadataAssemblyGeneration.ReferenceOnly -> ()
+            | _ ->
+                try
+                    ILBinaryWriter.WriteILBinary
+                     (outfile,
+                      { ilg = tcGlobals.ilg
+                        pdbfile=pdbfile
+                        emitTailcalls = tcConfig.emitTailcalls
+                        deterministic = tcConfig.deterministic
+                        showTimes = tcConfig.showTimes
+                        portablePDB = tcConfig.portablePDB
+                        embeddedPDB = tcConfig.embeddedPDB
+                        embedAllSource = tcConfig.embedAllSource
+                        embedSourceList = tcConfig.embedSourceList
+                        sourceLink = tcConfig.sourceLink
+                        checksumAlgorithm = tcConfig.checksumAlgorithm
+                        signer = GetStrongNameSigner signingInfo
+                        dumpDebugInfo = tcConfig.dumpDebugInfo
+                        pathMap = tcConfig.pathMap },
+                      ilxMainModule,
+                      normalizeAssemblyRefs
+                      )
+                with Failure msg ->
+                    error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
         with e ->
             errorRecoveryNoRange e
             exiter.Exit 1

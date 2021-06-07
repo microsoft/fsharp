@@ -64,15 +64,45 @@ let iLdcDouble i = AI_ldc (DT_R8, ILConst.R8 i)
 
 let iLdcSingle i = AI_ldc (DT_R4, ILConst.R4 i)
 
+let ilThrowNullInstrs = [|ILInstr.AI_ldnull; ILInstr.I_throw|]
+let emptyDict = Dictionary()
+let mkILThrowNullMethodBody name =
+    let ilCode = IL.buildILCode name emptyDict ilThrowNullInstrs [] []
+    mkILMethodBody(false, ILLocals.Empty, 0, ilCode, None)
+
+let mkILThrowNullStorageCtorWithParamNames (extraParams, flds, access) =
+    mkILCtor(access,
+            (flds |> List.map (fun (pnm, _, ty) -> mkILParamNamed (pnm, ty))) @ extraParams,
+            mkILThrowNullMethodBody ".ctor"
+            |> notlazy
+            |> MethodBody.IL)
+
+let mkILThrowNullStorageCtor(extraParams, flds, access) =
+    mkILThrowNullStorageCtorWithParamNames (extraParams, flds |> List.map (fun (nm, ty) -> (nm, nm, ty)), access)
+
 /// Make a method that simply loads a field
-let mkLdfldMethodDef (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPropType) =
+let mkLdfldMethodDef referenceAssemblyOnly (ilMethName, reprAccess, isStatic, ilTy, ilFieldName, ilPropType) =
    let ilFieldSpec = mkILFieldSpecInTy(ilTy, ilFieldName, ilPropType)
    let ilReturn = mkILReturn ilPropType
    let ilMethodDef =
        if isStatic then
-           mkILNonGenericStaticMethod (ilMethName, reprAccess, [], ilReturn, mkMethodBody(true, [], 2, nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec], None))
+           let methBody =
+                if referenceAssemblyOnly then
+                    mkILThrowNullMethodBody ilMethName
+                    |> notlazy
+                    |> MethodBody.IL
+                else
+                    mkMethodBody(true, [], 2, nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec], None)
+           mkILNonGenericStaticMethod (ilMethName, reprAccess, [], ilReturn, methBody)
        else
-           mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec], None))
+           let methBody =
+               if referenceAssemblyOnly then
+                   mkILThrowNullMethodBody ilMethName
+                   |> notlazy
+                   |> MethodBody.IL
+               else
+                   mkMethodBody (true, [], 2, nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec], None)
+           mkILNonGenericInstanceMethod (ilMethName, reprAccess, [], ilReturn, methBody)
    ilMethodDef.WithSpecialName
 
 /// Choose the constructor parameter names for fields
@@ -215,6 +245,9 @@ type IlxGenOptions =
 
       /// Whenever possible, use callvirt instead of call
       alwaysCallVirt: bool
+      
+      /// Indicates that we are not generating method bodies.
+      metadataOnly: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -1603,12 +1636,16 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             let ilMethods =
                 [ for (propName, fldName, fldTy) in flds ->
-                        mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
+                        mkLdfldMethodDef cenv.opts.metadataOnly ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy)
                   yield! genToStringMethod ilTy ]
 
             let ilBaseTy = (if isStruct then g.iltyp_ValueType else g.ilg.typ_Object)
 
-            let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
+            let ilCtorDef = 
+                if cenv.opts.metadataOnly then
+                    mkILThrowNullStorageCtorWithParamNames([], flds, ILMemberAccess.Public)
+                else
+                    mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
 
             // Create a tycon that looks exactly like a record definition, to help drive the generation of equality/comparison code
             let m = range0
@@ -1752,15 +1789,16 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             explicitEntryPointInfo <- Some tref
 
     member _.AddExplicitInitToSpecificMethodDef (cond, tref, fspec, sourceOpt, feefee, seqpt) =
-        // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
-        // Doing both a store and load keeps FxCop happier because it thinks the field is useful
-        let instrs =
-            [ yield! (if condition "NO_ADD_FEEFEE_TO_CCTORS" then [] elif condition "ADD_SEQPT_TO_CCTORS" then seqpt else feefee) // mark start of hidden code
-              yield mkLdcInt32 0
-              yield mkNormalStsfld fspec
-              yield mkNormalLdsfld fspec
-              yield AI_pop]
-        gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt)
+        if not cenv.opts.metadataOnly then
+            // Authoring a .cctor with effects forces the cctor for the 'initialization' module by doing a dummy store & load of a field
+            // Doing both a store and load keeps FxCop happier because it thinks the field is useful
+            let instrs =
+                [ yield! (if condition "NO_ADD_FEEFEE_TO_CCTORS" then [] elif condition "ADD_SEQPT_TO_CCTORS" then seqpt else feefee) // mark start of hidden code
+                  yield mkLdcInt32 0
+                  yield mkNormalStsfld fspec
+                  yield mkNormalLdsfld fspec
+                  yield AI_pop]
+            gtdefs.FindNestedTypeDefBuilder(tref).PrependInstructionsToSpecificMethodDef(cond, instrs, sourceOpt)
 
     member _.AddEventDef (tref, edef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddEventDef(edef)
@@ -5825,13 +5863,27 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) star
             cgbuf.mgbuf.AddOrMergePropertyDef(ilTypeRefForProperty, ilPropDef, m)
 
             let getterMethod =
+                let methBody =
+                    if cenv.opts.metadataOnly then
+                        mkILThrowNullMethodBody ilGetterMethRef.Name
+                        |> notlazy
+                        |> MethodBody.IL
+                    else
+                        mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld fspec ], None)
                 mkILStaticMethod([], ilGetterMethRef.Name, access, [], mkILReturn fty,
-                               mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkNormalLdsfld fspec ], None)).WithSpecialName
+                               methBody).WithSpecialName
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty, getterMethod)
             if mut || cenv.opts.isInteractiveItExpr then
                 let setterMethod =
+                    let methBody =
+                        if cenv.opts.metadataOnly then
+                            mkILThrowNullMethodBody ilGetterMethRef.Name
+                            |> notlazy
+                            |> MethodBody.IL
+                        else
+                            mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec], None)
                     mkILStaticMethod([], ilSetterMethRef.Name, access, [mkILParamNamed("value", fty)], mkILReturn ILType.Void,
-                                   mkMethodBody(true, [], 2, nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec], None)).WithSpecialName
+                                   methBody).WithSpecialName
                 cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty, setterMethod)
 
             GenBindingRhs cenv cgbuf eenv sp vspec rhsExpr
@@ -6214,7 +6266,7 @@ and GenMethodForBinding
          ctorThisValOpt, baseValOpt, methLambdaTypars, methLambdaVars, methLambdaBody, returnTy) =
     let g = cenv.g
     let m = v.Range
-
+    
     // If a method has a witness-passing version of the code, then suppress
     // the generation of any witness in the non-witness passing version of the code
     let eenv = { eenv with suppressWitnesses = hasWitnessEntry && not generateWitnessArgs }
@@ -6296,11 +6348,17 @@ and GenMethodForBinding
                     mkThrow m returnTy exnExpr
                 else
                     body
+            
+            if cenv.opts.metadataOnly then
+                // The reason for using 'throw null' bodies (as opposed to no bodies) is so 
+                // that PEVerify can run and pass (thus validating the completeness of the metadata).
+                let ilMethBody = mkILThrowNullMethodBody mspec.Name
+                false, MethodBody.IL(notlazy ilMethBody), false
+            else
+                let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
 
-            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, bodyExpr, sequel)
-
-            // This is the main code generation for most methods
-            false, MethodBody.IL(ilCodeLazy), false
+                // This is the main code generation for most methods
+                false, MethodBody.IL(ilCodeLazy), false
 
     match ilMethodBody with
     | MethodBody.IL(ilCodeLazy) ->
@@ -7115,9 +7173,9 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: TypedI
     let topInstrs, topCode =
         CodeGenMethod cenv mgbuf
             ([], methodName, eenv, 0,
-             (fun cgbuf eenv ->
-                  GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
-                  CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
+                (fun cgbuf eenv ->
+                    GenModuleExpr cenv cgbuf qname lazyInitInfo eenv mexpr
+                    CG.EmitInstr cgbuf (pop 0) Push0 I_ret), m)
 
     // The code generation for the initialization is now complete and the IL code is in topCode.
     // Make a .cctor and/or main method to contain the code. This initializes all modules.
@@ -7220,21 +7278,29 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
     let g = cenv.g
     let mspec = mkILNonGenericInstanceMethSpecInTy (g.iltyp_IComparable, "CompareTo", [g.ilg.typ_Object], g.ilg.typ_Int32)
 
+    let methBody =
+        if cenv.opts.metadataOnly then
+            mkILThrowNullMethodBody "Equals"
+            |> notlazy
+            |> MethodBody.IL
+        else
+            mkMethodBody(true, [], 2,
+                nonBranchingInstrsToCode
+                   [ yield mkLdarg0
+                     yield mkLdarg 1us
+                     if tcref.IsStructOrEnumTycon then
+                         yield I_callconstraint ( Normalcall, ilThisTy, mspec, None)
+                     else
+                         yield I_callvirt ( Normalcall, mspec, None)
+                     yield mkLdcInt32 0
+                     yield AI_ceq ],
+                None)
+
     mkILNonGenericVirtualMethod
         ("Equals", ILMemberAccess.Public,
          [mkILParamNamed ("obj", g.ilg.typ_Object)],
          mkILReturn g.ilg.typ_Bool,
-         mkMethodBody(true, [], 2,
-                         nonBranchingInstrsToCode
-                            [ yield mkLdarg0
-                              yield mkLdarg 1us
-                              if tcref.IsStructOrEnumTycon then
-                                  yield I_callconstraint ( Normalcall, ilThisTy, mspec, None)
-                              else
-                                  yield I_callvirt ( Normalcall, mspec, None)
-                              yield mkLdcInt32 0
-                              yield AI_ceq ],
-                         None))
+         methBody)
     |> AddNonUserCompilerGeneratedAttribs g
 
 and GenFieldInit m c =
@@ -7352,21 +7418,28 @@ and GenToStringMethod cenv eenv ilThisTy m =
                // Here's the body of the method. Call printf, then invoke the function it returns
                let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
                let mdef =
+                   let methBody =
+                       if cenv.opts.metadataOnly then
+                           mkILThrowNullMethodBody "ToString"
+                           |> notlazy
+                           |> MethodBody.IL
+                       else
+                           mkMethodBody (true, [], 2, nonBranchingInstrsToCode
+                               ([ // load the hardwired format string
+                                   yield I_ldstr "%+A"
+                                   // make the printf format object
+                                   yield mkNormalNewobj newFormatMethSpec
+                                   // call sprintf
+                                   yield mkNormalCall sprintfMethSpec
+                                   // call the function returned by sprintf
+                                   yield mkLdarg0
+                                   if ilThisTy.Boxity = ILBoxity.AsValue then
+                                       yield mkNormalLdobj ilThisTy ] @
+                                   callInstrs),
+                               None)
                    mkILNonGenericVirtualMethod ("ToString", ILMemberAccess.Public, [],
                         mkILReturn g.ilg.typ_String,
-                        mkMethodBody (true, [], 2, nonBranchingInstrsToCode
-                                ([ // load the hardwired format string
-                                    yield I_ldstr "%+A"
-                                    // make the printf format object
-                                    yield mkNormalNewobj newFormatMethSpec
-                                    // call sprintf
-                                    yield mkNormalCall sprintfMethSpec
-                                    // call the function returned by sprintf
-                                    yield mkLdarg0
-                                    if ilThisTy.Boxity = ILBoxity.AsValue then
-                                        yield mkNormalLdobj ilThisTy ] @
-                                    callInstrs),
-                                None))
+                        methBody)
                let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
                yield mdef
       | _ -> () ]
@@ -7639,7 +7712,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     let ilPropName = fspec.Name
                     let ilMethName = "get_" + ilPropName
                     let access = ComputeMemberAccess isPropHidden
-                    yield mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType)
+                    yield mkLdfldMethodDef cenv.opts.metadataOnly (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType)
 
               // Generate property setter methods for the mutable fields
               for (useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec) in fieldSummaries do
@@ -7653,13 +7726,27 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     let iLAccess = ComputeMemberAccess isPropHidden
                     let ilMethodDef =
                          if isStatic then
+                             let methBody =
+                                if cenv.opts.metadataOnly then
+                                    mkILThrowNullMethodBody ilMethName
+                                    |> notlazy
+                                    |> MethodBody.IL
+                                else
+                                    mkMethodBody(true, [], 2, nonBranchingInstrsToCode ([ mkLdarg0;mkNormalStsfld ilFieldSpec]), None)
                              mkILNonGenericStaticMethod
                                (ilMethName, iLAccess, ilParams, ilReturn,
-                                  mkMethodBody(true, [], 2, nonBranchingInstrsToCode ([ mkLdarg0;mkNormalStsfld ilFieldSpec]), None))
+                                  methBody)
                          else
+                             let methBody =
+                                 if cenv.opts.metadataOnly then
+                                     mkILThrowNullMethodBody ilMethName
+                                     |> notlazy
+                                     |> MethodBody.IL
+                                 else
+                                     mkMethodBody(true, [], 2, nonBranchingInstrsToCode ([ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec]), None)
                              mkILNonGenericInstanceMethod
                                (ilMethName, iLAccess, ilParams, ilReturn,
-                                  mkMethodBody(true, [], 2, nonBranchingInstrsToCode ([ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec]), None))
+                                  methBody)
                     yield ilMethodDef.WithSpecialName
 
               if generateDebugDisplayAttribute then
@@ -7682,23 +7769,31 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                       let sprintfMethSpec = mkILMethSpec(sprintfMethSpec.MethodRef, AsObject, [], [funcTy])
                       // Here's the body of the method. Call printf, then invoke the function it returns
                       let callInstrs = EraseClosures.mkCallFunc g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
-                      let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName, ILMemberAccess.Assembly, [],
+                      let ilMethodDef = 
+                            let methBody =
+                                if cenv.opts.metadataOnly then
+                                    mkILThrowNullMethodBody debugDisplayMethodName
+                                    |> notlazy
+                                    |> MethodBody.IL
+                                else
+                                    mkMethodBody
+                                        (true, [], 2,
+                                         nonBranchingInstrsToCode
+                                           ([ // load the hardwired format string
+                                              yield I_ldstr "%+0.8A"
+                                              // make the printf format object
+                                              yield mkNormalNewobj newFormatMethSpec
+                                              // call sprintf
+                                              yield mkNormalCall sprintfMethSpec
+                                              // call the function returned by sprintf
+                                              yield mkLdarg0
+                                              if ilThisTy.Boxity = ILBoxity.AsValue then
+                                                 yield mkNormalLdobj ilThisTy ] @
+                                            callInstrs),
+                                         None)
+                            mkILNonGenericInstanceMethod (debugDisplayMethodName, ILMemberAccess.Assembly, [],
                                                    mkILReturn g.ilg.typ_Object,
-                                                   mkMethodBody
-                                                         (true, [], 2,
-                                                          nonBranchingInstrsToCode
-                                                            ([ // load the hardwired format string
-                                                               yield I_ldstr "%+0.8A"
-                                                               // make the printf format object
-                                                               yield mkNormalNewobj newFormatMethSpec
-                                                               // call sprintf
-                                                               yield mkNormalCall sprintfMethSpec
-                                                               // call the function returned by sprintf
-                                                               yield mkLdarg0
-                                                               if ilThisTy.Boxity = ILBoxity.AsValue then
-                                                                  yield mkNormalLdobj ilThisTy ] @
-                                                             callInstrs),
-                                                          None))
+                                                   methBody)
                       yield ilMethodDef.WithSpecialName |> AddNonUserCompilerGeneratedAttribs g
                   | None, _ ->
                       //printfn "sprintf not found"
@@ -7728,14 +7823,21 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(g.ilg.typ_Object.TypeSpec)
-                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
+                 let ilMethodDef = 
+                    if cenv.opts.metadataOnly then
+                        mkILThrowNullStorageCtorWithParamNames([], ChooseParamNames fieldNamesAndTypes, reprAccess)
+                    else
+                        mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
 
                  yield ilMethodDef
                  // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true) attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
                  // FSharp 3.0 feature: adding CLIMutable to a record type causes emit of default constructor, and all fields get property setters
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute g g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
-                     yield mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
+                     if cenv.opts.metadataOnly then
+                        yield mkILThrowNullStorageCtor([], [], reprAccess)
+                     else
+                        yield mkILSimpleStorageCtor(None, Some g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess)
 
                  if not (tycon.HasMember g "ToString" []) then
                     yield! GenToStringMethod cenv eenv ilThisTy m
@@ -7992,7 +8094,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                let ilPropType = GenType cenv.amap m eenv.tyenv fld.FormalType
                let ilMethName = "get_" + fld.Name
                let ilFieldName = ComputeFieldName exnc fld
-               let ilMethodDef = mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType)
+               let ilMethodDef = mkLdfldMethodDef cenv.opts.metadataOnly (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType)
                let ilFieldDef = IL.mkILInstanceField(ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
                let ilPropDef =
                    ILPropertyDef(name = ilPropName,
@@ -8008,13 +8110,19 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
              |> List.unzip4
 
         let ilCtorDef =
-            mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
+            if cenv.opts.metadataOnly then
+                mkILThrowNullStorageCtorWithParamNames([], ChooseParamNames fieldNamesAndTypes, reprAccess)
+            else
+                mkILSimpleStorageCtorWithParamNames(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
 
         // In compiled code, all exception types get a parameterless constructor for use with XML serialization
         // This does default-initialization of all fields
         let ilCtorDefNoArgs =
             if not (isNil fieldNamesAndTypes) then
-                [ mkILSimpleStorageCtor(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
+                if cenv.opts.metadataOnly then
+                    [ mkILThrowNullStorageCtor([], [], reprAccess) ]
+                else
+                    [ mkILSimpleStorageCtor(None, Some g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
             else
                 []
 
@@ -8023,16 +8131,23 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
           match g.iltyp_SerializationInfo, g.iltyp_StreamingContext with
           | Some serializationInfoType, Some streamingContextType ->
             let ilCtorDefForSerialization =
+                let methBody =
+                    if cenv.opts.metadataOnly then
+                        mkILThrowNullMethodBody "info"
+                        |> notlazy
+                        |> MethodBody.IL
+                    else
+                        mkMethodBody
+                            (false, [], 8,
+                             nonBranchingInstrsToCode
+                                [ mkLdarg0
+                                  mkLdarg 1us
+                                  mkLdarg 2us
+                                  mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
+                             None)
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType);mkILParamNamed("context", streamingContextType)],
-                        mkMethodBody
-                          (false, [], 8,
-                           nonBranchingInstrsToCode
-                              [ mkLdarg0
-                                mkLdarg 1us
-                                mkLdarg 2us
-                                mkNormalCall (mkILCtorMethSpecForTy (g.iltyp_Exception, [serializationInfoType; streamingContextType])) ],
-                           None))
+                        methBody)
 
             [ilCtorDefForSerialization]
 (*

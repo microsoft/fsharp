@@ -52,6 +52,9 @@ type internal IlxGenOptions =
 
       /// Indicates that, whenever possible, use callvirt instead of call
       alwaysCallVirt: bool
+
+      /// Indicates that we are not generating method bodies.
+      metadataOnly: bool
     }
 
 /// The results of the ILX compilation of one fragment of an assembly

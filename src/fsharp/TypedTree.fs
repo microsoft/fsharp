@@ -5291,6 +5291,9 @@ type FreeRecdFields = Zset<RecdFieldRef>
 /// Represents a set of 'free' union cases. Used to collect the union cases referred to from an expression.
 type FreeUnionCases = Zset<UnionCaseRef>
 
+/// Represents a set of 'free' anonymous record types. Used to collect the anonymous records in a signature.
+type FreeAnonRecdTypeInfos = Zset<AnonRecdTypeInfo>
+
 /// Represents a set of 'free' type-related elements, including named types, trait solutions, union cases and
 /// record fields.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -5306,6 +5309,9 @@ type FreeTyvars =
       /// The summary of type parameters used in the expression. These may not escape the enclosing generic construct 
       /// and we have to check various conditions associated with that. 
       FreeTypars: FreeTypars
+
+      /// The summary of anonymous records used in a signature.
+      FreeAnonRecdTypeInfos: FreeAnonRecdTypeInfos
     }
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]

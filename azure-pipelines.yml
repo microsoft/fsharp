@@ -354,6 +354,16 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
+        # Determinism
+        - job: Determinism
+          pool:
+            vmImage: windows-latest
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\eng\test-determinism.cmd -configuration Debug
+            displayName: Determinism tests
+
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:

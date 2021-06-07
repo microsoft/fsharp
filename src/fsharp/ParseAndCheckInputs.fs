@@ -35,6 +35,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
 
 let CanonicalizeFilename filename =
@@ -754,6 +755,141 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
       tcsRootImpls = Zset.empty qnameOrder
       tcsCcuSig = Construct.NewEmptyModuleOrNamespaceType Namespace }
 
+let mkDummyParameterVal name attribs ty =
+    Construct.NewVal(
+        name, range0, None, ty, ValMutability.Immutable, false, None, taccessPublic,
+        ValRecursiveScopeInfo.ValNotInRecScope, None, ValBaseOrThisInfo.NormalVal, attribs, ValInline.Never,
+        XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+
+let rec CreateDummyModuleOrNamespaceExpr (g: TcGlobals) (mty: ModuleOrNamespaceType) =
+
+    let dummyValAsBinding (v: Val) =
+        let dummyExpr =
+            // It does not matter what this expression is as it will never get checked or emitted.
+            let retDummyExpr = Expr.Op(TOp.Return, [], [], range0)
+
+            if isFunTy g v.Type || isForallFunctionTy g v.Type then
+                match v.ValReprInfo with
+                | Some valReprInfo ->
+                    let typars, curriedArgInfos, retTy, _retInfo = GetTopValTypeInFSharpForm g valReprInfo v.Type v.Range
+                    
+                    let valParams =
+                        let defaultParamNames =
+                            match
+                                v.MemberInfo
+                                |> Option.bind (fun x -> x.ImplementedSlotSigs |> List.tryExactlyOne)
+                             with
+                             | Some slotSig when v.IsCompilerGenerated ->
+                                let paramNames =
+                                    slotSig.FormalParams
+                                    |> List.map (fun slotParams ->
+                                        slotParams
+                                        |> List.map (fun slotParam ->
+                                            match slotParam with
+                                            | TSlotParam(paramName=paramName) ->
+                                                paramName
+                                                |> Option.defaultValue ""
+                                        )
+                                        |> Array.ofList
+                                    )
+
+                                if v.IsInstanceMember then
+                                    [|""|] :: paramNames |> Array.ofList
+                                else
+                                    paramNames |> Array.ofList
+                             | _ ->
+                                curriedArgInfos
+                                |> List.map (fun x -> Array.init x.Length (fun _ -> ""))
+                                |> Array.ofSeq
+
+                        curriedArgInfos
+                        |> List.mapi (fun i argInfos ->
+                            argInfos
+                            |> List.mapi (fun j (ty, argInfo) ->
+                                let defaultParamName =
+                                    if i >= defaultParamNames.Length || j >= defaultParamNames.[i].Length then
+                                        ""
+                                    else
+                                        defaultParamNames.[i].[j]
+                                let name =
+                                    argInfo.Name
+                                    |> Option.map (fun x -> x.idText)
+                                    |> Option.defaultValue defaultParamName
+                                mkDummyParameterVal name argInfo.Attribs ty
+                            )
+                        )
+
+                    if valParams.IsEmpty || (valParams.Length = 1 && valParams.Head.IsEmpty) then
+                        // We have to create a lambda like this as `mkMemberLambdas` will throw if it is passed
+                        // a single empty curried argument list.
+                        if typars.IsEmpty then
+                            Expr.Lambda(newUnique(), None, None, [], retDummyExpr, range0, retTy)
+                        else
+                            Expr.TyLambda(newUnique(), typars, retDummyExpr, range0, retTy)
+                    else
+                        mkMemberLambdas range0 typars None None valParams (retDummyExpr, retTy)
+                | _ ->
+                    failwith "Expected top-level val"
+            else
+                retDummyExpr
+        mkBind DebugPointAtBinding.NoneAtLet v dummyExpr
+    
+    let dummyValAsModuleOrNamespaceExpr (v: Val) =
+        ModuleOrNamespaceExpr.TMDefLet(dummyValAsBinding v, range0)
+
+    let dummyValAsModuleOrNamespaceExprs (vs: Val seq) =
+        vs
+        |> Seq.map dummyValAsModuleOrNamespaceExpr
+
+    let dummyEntityAsModuleOrNamespaceBinding (ent: Entity) =
+        ModuleOrNamespaceBinding.Module(ent, CreateDummyModuleOrNamespaceExpr g ent.ModuleOrNamespaceType)
+
+    let dummyEntitiesAsModuleOrNamespaceBindings (ents: Entity seq) =
+        ents
+        |> Seq.map dummyEntityAsModuleOrNamespaceBinding
+
+    let entBindings =
+        mty.ModuleAndNamespaceDefinitions
+        |> dummyEntitiesAsModuleOrNamespaceBindings
+        |> List.ofSeq
+
+    let tycons = mty.TypeAndExceptionDefinitions
+
+    let dummyExprs = 
+        dummyValAsModuleOrNamespaceExprs mty.AllValsAndMembers 
+        |> List.ofSeq
+
+    let dummyExprs =
+        if entBindings.IsEmpty && tycons.IsEmpty then
+            dummyExprs
+        else
+            ModuleOrNamespaceExpr.TMDefRec(false, tycons, entBindings, range0) :: dummyExprs
+
+    ModuleOrNamespaceExpr.TMDefs dummyExprs
+
+let CreateDummyModuleOrNamespaceExprWithSig g (sigTy: ModuleOrNamespaceType) =
+    let dummyExpr = CreateDummyModuleOrNamespaceExpr g sigTy
+    ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [dummyExpr], range0)
+
+/// Similar to 'createDummyTypedImplFile', only diffference is that there are no definitions and is not used for emitting any kind of assembly.
+let CreateEmptyDummyTypedImplFile qualNameOfFile sigTy =
+    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(sigTy, ModuleOrNamespaceExpr.TMDefs [], range0)
+    TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap.Empty)
+
+/// 'dummy' in this context means it acts as a placeholder so other parts of the compiler will work with it.
+/// In this case, this is used to create a typed impl file based on a signature so we can emit a partial reference assembly
+///     for tooling, IDEs, etc - without having to actually check an implementation file.
+/// An example of this use would be for other .NET languages wanting cross-project referencing with F# as they require an assembly.
+let CreateDummyTypedImplFile g qualNameOfFile sigTy =
+    let exprWithSig = CreateDummyModuleOrNamespaceExprWithSig g sigTy
+    
+    let anonRecdTypeInfos = 
+        let s = freeAnonRecdTypeInfosInModuleTy sigTy
+        StampMap.Empty
+        |> s.Fold (fun x stamps -> stamps.Add(x.Stamp, x))
+
+    TypedImplFile.TImplFile(qualNameOfFile, [], exprWithSig, false, false, anonRecdTypeInfos)
+
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput, skipImplIfSigExists: bool) =
 
@@ -822,17 +958,20 @@ let TypeCheckOneInputEventually (checkForErrors, tcConfig: TcConfig, tcImports: 
               // Typecheck the implementation file
               let typeCheckOne =
                   if skipImplIfSigExists && hadSig then
-                    let dummyExpr = ModuleOrNamespaceExprWithSig.ModuleOrNamespaceExprWithSig(rootSigOpt.Value, ModuleOrNamespaceExpr.TMDefs [], range.Zero)
-                    let dummyImplFile = TypedImplFile.TImplFile(qualNameOfFile, [], dummyExpr, false, false, StampMap [])
-
-                    (EmptyTopAttrs, dummyImplFile, Unchecked.defaultof<_>, tcImplEnv, false)
+                    (EmptyTopAttrs, CreateEmptyDummyTypedImplFile qualNameOfFile rootSigOpt.Value, Unchecked.defaultof<_>, tcImplEnv, false)
                     |> Eventually.Done
                   else
                     TypeCheckOneImplFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, conditionalDefines, tcSink, tcConfig.internalTestSpanStackReferring) tcImplEnv rootSigOpt file
 
-              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
+              let! topAttrs, implFile0, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = typeCheckOne
 
-              let implFileSigType = SigTypeOfImplFile implFile
+              let implFileSigType = SigTypeOfImplFile implFile0
+
+              let implFile =
+                if tcConfig.emitMetadataAssembly = MetadataAssemblyGeneration.TestSigOfImpl then
+                    CreateDummyTypedImplFile tcGlobals qualNameOfFile implFileSigType
+                else
+                    implFile0
 
               let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 

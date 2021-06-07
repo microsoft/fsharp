@@ -27,12 +27,14 @@
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\Service\MultiProjectTests.fs" />
     <Compile Include="Compiler\Service\SignatureGenerationTests.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DeterministicTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\ComputedListExpressions.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\BooleanLogic.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ReferenceAssemblyTests.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />

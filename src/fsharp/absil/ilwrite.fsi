@@ -29,4 +29,4 @@ type options =
 val WriteILBinary: filename: string * options:  options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
 
 /// Write a binary to the given stream. Extra configuration parameters can also be specified. 
-val WriteILBinaryStreamWithNoPDB: stream: Stream * options: options * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit
+val WriteILBinaryStreamWithNoPDB: stream: Stream * options: options * referenceAssemblyOnly: bool * referenceAssemblyAttribOpt: ILAttribute option * inputModule: ILModuleDef * (ILAssemblyRef -> ILAssemblyRef) -> unit

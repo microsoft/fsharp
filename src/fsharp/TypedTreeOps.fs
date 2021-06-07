@@ -1957,11 +1957,22 @@ let unionFreeTypars s1 s2 =
     elif s2 === emptyFreeTypars then s1
     else Zset.union s1 s2
 
+let anonRecdTypeInfoOrder = 
+    { new System.Collections.Generic.IComparer<AnonRecdTypeInfo> with 
+        member x.Compare (v1: AnonRecdTypeInfo, v2: AnonRecdTypeInfo) = compare v1.Stamp v2.Stamp } 
+
+let emptyFreeAnonRecdTypeInfos = Zset.empty anonRecdTypeInfoOrder
+let unionFreeAnonRecdTypeInfos s1 s2 =
+    if s1 === emptyFreeAnonRecdTypeInfos then s2
+    elif s2 === emptyFreeAnonRecdTypeInfos then s1
+    else Zset.union s1 s2
+
 let emptyFreeTyvars =  
     { FreeTycons = emptyFreeTycons
       /// The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
-      FreeTypars = emptyFreeTypars}
+      FreeTypars = emptyFreeTypars
+      FreeAnonRecdTypeInfos = emptyFreeAnonRecdTypeInfos }
 
 let isEmptyFreeTyvars ftyvs = 
     Zset.isEmpty ftyvs.FreeTypars &&
@@ -1972,7 +1983,8 @@ let unionFreeTyvars fvs1 fvs2 =
     if fvs2 === emptyFreeTyvars then fvs1 else
     { FreeTycons = unionFreeTycons fvs1.FreeTycons fvs2.FreeTycons
       FreeTraitSolutions = unionFreeLocals fvs1.FreeTraitSolutions fvs2.FreeTraitSolutions
-      FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars }
+      FreeTypars = unionFreeTypars fvs1.FreeTypars fvs2.FreeTypars
+      FreeAnonRecdTypeInfos = unionFreeAnonRecdTypeInfos fvs1.FreeAnonRecdTypeInfos fvs2.FreeAnonRecdTypeInfos }
 
 type FreeVarOptions = 
     { canCache: bool
@@ -1982,7 +1994,8 @@ type FreeVarOptions =
       includeLocalTyconReprs: bool
       includeRecdFields: bool
       includeUnionCases: bool
-      includeLocals: bool }
+      includeLocals: bool
+      includeAnonRecdTypeInfos: bool }
       
 let CollectAllNoCaching = 
     { canCache = false
@@ -1992,7 +2005,11 @@ let CollectAllNoCaching =
       includeRecdFields = true
       includeUnionCases = true
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+
+      // REVIEW: While this options dictates that we collect all the information,
+      //         we only want to collect anonymous record information when building a dummy typed implementation file.
+      includeAnonRecdTypeInfos = false }
 
 let CollectTyparsNoCaching = 
     { canCache = false
@@ -2002,7 +2019,8 @@ let CollectTyparsNoCaching =
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false
-      includeLocals = false }
+      includeLocals = false
+      includeAnonRecdTypeInfos = false }
 
 let CollectLocalsNoCaching = 
     { canCache = false
@@ -2012,7 +2030,8 @@ let CollectLocalsNoCaching =
       includeLocalTyconReprs = false
       includeRecdFields = false 
       includeUnionCases = false
-      includeLocals = true }
+      includeLocals = true
+      includeAnonRecdTypeInfos = false }
 
 let CollectTyparsAndLocalsNoCaching = 
     { canCache = false
@@ -2022,7 +2041,8 @@ let CollectTyparsAndLocalsNoCaching =
       includeRecdFields = false 
       includeUnionCases = false
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      includeAnonRecdTypeInfos = false }
 
 let CollectAll =
     { canCache = false
@@ -2032,7 +2052,8 @@ let CollectAll =
       includeRecdFields = true 
       includeUnionCases = true
       includeTypars = true
-      includeLocals = true }
+      includeLocals = true
+      includeAnonRecdTypeInfos = false }
     
 let CollectTyparsAndLocals = // CollectAll
     { canCache = true // only cache for this one
@@ -2042,8 +2063,22 @@ let CollectTyparsAndLocals = // CollectAll
       includeLocalTycons = false
       includeLocalTyconReprs = false
       includeRecdFields = false
-      includeUnionCases = false }
+      includeUnionCases = false
 
+      // REVIEW: While this options dictates that we collect all the information,
+      //         we only want to collect anonymous record information when building a dummy typed implementation file.
+      includeAnonRecdTypeInfos = false }
+
+let CollectAnonRecdTypeInfosNoCaching =
+    { canCache = false
+      collectInTypes = true
+      includeTypars = true
+      includeLocals = true
+      includeLocalTycons = false
+      includeLocalTyconReprs = false
+      includeRecdFields = false
+      includeUnionCases = false
+      includeAnonRecdTypeInfos = true }
   
 let CollectTypars = CollectTyparsAndLocals
 
@@ -2133,7 +2168,14 @@ and accFreeTyparRef opts (tp: Typar) acc =
 and accFreeInType opts ty acc = 
     match stripTyparEqns ty with 
     | TType_tuple (tupInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts tupInfo acc)
-    | TType_anon (anonInfo, l) -> accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
+    | TType_anon (anonInfo, l) ->
+        let acc =
+            if opts.includeAnonRecdTypeInfos then
+                if Zset.contains anonInfo acc.FreeAnonRecdTypeInfos then acc
+                else { acc with FreeAnonRecdTypeInfos = Zset.add anonInfo acc.FreeAnonRecdTypeInfos }
+            else
+                acc
+        accFreeInTypes opts l (accFreeInTupInfo opts anonInfo.TupInfo acc)
     | TType_app (tc, tinst) -> 
         let acc = accFreeTycon opts tc acc
         match tinst with 
@@ -2163,11 +2205,14 @@ let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
 let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTyvars
 let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
-let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) acc =
-    QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
-      (QueueList.foldBack (fun (mspec: ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
+let rec addFreeInModuleTy (mtyp: ModuleOrNamespaceType) opts acc =
+    QueueList.foldBack (typeOfVal >> accFreeInType opts) mtyp.AllValsAndMembers
+      (QueueList.foldBack (fun (mspec: ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType opts acc) mtyp.AllEntities acc)
 
-let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
+let freeInModuleTy mtyp = addFreeInModuleTy mtyp CollectAllNoCaching emptyFreeTyvars
+
+let freeAnonRecdTypeInfosInModuleTy mtyp = 
+    (addFreeInModuleTy mtyp CollectAnonRecdTypeInfosNoCaching emptyFreeTyvars).FreeAnonRecdTypeInfos
 
 
 //--------------------------------------------------------------------------

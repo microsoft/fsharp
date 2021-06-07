@@ -34,18 +34,18 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         match x with 
         | CompPath(ILScopeRef.Local, []) -> true 
         | _ -> false
-
+    
     let (|Public|Internal|Private|) (TAccess p) = 
         match p with 
         | [] -> Public 
-        | _ when List.forall isInternalCompPath p  -> Internal 
+        | _ when List.forall isInternalCompPath p -> Internal 
         | _ -> Private
 
-    member _.IsPublic = not isProtected && match a with TAccess [] -> true | _ -> false
+    member _.IsPublic = not isProtected && (match a with TAccess [] -> true | _ -> false)
 
-    member _.IsPrivate = not isProtected && match a with Private -> true | _ -> false
+    member _.IsPrivate = not isProtected && (match a with Private -> true | _ -> false)
 
-    member _.IsInternal = not isProtected && match a with Internal -> true | _ -> false
+    member _.IsInternal = not isProtected && (match a with Internal -> true | _ -> false)
 
     member _.IsProtected = isProtected
 

@@ -51,6 +51,8 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.AbstractIL
 open System.Reflection.PortableExecutable
+open FSharp.Compiler.CreateILModule
+open FSharp.Compiler.IlxGen
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -2240,6 +2242,139 @@ type FSharpCheckProjectResults
                 files |> List.map (fun implFile -> implFile.ImplFile)
 
         FSharpAssemblyContents(tcGlobals, thisCcu, Some ccuSig, tcImports, mimpls)
+
+    member _.TryEmitMetadataOnlyAssembly(stream: Stream) =
+        match tcConfigOption with
+        | Some tcConfig ->
+            let ctok = CompilationThreadToken()
+
+            let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+
+            let topAttribs =
+                match topAttribs with
+                | Some topAttribs -> topAttribs
+                | _ -> EmptyTopAttrs
+
+            let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttribs)
+
+            // Try to find an AssemblyVersion attribute
+            let assemVerFromAttrib =
+                match AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" topAttribs.assemblyAttrs with
+                | Some v ->
+                   let v =
+                    try
+                        parseILVersion v
+                        |> Some
+                    with
+                    | _ ->
+                        None
+                   match v with
+                   | Some v ->
+                       match tcConfig.version with
+                       | VersionNone -> Some v
+                       | _ -> None
+                   | _ ->
+                    None
+                | _ -> None
+
+            let outfile = 
+                match tcConfig.outputFile with
+                | Some outfile -> outfile
+                | _ -> ""
+
+            let assemblyName =
+                match tcAssemblyData with
+                | Some data -> data.ShortAssemblyName
+                | _ -> ""
+
+            let optimizedImpls =
+                [
+                    CreateDummyTypedImplFile tcGlobals (QualifiedNameOfFile(Ident("", range0))) ccuSig
+                ]
+                |> List.map (fun x -> { ImplFile = x; OptimizeDuringCodeGen = (fun _ expr -> expr) })
+                |> TypedAssemblyAfterOptimization
+                
+            let optDataResources = []
+
+            let exportRemapping = MakeExportRemapping thisCcu thisCcu.Contents
+            let sigDataAttributes, sigDataResources =
+                try
+                    EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, thisCcu, "", (* this makes encoding in-memory *) true)
+                with _ ->
+                    [], []
+
+            let metadataVersion =
+                match tcConfig.metadataVersion with
+                | Some v -> v
+                | _ -> ""
+
+            // TAST -> IL
+            // Create the Abstract IL generator
+            let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), thisCcu)
+
+            let codegenBackend = IlWriteBackend
+
+            // Generate the Abstract IL Code
+            let codegenResults = GenerateIlxCode (codegenBackend, false, false, tcConfig, topAttribs, optimizedImpls, thisCcu.AssemblyName, ilxGenerator)
+
+            // Build the Abstract IL view of the final main module, prior to static linking
+
+            let topAssemblyAttrs = codegenResults.topAssemblyAttrs
+            let topAttrs = {topAttribs with assemblyAttrs=topAssemblyAttrs}
+            let permissionSets = codegenResults.permissionSets
+            let secDecls = mkILSecurityDecls permissionSets
+
+            let ilxMainModule =
+                MainModuleBuilder.CreateMainModule
+                    (ctok, tcConfig, tcGlobals, tcImports,
+                     None, assemblyName, outfile, topAttrs,
+                     sigDataAttributes, sigDataResources, optDataResources,
+                     codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
+
+            // Binary Writer
+
+            let normalizeAssemblyRefs (aref: ILAssemblyRef) =
+                match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with
+                | Some dllInfo ->
+                    match dllInfo.ILScopeRef with
+                    | ILScopeRef.Assembly ref -> ref
+                    | _ -> aref
+                | None -> aref
+
+            let referenceAssemblyAttribOpt =
+                tcGlobals.iltyp_ReferenceAssemblyAttributeOpt
+                |> Option.map (fun ilTy ->
+                    mkILCustomAttribute (ilTy.TypeRef, [], [], [])
+                )
+
+            try
+                ILBinaryWriter.WriteILBinaryStreamWithNoPDB
+                    (stream,
+                    { ilg = tcGlobals.ilg
+                      pdbfile=None
+                      emitTailcalls = tcConfig.emitTailcalls
+                      deterministic = tcConfig.deterministic
+                      showTimes = tcConfig.showTimes
+                      portablePDB = tcConfig.portablePDB
+                      embeddedPDB = tcConfig.embeddedPDB
+                      embedAllSource = tcConfig.embedAllSource
+                      embedSourceList = tcConfig.embedSourceList
+                      sourceLink = tcConfig.sourceLink
+                      checksumAlgorithm = tcConfig.checksumAlgorithm
+                      signer = GetStrongNameSigner signingInfo
+                      dumpDebugInfo = tcConfig.dumpDebugInfo
+                      pathMap = tcConfig.pathMap },
+                    true,
+                    referenceAssemblyAttribOpt,
+                    ilxMainModule,
+                    normalizeAssemblyRefs
+                    )
+
+                None
+            with _ ->
+                None
+        | _ ->
+            None
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =

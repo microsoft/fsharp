@@ -262,9 +262,29 @@
         <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsInvalidRefAssembly">
+        <source>Invalid use of emitting a reference assembly. Check the compiler options to not specify static linking, or using '--refonly' and '--refout' together.</source>
+        <target state="new">Invalid use of emitting a reference assembly. Check the compiler options to not specify static linking, or using '--refonly' and '--refout' together.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsInvalidRefOut">
+        <source>Invalid reference assembly path'</source>
+        <target state="new">Invalid reference assembly path'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOnly">
+        <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
+        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsRefOut">
+        <source>Produce a reference assembly with the specified file path.</source>
+        <target state="new">Produce a reference assembly with the specified file path.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

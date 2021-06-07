@@ -17,6 +17,9 @@ open System.Collections.Immutable
 open System.IO
 open System.Text
 open System.Text.RegularExpressions
+open System.Reflection
+open System.Reflection.Metadata
+open System.Reflection.PortableExecutable
 
 
 module rec Compiler =
@@ -44,7 +47,8 @@ module rec Compiler =
           SourceKind:     SourceKind
           Name:           string option
           IgnoreWarnings: bool
-          References:     CompilationUnit list }
+          References:     CompilationUnit list
+          CompileDirectory: string option }
         override this.ToString() = match this.Name with | Some n -> n | _ -> (sprintf "%A" this)
 
     type CSharpCompilationSource =
@@ -110,14 +114,15 @@ module rec Compiler =
         match source with
         | null -> failwith "Source cannot be null"
         | _ ->
-            { Source         = Text source
-              Baseline       = None
-              Options        = defaultOptions
-              OutputType     = Library
-              SourceKind     = kind
-              Name           = None
-              IgnoreWarnings = false
-              References     = [] }
+            { Source           = Text source
+              Baseline         = None
+              Options          = defaultOptions
+              OutputType       = Library
+              SourceKind       = kind
+              Name             = None
+              IgnoreWarnings   = false
+              References       = []
+              CompileDirectory = None }
 
     let private csFromString (source: string) : CSharpCompilationSource =
         match source with
@@ -167,6 +172,20 @@ module rec Compiler =
 
     let FSharp (source: string) : CompilationUnit =
         fsFromString source SourceKind.Fs |> FS
+
+    let FSharpWithInputAndOutputPath (inputFilePath: string) (outputFilePath: string) : CompilationUnit =
+        let compileDirectory = Path.GetDirectoryName(outputFilePath)
+        let name = Path.GetFileName(outputFilePath)
+        { Source           = Path(inputFilePath)
+          Baseline         = None
+          Options          = defaultOptions
+          OutputType       = Library
+          SourceKind       = SourceKind.Fs
+          Name             = Some name
+          IgnoreWarnings   = false
+          References       = []
+          CompileDirectory = Some compileDirectory }
+        |> FS
 
     let CSharp (source: string) : CompilationUnit =
         csFromString source |> CS
@@ -305,7 +324,12 @@ module rec Compiler =
 
         let references = processReferences fsSource.References
 
-        let compilation = Compilation.Create(source, sourceKind, output, options, references)
+        let compilation = 
+            match fsSource.CompileDirectory with
+            | Some compileDirectory ->
+                Compilation.Create(source, sourceKind, output, options, references, compileDirectory)
+            | _ ->
+                Compilation.Create(source, sourceKind, output, options, references)
 
         compileFSharpCompilation compilation fsSource.IgnoreWarnings
 
@@ -364,6 +388,27 @@ module rec Compiler =
         | FS fs -> compileFSharp fs
         | CS cs -> compileCSharp cs
         | _ -> failwith "TODO"
+
+    let private getAssemblyInBytes (result: TestResult) =
+        match result with
+        | Success output ->
+            match output.OutputPath with
+            | Some filePath -> File.ReadAllBytes(filePath)
+            | _ -> failwith "Output path not found."
+        | _ ->
+            failwith "Compilation has errors."
+
+    let compileGuid (cUnit: CompilationUnit) : Guid =
+        let bytes =
+            compile cUnit
+            |> shouldSucceed
+            |> getAssemblyInBytes
+
+        use reader1 = new PEReader(bytes.ToImmutableArray())
+        let reader1 = reader1.GetMetadataReader()
+
+        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+        
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : TestResult =
         let source = getSource fsSource.Source

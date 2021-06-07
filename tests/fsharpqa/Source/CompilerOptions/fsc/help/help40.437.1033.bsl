@@ -39,6 +39,9 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          signature files
 --nocopyfsharpcore                       Don't copy FSharp.Core.dll along the
                                          produced binaries
+--refonly[+|-]                           Produce a reference assembly, instead of a full assembly, as the primary
+                                         output
+--refout:<file>                          Produce a reference assembly with the specified file path.
 
 
 		- INPUT FILES -
