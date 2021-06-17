@@ -4053,6 +4053,11 @@ minusExpr:
   | AMP_AMP  minusExpr   
       { SynExpr.AddressOf (false, $2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range) } 
 
+  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType DOT atomicExprQualification 
+      { errorR (Error (FSComp.SR.parsNewExprMemberAccess (), rhs parseState 6))
+        let newExpr = SynExpr.New (false, $2, $4, unionRanges (rhs parseState 1) $4.Range)
+        $6 newExpr (lhs parseState) (rhs parseState 5) }
+
   | NEW atomTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
       { SynExpr.New (false, $2, $4, unionRanges (rhs parseState 1) $4.Range) }
 
