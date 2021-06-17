@@ -4,6 +4,7 @@ namespace rec FSharp.Compiler.Syntax
 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 
 /// Represents an identifier in F# code
 [<Struct; NoEquality; NoComparison>]
@@ -151,6 +152,10 @@ type SynConst =
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
     | Measure of constant: SynConst * constantRange: range * SynMeasure
+    
+    /// Source Line, File, and Path Identifiers
+    /// Containing both the original value as the evaluated value.
+    | SourceIdentifier of constant: string * value: string * range: Range
 
     /// Gets the syntax range of this construct
     member Range: dflt: range -> range
@@ -231,7 +236,6 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    // Used for "use" and "for"
     | Body
     | No
 
@@ -247,6 +251,7 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
+    | Body
     | No
 
 /// Represents whether a debug point should be present for the 'for' in a 'for...' loop,
@@ -1406,6 +1411,9 @@ type SynMemberSig =
     | NestedType of
         nestedType: SynTypeDefnSig *
         range: range
+
+    /// Gets the syntax range of this construct
+    member Range: range
 
 /// Represents the kind of a type definition whether explicit or inferred
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

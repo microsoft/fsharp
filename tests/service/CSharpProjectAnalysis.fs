@@ -14,28 +14,29 @@ open FsUnit
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 
-let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
+let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlags) =
     let otherFlags = defaultArg otherFlags []
     let libDirs = defaultArg libDirs []
     let base1 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base1, ".dll")
     let fileName1 = Path.ChangeExtension(base1, ".fs")
     let projFileName = Path.ChangeExtension(base1, ".fsproj")
-    File.WriteAllText(fileName1, content)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(content)
     let options =
         checker.GetProjectOptionsFromCommandLineArgs(projFileName,
-            [| yield "--debug:full" 
-               yield "--define:DEBUG" 
-               yield "--optimize-" 
+            [| yield "--debug:full"
+               yield "--define:DEBUG"
+               yield "--optimize-"
                yield "--out:" + dllName
-               yield "--doc:test.xml" 
-               yield "--warn:3" 
-               yield "--fullpaths" 
-               yield "--flaterrors" 
-               yield "--target:library" 
+               yield "--doc:test.xml"
+               yield "--warn:3"
+               yield "--fullpaths"
+               yield "--flaterrors"
+               yield "--target:library"
                for dllFile in dllFiles do
                  yield "-r:"+dllFile
                for libDir in libDirs do
@@ -57,16 +58,16 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
 
 [<Test>]
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-let ``Test that csharp references are recognized as such`` () = 
+let ``Test that csharp references are recognized as such`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
     let assembly = table.["CSharp_Analysis"]
-    let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
+    let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass")
     Assert.True search.IsSome
     let found = search.Value
     // this is no F# thing
     found.IsFSharp |> shouldEqual false
-        
+
     // Check that we have members
     let members = found.MembersFunctionsAndValues |> Seq.map (fun e -> e.CompiledName, e) |> dict
     members.ContainsKey ".ctor" |> shouldEqual true
@@ -93,7 +94,7 @@ let ``Test that csharp references are recognized as such`` () =
 
 [<Test>]
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-let ``Test that symbols of csharp inner classes/enums are reported`` () = 
+let ``Test that symbols of csharp inner classes/enums are reported`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
 module NestedEnumClass
@@ -106,7 +107,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
     let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
     results.GetAllUsesOfAllSymbols()
     |> Array.map (fun su -> su.Symbol.ToString())
-    |> shouldEqual 
+    |> shouldEqual
           [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "InnerEnum";
             "CSharpOuterClass"; "field Case1"; "InnerClass"; "CSharpOuterClass";
             "member StaticMember"; "NestedEnumClass"|]
@@ -126,7 +127,7 @@ let _ = CSharpClass(0)
             results.GetAllUsesOfAllSymbols()
             |> Seq.map (fun su -> su.Symbol)
             |> Seq.find (function :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsConstructor | _ -> false)
-    match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with 
+    match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with
     | Some e ->
         let members = e.MembersFunctionsAndValues
         Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True

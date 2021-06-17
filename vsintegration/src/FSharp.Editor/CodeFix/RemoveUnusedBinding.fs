@@ -9,36 +9,6 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Syntax
-open FSharp.Compiler.Text
-
-[<AutoOpen>]
-module FSharpParseFileResultsExtensions =
-    type FSharpParseFileResults with
-        member this.TryRangeOfBindingWithHeadPatternWithPos pos =
-            let input = this.ParseTree
-            SyntaxTraversal.Traverse(pos, input, { new SyntaxVisitorBase<_>() with 
-                member _.VisitExpr(_, _, defaultTraverse, expr) =
-                    defaultTraverse expr
-
-                override _.VisitBinding(_path, defaultTraverse, binding) =
-                    match binding with
-                    | SynBinding(_, SynBindingKind.Normal, _, _, _, _, _, pat, _, _, _, _) as binding ->
-                        if Position.posEq binding.RangeOfHeadPattern.Start pos then
-                            Some binding.RangeOfBindingWithRhs
-                        else
-                            // Check if it's an operator
-                            match pat with
-                            | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) when id.idText.StartsWith("op_") ->
-                                if Position.posEq id.idRange.Start pos then
-                                    Some binding.RangeOfBindingWithRhs
-                                else
-                                    defaultTraverse binding
-                            | _ -> defaultTraverse binding
-
-                    | _ -> defaultTraverse binding })
-
 [<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedBinding"); Shared>]
 type internal FSharpRemoveUnusedBindingCodeFixProvider
     [<ImportingConstructor>]

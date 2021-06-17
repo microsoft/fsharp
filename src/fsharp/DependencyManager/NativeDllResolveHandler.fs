@@ -9,6 +9,7 @@ open System.Reflection
 open System.Runtime.InteropServices
 open Internal.Utilities
 open Internal.Utilities.FSharpEnvironment
+open FSharp.Compiler.IO
 
 /// Signature for Native library resolution probe callback
 /// host implements this, it's job is to return a list of package roots to probe.
@@ -67,7 +68,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
             // Look for name in root
             probingFileNames name |> Array.tryPick(fun name ->
                 let path = Path.Combine(root, "runtimes", rid, "native", name)
-                if File.Exists(path) then
+                if FileSystem.FileExistsShim(path) then
                     Some path
                 else
                     None)
@@ -80,7 +81,7 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
                 |> Seq.tryPick(fun root ->
                     probingFileNames name |> Seq.tryPick(fun name ->
                         let path = Path.Combine(root, name)
-                        if File.Exists(path) then
+                        if FileSystem.FileExistsShim(path) then
                             Some path
                         else
                             RidHelpers.probingRids |> Seq.tryPick(fun rid -> probeForNativeLibrary root rid name)))
@@ -93,8 +94,8 @@ type NativeDllResolveHandlerCoreClr (nativeProbingRoots: NativeResolutionProbe) 
     //public event Func<Assembly, string, IntPtr> ResolvingUnmanagedDll
     let assemblyLoadContextType: Type = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", false)
     let eventInfo, handler, defaultAssemblyLoadContext =
-        assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"), 
-        Func<Assembly, string, IntPtr> (resolveUnmanagedDll), 
+        assemblyLoadContextType.GetEvent("ResolvingUnmanagedDll"),
+        Func<Assembly, string, IntPtr> (resolveUnmanagedDll),
         assemblyLoadContextType.GetProperty("Default", BindingFlags.Static ||| BindingFlags.Public).GetValue(null, null)
 
     do eventInfo.AddEventHandler(defaultAssemblyLoadContext, handler)

@@ -19,7 +19,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TcGlobals
@@ -197,7 +197,7 @@ module Impl =
             
 
     let getXmlDocSigForEntity (cenv: SymbolEnv) (ent:EntityRef)=
-        match SymbolHelpers.GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
+        match GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -762,7 +762,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member x.ActivePatternCases =
         protect <| fun () -> 
-            ActivePatternElemsOfModuleOrNamespace x.Entity
+            ActivePatternElemsOfModuleOrNamespace cenv.g x.Entity
             |> Map.toList
             |> List.map (fun (_, apref) ->
                 let item = Item.ActivePatternCase apref
@@ -810,7 +810,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
 
     member this.TryGetMetadataText() =
         match entity.TryDeref with
-        | ValueSome entity ->
+        | ValueSome _ ->
             if entity.IsNamespace then None
             else
 
@@ -886,7 +886,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                 [
                     (Layout.(^^) headerL (Layout.sepL TaggedText.lineBreak))
                     (Layout.(^^) openL (Layout.sepL TaggedText.lineBreak))
-                    (NicePrint.layoutEntity denv infoReader AccessibleFromSomewhere range0 entity)
+                    (NicePrint.layoutEntityRef denv infoReader AccessibleFromSomewhere range0 entity)
                 ]
             |> LayoutRender.showL
             |> SourceText.ofString
@@ -955,7 +955,7 @@ type FSharpUnionCase(cenv, v: UnionCaseRef) =
     member _.XmlDocSig = 
         checkIsResolved()
         let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-        match SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase with
+        match GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -1130,12 +1130,12 @@ type FSharpField(cenv: SymbolEnv, d: FSharpFieldData)  =
             match d with 
             | RecdOrClass v -> 
                 let recd = RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                SymbolHelpers.GetXmlDocSigOfRecdFieldInfo recd
+                GetXmlDocSigOfRecdFieldRef recd.RecdFieldRef
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
-                SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase
+                GetXmlDocSigOfUnionCaseRef unionCase.UnionCaseRef
             | ILField f -> 
-                SymbolHelpers.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
+                GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
             | AnonField _ -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1272,7 +1272,7 @@ type FSharpActivePatternCase(cenv, apinfo: PrettyNaming.ActivePatternInfo, ty, n
     member _.XmlDocSig = 
         let xmlsig = 
             match valOpt with
-            | Some valref -> SymbolHelpers.GetXmlDocSigOfValRef cenv.g valref
+            | Some valref -> GetXmlDocSigOfValRef cenv.g valref
             | None -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1961,23 +1961,23 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e ->
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfEvent cenv.infoReader range e with
+            match GetXmlDocSigOfEvent cenv.infoReader range e with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | P p ->
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfProp cenv.infoReader range p with
+            match GetXmlDocSigOfProp cenv.infoReader range p with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | M m | C m -> 
             let range = defaultArg sym.DeclarationLocationOpt range0
-            match SymbolHelpers.GetXmlDocSigOfMethInfo cenv.infoReader range m with
+            match GetXmlDocSigOfMethInfo cenv.infoReader range m with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | V v ->
             match v.DeclaringEntity with 
             | Parent entityRef -> 
-                match SymbolHelpers.GetXmlDocSigOfScopedValRef cenv.g entityRef v with
+                match GetXmlDocSigOfScopedValRef cenv.g entityRef v with
                 | Some (_, docsig) -> docsig
                 | _ -> ""
             | ParentNone -> "" 
@@ -2540,7 +2540,7 @@ type FSharpAttribute(cenv: SymbolEnv, attrib: AttribInfo) =
             | AttribInfo.FSAttribInfo(g, attrib) ->
                 NicePrint.stringOfFSAttrib (context.Contents g) attrib
             | AttribInfo.ILAttribInfo (g, _, _scoref, cattr, _) -> 
-                let parms, _args = decodeILAttribData g.ilg cattr 
+                let parms, _args = decodeILAttribData cattr 
                 NicePrint.stringOfILAttrib (context.Contents g) (cattr.Method.DeclaringType, parms)
 
     member _.Range = attrib.Range

@@ -42,11 +42,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat lists = Microsoft.FSharp.Primitives.Basics.List.concat lists
 
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =
-            match list with
-            | [] -> []
-            | _ ->
-
+        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (projection:'T->'SafeKey) (getKey:'SafeKey->'Key) (list:'T list) =            
             let dict = Dictionary comparer
             let rec loop srcList  =
                 match srcList with
@@ -67,9 +63,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
-            if typeof<'Key>.IsValueType
-                then countByValueType projection list
-                else countByRefType   projection list
+            match list with
+            | [] -> []
+            | _ ->
+                if typeof<'Key>.IsValueType
+                    then countByValueType projection list
+                    else countByRefType   projection list
 
         [<CompiledName("Map")>]
         let map mapping list = Microsoft.FSharp.Primitives.Basics.List.map mapping list
@@ -440,9 +439,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (projection:'T->'Key) (list:'T list) =
-            if typeof<'Key>.IsValueType
-                then groupByValueType projection list
-                else groupByRefType   projection list
+            match list with
+            | [] -> []
+            | _ ->
+                if typeof<'Key>.IsValueType
+                    then groupByValueType projection list
+                    else groupByRefType   projection list
 
         [<CompiledName("Partition")>]
         let partition predicate list = Microsoft.FSharp.Primitives.Basics.List.partition predicate list

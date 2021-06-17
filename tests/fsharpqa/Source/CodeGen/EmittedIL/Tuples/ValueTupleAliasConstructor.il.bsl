@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,12 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:5:0:0
-}
-.assembly extern System.ValueTuple
-{
-  .publickeytoken = (CC 7B 13 FF CD 2D DD 51 )                         // .{...-.Q
-  .ver 4:0:1:0
+  .ver 5:0:0:0
 }
 .assembly ValueTupleAliasConstructor
 {
@@ -34,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.ValueTupleAliasConstructor
 {
-  // Offset: 0x00000000 Length: 0x000001EA
+  // Offset: 0x00000000 Length: 0x000001E0
 }
 .mresource public FSharpOptimizationData.ValueTupleAliasConstructor
 {
-  // Offset: 0x000001F0 Length: 0x00000061
+  // Offset: 0x000001E8 Length: 0x00000061
 }
 .module ValueTupleAliasConstructor.exe
-// MVID: {5B9C53DD-A8CF-BB34-A745-0383DD539C5B}
+// MVID: {60B68B97-A8CF-BB34-A745-0383978BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01B00000
+// Image base: 0x00B60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -71,11 +66,11 @@
     // Code size       9 (0x9)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 9,22 'c:\\kevinransom\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Tuples\\ValueTupleAliasConstructor.fs'
+    .line 3,3 : 9,22 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Tuples\\ValueTupleAliasConstructor.fs'
     IL_0000:  ldc.i4.2
     IL_0001:  ldc.i4.2
-    IL_0002:  newobj     instance void valuetype [System.ValueTuple]System.ValueTuple`2<int32,int32>::.ctor(!0,
-                                                                                                            !1)
+    IL_0002:  newobj     instance void valuetype [mscorlib]System.ValueTuple`2<int32,int32>::.ctor(!0,
+                                                                                                   !1)
     IL_0007:  pop
     IL_0008:  ret
   } // end of method $ValueTupleAliasConstructor::main@

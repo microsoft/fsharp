@@ -101,7 +101,6 @@ type internal FSharpLanguageServiceTestable() as this =
             match checkerContainerOpt with
             | Some container -> 
                 let checker = container
-                checker.StopBackgroundCompile()
                 checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             | None -> ()
             
@@ -225,4 +224,4 @@ type internal FSharpLanguageServiceTestable() as this =
     //
     // This is for unit testing only
     member this.WaitForBackgroundCompile() =
-        this.FSharpChecker.WaitForBackgroundCompile()
+        ()

@@ -24,7 +24,7 @@ type NameResolver =
     member languageSupportsNameOf: bool
 
 /// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
-val ActivePatternElemsOfModuleOrNamespace: ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
+val ActivePatternElemsOfModuleOrNamespace: g: TcGlobals -> ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
@@ -50,7 +50,7 @@ type Item =
     | UnionCase of UnionCaseInfo * hasRequireQualifiedAccessAttr: bool
 
     /// Represents the resolution of a name to an F# active pattern result.
-    | ActivePatternResult of ActivePatternInfo * TType * int  * range
+    | ActivePatternResult of apinfo: ActivePatternInfo * apOverallTy: TType * index: int * range: range
 
     /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
     | ActivePatternCase of ActivePatternElemRef 
@@ -229,7 +229,7 @@ val internal AddFakeNamedValRefToNameEnv: string -> NameResolutionEnv -> ValRef 
 val internal AddFakeNameToNameEnv: string -> NameResolutionEnv -> Item -> NameResolutionEnv
 
 /// Add a single F# value to the environment.
-val internal AddValRefToNameEnv               : NameResolutionEnv -> ValRef -> NameResolutionEnv
+val internal AddValRefToNameEnv: TcGlobals -> NameResolutionEnv -> ValRef -> NameResolutionEnv
 
 /// Add active pattern result tags to the environment.
 val internal AddActivePatternResultTagsToNameEnv: ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv

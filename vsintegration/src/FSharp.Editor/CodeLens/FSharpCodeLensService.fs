@@ -44,7 +44,7 @@ type internal FSharpCodeLensService
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
         buffer: ITextBuffer, 
-        checker: FSharpChecker,
+        checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<FSharpClassificationTypeMap>,
@@ -54,6 +54,7 @@ type internal FSharpCodeLensService
 
     let lineLens = codeLens
     let userOpName = "FSharpCodeLensService"
+    let checker = checkerProvider.Checker
 
     let visit pos parseTree = 
         SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
@@ -193,7 +194,7 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()        
                                 typeLayout |> Seq.iter taggedText.Add
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
-                                let navigation = QuickInfoNavigation(statusBar, checker, projectInfoManager, document, realPosition)
+                                let navigation = QuickInfoNavigation(statusBar, checkerProvider, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 

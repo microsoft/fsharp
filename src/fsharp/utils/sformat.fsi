@@ -281,6 +281,12 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         /// Join broken with ident=2 
         val ( @@-- ): layout1:Layout -> layout2:Layout -> Layout   
+        
+        /// Join broken with ident=3 
+        val (@@---): layout1:Layout -> layout2:Layout -> Layout  
+            
+            /// Join broken with ident=4
+        val (@@----): layout1:Layout -> layout2:Layout -> Layout  
 
         /// Join layouts into a comma separated list.
         val commaListL: layouts:Layout list -> Layout

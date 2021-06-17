@@ -191,7 +191,7 @@ and accDiscrim cenv env d =
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
     | DecisionTreeTest.IsInst (srcty, tgty) -> accTy cenv env srcty; accTy cenv env tgty
-    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _) -> 
+    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
     | DecisionTreeTest.Error _ -> ()

@@ -443,9 +443,8 @@ module Structure =
             | SynBindingKind.Normal ->
                 let collapse = Range.endToEnd binding.RangeOfBindingWithoutRhs binding.RangeOfBindingWithRhs
                 match memberFlags with
-                | Some ({MemberKind=SynMemberKind.Constructor}) ->
-                    let collapse = Range.startToEnd expr.Range br
-                    rcheck Scope.New Collapse.Below br collapse
+                | Some {MemberKind=SynMemberKind.Constructor} ->
+                    rcheck Scope.New Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | Some _ ->
                     rcheck Scope.Member Collapse.Below binding.RangeOfBindingWithRhs collapse
                 | None ->

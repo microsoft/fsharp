@@ -1,0 +1,47 @@
+<Project>
+
+  <PropertyGroup>
+    <GitHubRepositoryName>fsharp</GitHubRepositoryName>
+    <SourceBuildManagedOnly>true</SourceBuildManagedOnly>
+  </PropertyGroup>
+
+  <Target Name="ApplySourceBuildPatchFiles"
+          Condition="
+            '$(ArcadeBuildFromSource)' == 'true' and
+            '$(ArcadeInnerBuildFromSource)' == 'true'"
+          BeforeTargets="Execute">
+    <ItemGroup>
+      <SourceBuildPatchFile Include="$(RepositoryEngineeringDir)source-build-patches\*.patch" />
+    </ItemGroup>
+
+    <Exec
+      Command="git apply --ignore-whitespace --whitespace=nowarn &quot;%(SourceBuildPatchFile.FullPath)&quot;"
+      WorkingDirectory="$(RepoRoot)"
+      Condition="'@(SourceBuildPatchFile)' != ''" />
+  </Target>
+
+  <!--
+    The build script passes in the full path of the sln to build.  This must be overridden in order to build
+    the cloned source in the inner build.
+  -->
+  <Target Name="ConfigureInnerBuildArg" BeforeTargets="GetSourceBuildCommandConfiguration">
+    <PropertyGroup>
+      <InnerBuildArgs>$(InnerBuildArgs) /p:Projects="$(InnerSourceBuildRepoRoot)\FSharp.sln"</InnerBuildArgs>
+    </PropertyGroup>
+  </Target>
+
+  <!--
+    The build script bootstraps some tooling for the build.  Since the inner build is triggerred via msbuild,
+    trigger the bootstrapping for the inner build.
+  -->
+  <Target Name="BuildBootstrap"
+          DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
+          BeforeTargets="RunInnerSourceBuildCommand">
+
+    <Exec
+      Command="./build.sh --bootstrap --skipBuild"
+      WorkingDirectory="$(InnerSourceBuildRepoRoot)"
+      EnvironmentVariables="@(InnerBuildEnv)" />
+  </Target>
+
+</Project>

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 5:0:0:0
 }
 .assembly StructUnion01
 {
@@ -25,20 +25,20 @@
 }
 .mresource public FSharpSignatureData.StructUnion01
 {
-  // Offset: 0x00000000 Length: 0x0000087E
+  // Offset: 0x00000000 Length: 0x0000087A
 }
 .mresource public FSharpOptimizationData.StructUnion01
 {
-  // Offset: 0x00000888 Length: 0x00000421
+  // Offset: 0x00000880 Length: 0x00000421
 }
 .module StructUnion01.dll
-// MVID: {5B1ED843-D3E9-6B24-A745-038343D81E5B}
+// MVID: {60B6A4C9-D3E9-6B24-A745-0383C9A4B660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x017F0000
+// Image base: 0x06CE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -374,15 +374,14 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       52 (0x34)
+      // Code size       54 (0x36)
       .maxstack  4
       .locals init (valuetype StructUnion01/U V_0)
       IL_0000:  ldarg.1
       IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StructUnion01/U>(object)
       IL_0006:  brtrue.s   IL_000a
 
-      IL_0008:  ldc.i4.0
-      IL_0009:  ret
+      IL_0008:  br.s       IL_0034
 
       IL_000a:  ldarg.1
       IL_000b:  unbox.any  StructUnion01/U
@@ -404,6 +403,9 @@
 
       IL_0032:  ldc.i4.0
       IL_0033:  ret
+
+      IL_0034:  ldc.i4.0
+      IL_0035:  ret
     } // end of method U::Equals
 
     .method public hidebysig virtual final 
@@ -435,20 +437,22 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       23 (0x17)
+      // Code size       25 (0x19)
       .maxstack  8
       IL_0000:  ldarg.1
       IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StructUnion01/U>(object)
       IL_0006:  brtrue.s   IL_000a
 
-      IL_0008:  ldc.i4.0
-      IL_0009:  ret
+      IL_0008:  br.s       IL_0017
 
       IL_000a:  ldarg.0
       IL_000b:  ldarg.1
       IL_000c:  unbox.any  StructUnion01/U
       IL_0011:  call       instance bool StructUnion01/U::Equals(valuetype StructUnion01/U)
       IL_0016:  ret
+
+      IL_0017:  ldc.i4.0
+      IL_0018:  ret
     } // end of method U::Equals
 
     .property instance int32 Tag()
@@ -504,31 +508,33 @@
 
   .method public static int32  g3(valuetype StructUnion01/U x) cil managed
   {
-    // Code size       42 (0x2a)
+    // Code size       44 (0x2c)
     .maxstack  8
     IL_0000:  ldarga.s   x
     IL_0002:  ldfld      int32 StructUnion01/U::item1
     IL_0007:  ldc.i4.3
     IL_0008:  sub
     IL_0009:  switch     ( 
-                          IL_0022)
-    IL_0012:  ldarga.s   x
-    IL_0014:  ldfld      int32 StructUnion01/U::item1
-    IL_0019:  ldarga.s   x
-    IL_001b:  ldfld      int32 StructUnion01/U::item2
-    IL_0020:  add
-    IL_0021:  ret
+                          IL_0014)
+    IL_0012:  br.s       IL_001c
 
-    IL_0022:  ldarga.s   x
-    IL_0024:  ldfld      int32 StructUnion01/U::item2
-    IL_0029:  ret
+    IL_0014:  ldarga.s   x
+    IL_0016:  ldfld      int32 StructUnion01/U::item2
+    IL_001b:  ret
+
+    IL_001c:  ldarga.s   x
+    IL_001e:  ldfld      int32 StructUnion01/U::item1
+    IL_0023:  ldarga.s   x
+    IL_0025:  ldfld      int32 StructUnion01/U::item2
+    IL_002a:  add
+    IL_002b:  ret
   } // end of method StructUnion01::g3
 
   .method public static int32  g4(valuetype StructUnion01/U x,
                                   valuetype StructUnion01/U y) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       126 (0x7e)
+    // Code size       128 (0x80)
     .maxstack  6
     .locals init (int32 V_0,
              int32 V_1,
@@ -539,54 +545,56 @@
     IL_0007:  ldc.i4.3
     IL_0008:  sub
     IL_0009:  switch     ( 
-                          IL_003a)
-    IL_0012:  ldarga.s   y
-    IL_0014:  ldfld      int32 StructUnion01/U::item2
-    IL_0019:  stloc.0
-    IL_001a:  ldarga.s   y
-    IL_001c:  ldfld      int32 StructUnion01/U::item1
-    IL_0021:  stloc.1
-    IL_0022:  ldarga.s   x
-    IL_0024:  ldfld      int32 StructUnion01/U::item2
-    IL_0029:  stloc.2
-    IL_002a:  ldarga.s   x
-    IL_002c:  ldfld      int32 StructUnion01/U::item1
-    IL_0031:  stloc.3
-    IL_0032:  ldloc.3
-    IL_0033:  ldloc.2
-    IL_0034:  add
-    IL_0035:  ldloc.1
-    IL_0036:  add
-    IL_0037:  ldloc.0
-    IL_0038:  add
-    IL_0039:  ret
+                          IL_0014)
+    IL_0012:  br.s       IL_0058
 
-    IL_003a:  ldarga.s   y
-    IL_003c:  ldfld      int32 StructUnion01/U::item1
-    IL_0041:  ldc.i4.5
-    IL_0042:  sub
-    IL_0043:  switch     ( 
-                          IL_006e)
-    IL_004c:  ldarga.s   y
-    IL_004e:  ldfld      int32 StructUnion01/U::item2
-    IL_0053:  ldarga.s   y
-    IL_0055:  ldfld      int32 StructUnion01/U::item1
-    IL_005a:  ldarga.s   x
-    IL_005c:  ldfld      int32 StructUnion01/U::item2
-    IL_0061:  ldarga.s   x
-    IL_0063:  ldfld      int32 StructUnion01/U::item1
-    IL_0068:  stloc.3
-    IL_0069:  stloc.2
-    IL_006a:  stloc.1
-    IL_006b:  stloc.0
-    IL_006c:  br.s       IL_0032
+    IL_0014:  ldarga.s   y
+    IL_0016:  ldfld      int32 StructUnion01/U::item1
+    IL_001b:  ldc.i4.5
+    IL_001c:  sub
+    IL_001d:  switch     ( 
+                          IL_0048)
+    IL_0026:  ldarga.s   y
+    IL_0028:  ldfld      int32 StructUnion01/U::item2
+    IL_002d:  ldarga.s   y
+    IL_002f:  ldfld      int32 StructUnion01/U::item1
+    IL_0034:  ldarga.s   x
+    IL_0036:  ldfld      int32 StructUnion01/U::item2
+    IL_003b:  ldarga.s   x
+    IL_003d:  ldfld      int32 StructUnion01/U::item1
+    IL_0042:  stloc.3
+    IL_0043:  stloc.2
+    IL_0044:  stloc.1
+    IL_0045:  stloc.0
+    IL_0046:  br.s       IL_0078
 
-    IL_006e:  ldarga.s   x
-    IL_0070:  ldfld      int32 StructUnion01/U::item2
-    IL_0075:  ldarga.s   y
-    IL_0077:  ldfld      int32 StructUnion01/U::item2
+    IL_0048:  ldarga.s   x
+    IL_004a:  ldfld      int32 StructUnion01/U::item2
+    IL_004f:  ldarga.s   y
+    IL_0051:  ldfld      int32 StructUnion01/U::item2
+    IL_0056:  add
+    IL_0057:  ret
+
+    IL_0058:  ldarga.s   y
+    IL_005a:  ldfld      int32 StructUnion01/U::item2
+    IL_005f:  stloc.0
+    IL_0060:  ldarga.s   y
+    IL_0062:  ldfld      int32 StructUnion01/U::item1
+    IL_0067:  stloc.1
+    IL_0068:  ldarga.s   x
+    IL_006a:  ldfld      int32 StructUnion01/U::item2
+    IL_006f:  stloc.2
+    IL_0070:  ldarga.s   x
+    IL_0072:  ldfld      int32 StructUnion01/U::item1
+    IL_0077:  stloc.3
+    IL_0078:  ldloc.3
+    IL_0079:  ldloc.2
+    IL_007a:  add
+    IL_007b:  ldloc.1
     IL_007c:  add
-    IL_007d:  ret
+    IL_007d:  ldloc.0
+    IL_007e:  add
+    IL_007f:  ret
   } // end of method StructUnion01::g4
 
   .method public static int32  f1(valuetype StructUnion01/U& x) cil managed
@@ -615,31 +623,33 @@
 
   .method public static int32  f3(valuetype StructUnion01/U& x) cil managed
   {
-    // Code size       38 (0x26)
+    // Code size       40 (0x28)
     .maxstack  8
     IL_0000:  ldarg.0
     IL_0001:  ldfld      int32 StructUnion01/U::item1
     IL_0006:  ldc.i4.3
     IL_0007:  sub
     IL_0008:  switch     ( 
-                          IL_001f)
-    IL_0011:  ldarg.0
-    IL_0012:  ldfld      int32 StructUnion01/U::item1
-    IL_0017:  ldarg.0
-    IL_0018:  ldfld      int32 StructUnion01/U::item2
-    IL_001d:  add
-    IL_001e:  ret
+                          IL_0013)
+    IL_0011:  br.s       IL_001a
 
-    IL_001f:  ldarg.0
-    IL_0020:  ldfld      int32 StructUnion01/U::item2
-    IL_0025:  ret
+    IL_0013:  ldarg.0
+    IL_0014:  ldfld      int32 StructUnion01/U::item2
+    IL_0019:  ret
+
+    IL_001a:  ldarg.0
+    IL_001b:  ldfld      int32 StructUnion01/U::item1
+    IL_0020:  ldarg.0
+    IL_0021:  ldfld      int32 StructUnion01/U::item2
+    IL_0026:  add
+    IL_0027:  ret
   } // end of method StructUnion01::f3
 
   .method public static int32  f4(valuetype StructUnion01/U& x,
                                   valuetype StructUnion01/U& y) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       146 (0x92)
+    // Code size       148 (0x94)
     .maxstack  6
     .locals init (valuetype StructUnion01/U V_0,
              valuetype StructUnion01/U V_1,
@@ -658,54 +668,56 @@
     IL_0015:  ldc.i4.3
     IL_0016:  sub
     IL_0017:  switch     ( 
-                          IL_004c)
-    IL_0020:  ldloca.s   V_1
-    IL_0022:  ldfld      int32 StructUnion01/U::item2
-    IL_0027:  stloc.2
-    IL_0028:  ldloca.s   V_1
-    IL_002a:  ldfld      int32 StructUnion01/U::item1
-    IL_002f:  stloc.3
-    IL_0030:  ldloca.s   V_0
-    IL_0032:  ldfld      int32 StructUnion01/U::item2
-    IL_0037:  stloc.s    V_4
-    IL_0039:  ldloca.s   V_0
-    IL_003b:  ldfld      int32 StructUnion01/U::item1
-    IL_0040:  stloc.s    V_5
-    IL_0042:  ldloc.s    V_5
-    IL_0044:  ldloc.s    V_4
-    IL_0046:  add
-    IL_0047:  ldloc.3
-    IL_0048:  add
-    IL_0049:  ldloc.2
-    IL_004a:  add
-    IL_004b:  ret
+                          IL_0022)
+    IL_0020:  br.s       IL_0068
 
-    IL_004c:  ldloca.s   V_1
-    IL_004e:  ldfld      int32 StructUnion01/U::item1
-    IL_0053:  ldc.i4.5
-    IL_0054:  sub
-    IL_0055:  switch     ( 
-                          IL_0082)
-    IL_005e:  ldloca.s   V_1
-    IL_0060:  ldfld      int32 StructUnion01/U::item2
-    IL_0065:  ldloca.s   V_1
-    IL_0067:  ldfld      int32 StructUnion01/U::item1
-    IL_006c:  ldloca.s   V_0
-    IL_006e:  ldfld      int32 StructUnion01/U::item2
-    IL_0073:  ldloca.s   V_0
-    IL_0075:  ldfld      int32 StructUnion01/U::item1
-    IL_007a:  stloc.s    V_5
-    IL_007c:  stloc.s    V_4
-    IL_007e:  stloc.3
-    IL_007f:  stloc.2
-    IL_0080:  br.s       IL_0042
+    IL_0022:  ldloca.s   V_1
+    IL_0024:  ldfld      int32 StructUnion01/U::item1
+    IL_0029:  ldc.i4.5
+    IL_002a:  sub
+    IL_002b:  switch     ( 
+                          IL_0058)
+    IL_0034:  ldloca.s   V_1
+    IL_0036:  ldfld      int32 StructUnion01/U::item2
+    IL_003b:  ldloca.s   V_1
+    IL_003d:  ldfld      int32 StructUnion01/U::item1
+    IL_0042:  ldloca.s   V_0
+    IL_0044:  ldfld      int32 StructUnion01/U::item2
+    IL_0049:  ldloca.s   V_0
+    IL_004b:  ldfld      int32 StructUnion01/U::item1
+    IL_0050:  stloc.s    V_5
+    IL_0052:  stloc.s    V_4
+    IL_0054:  stloc.3
+    IL_0055:  stloc.2
+    IL_0056:  br.s       IL_008a
 
-    IL_0082:  ldloca.s   V_0
-    IL_0084:  ldfld      int32 StructUnion01/U::item2
-    IL_0089:  ldloca.s   V_1
-    IL_008b:  ldfld      int32 StructUnion01/U::item2
+    IL_0058:  ldloca.s   V_0
+    IL_005a:  ldfld      int32 StructUnion01/U::item2
+    IL_005f:  ldloca.s   V_1
+    IL_0061:  ldfld      int32 StructUnion01/U::item2
+    IL_0066:  add
+    IL_0067:  ret
+
+    IL_0068:  ldloca.s   V_1
+    IL_006a:  ldfld      int32 StructUnion01/U::item2
+    IL_006f:  stloc.2
+    IL_0070:  ldloca.s   V_1
+    IL_0072:  ldfld      int32 StructUnion01/U::item1
+    IL_0077:  stloc.3
+    IL_0078:  ldloca.s   V_0
+    IL_007a:  ldfld      int32 StructUnion01/U::item2
+    IL_007f:  stloc.s    V_4
+    IL_0081:  ldloca.s   V_0
+    IL_0083:  ldfld      int32 StructUnion01/U::item1
+    IL_0088:  stloc.s    V_5
+    IL_008a:  ldloc.s    V_5
+    IL_008c:  ldloc.s    V_4
+    IL_008e:  add
+    IL_008f:  ldloc.3
     IL_0090:  add
-    IL_0091:  ret
+    IL_0091:  ldloc.2
+    IL_0092:  add
+    IL_0093:  ret
   } // end of method StructUnion01::f4
 
 } // end of class StructUnion01

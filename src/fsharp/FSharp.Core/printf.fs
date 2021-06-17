@@ -724,7 +724,7 @@ module internal PrintfImpl =
             else 
                 fun (v: obj) -> noJustificationCore (f v) true (isPositive v) prefix
 
-    /// contains functions to handle left\right and no justification case for numbers
+    /// contains functions to handle left/right and no justification case for numbers
     module Integer =
     
         let eliminateNative (v: obj) = 
@@ -821,21 +821,27 @@ module internal PrintfImpl =
                 (rightJustify f prefix padChar isUnsigned)
 
         let getValueConverter (spec: FormatSpecifier) : ValueConverter =
-            let c = spec.TypeChar
-            if c = 'd' || c = 'i' then
+            match spec.TypeChar with
+            | 'd' | 'i' ->
                 withPadding spec false toString
-            elif c = 'u' then
+            | 'u' ->
                 withPadding spec true  (toUnsigned >> toString) 
-            elif c = 'x' then
+            | 'x' ->
                 withPadding spec true (toFormattedString "x")
-            elif c = 'X' then
+            | 'X' ->
                 withPadding spec true (toFormattedString "X")
-            elif c = 'o' then
+            | 'o' ->
                 withPadding spec true (fun (v: obj) ->
+                    // Convert.ToInt64 throws for uint64 with values above int64 range so cast directly
                     match toUnsigned v with 
                     | :? uint64 as u -> Convert.ToString(int64 u, 8)
                     | u -> Convert.ToString(Convert.ToInt64 u, 8))
-            else raise (ArgumentException())    
+            | 'B' ->
+                withPadding spec true (fun (v: obj) ->
+                    match toUnsigned v with 
+                    | :? uint64 as u -> Convert.ToString(int64 u, 2)
+                    | u -> Convert.ToString(Convert.ToInt64 u, 2))
+            | _ -> invalidArg (nameof spec) "Invalid integer format"
     
     module FloatAndDecimal = 
 
@@ -982,7 +988,7 @@ module internal PrintfImpl =
             Basic.withPadding spec (fun (c: obj) -> (unbox<char> c).ToString())
         | 'M'  ->
             FloatAndDecimal.withPadding spec (fun _ -> "G") "G" // %M ignores precision
-        | 'd' | 'i' | 'x' | 'X' | 'u' | 'o'-> 
+        | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' -> 
             Integer.getValueConverter spec
         | 'e' | 'E' 
         | 'f' | 'F' 

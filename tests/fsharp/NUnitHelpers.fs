@@ -2,6 +2,9 @@ namespace NUnit.Framework
 
 module Assert =
 
+    [<assembly: Parallelizable(ParallelScope.All)>]
+    do()
+
     let inline fail message = Assert.Fail message
 
     let inline failf fmt = Printf.kprintf fail fmt

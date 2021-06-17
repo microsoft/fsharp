@@ -94,7 +94,7 @@ type ContextInfo =
 type OverloadInformation = 
     {
         methodSlot: CalledMeth<Expr>
-        amap : ImportMap
+        infoReader: InfoReader
         error: exn
     }
 

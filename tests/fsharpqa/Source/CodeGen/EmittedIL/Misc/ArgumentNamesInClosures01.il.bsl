@@ -36,13 +36,13 @@
   // Offset: 0x000003A0 Length: 0x0000010D
 }
 .module ArgumentNamesInClosures01.dll
-// MVID: {5FCFFD09-39CA-41B5-A745-038309FDCF5F}
+// MVID: {60B68B7F-39CA-41B5-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05A70000
+// Image base: 0x00EF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

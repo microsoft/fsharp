@@ -64,7 +64,7 @@ module internal ProjectFile =
     let findIncludesFromResolutions (resolutions:Resolution[]) =
         let managedRoots =
             resolutions
-            |> Array.filter(fun r -> 
+            |> Array.filter(fun r ->
                 not(String.IsNullOrEmpty(r.NugetPackageId) ||
                     String.IsNullOrEmpty(r.PackageRoot)) &&
                 Directory.Exists(r.PackageRoot))
@@ -136,6 +136,8 @@ $(POUND_R)
     <TargetFramework>$(TARGETFRAMEWORK)</TargetFramework>
     <RuntimeIdentifier>$(RUNTIMEIDENTIFIER)</RuntimeIdentifier>
     <IsPackable>false</IsPackable>
+    <_NETCoreSdkIsPreview>false</_NETCoreSdkIsPreview>                      <!-- Disable preview FSharp.Core for legacy DotNet Sdks -->
+    <DisableFSharpCorePreviewCheck>true</DisableFSharpCorePreviewCheck>     <!-- Disable preview FSharp.Core current DotNet Sdks    -->
 
     <!-- Disable automagic FSharp.Core resolution when not using with FSharp scripts -->
     <DisableImplicitFSharpCoreReference Condition="'$(SCRIPTEXTENSION)' != '.fsx'">true</DisableImplicitFSharpCoreReference>
@@ -273,8 +275,8 @@ $(PACKAGEREFERENCES)
           KeepDuplicates="false" />
     </ItemGroup>
 
-    <WriteLinesToFile Lines='@(ResolvedReferenceLines)' 
-                      File='$(MSBuildProjectFullPath).resolvedReferences.paths' 
+    <WriteLinesToFile Lines='@(ResolvedReferenceLines)'
+                      File='$(MSBuildProjectFullPath).resolvedReferences.paths'
                       Overwrite='True' WriteOnlyWhenDifferent='True' />
   </Target>
 

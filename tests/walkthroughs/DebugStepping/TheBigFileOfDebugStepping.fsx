@@ -168,6 +168,24 @@ let ListExpressionSteppingTest6 () =
             printfn "goodbye"
             yield x ]
 
+let ListExpressionSteppingTest7 () = 
+    [ for x in 1..4 do
+            printfn "hello"
+            yield x ]
+
+let ListExpressionSteppingTest8 () = 
+    [ for x in 1..4 do
+        match x with 
+        | 1 -> 
+            printfn "hello"
+            yield x 
+        | 2 -> 
+            printfn "hello"
+            yield x 
+        | _ -> 
+            yield x 
+        ]
+
 let SeqExpressionSteppingTest1 () = 
     seq { yield 1 }
 
@@ -674,6 +692,8 @@ ListExpressionSteppingTest3()
 ListExpressionSteppingTest4()
 ListExpressionSteppingTest5()
 ListExpressionSteppingTest6()
+ListExpressionSteppingTest7()
+ListExpressionSteppingTest8()
 SeqExpressionSteppingTest1()|> Seq.length
 SeqExpressionSteppingTest2()|> Seq.length
 SeqExpressionSteppingTest3()|> Seq.length

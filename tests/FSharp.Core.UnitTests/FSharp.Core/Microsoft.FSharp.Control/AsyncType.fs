@@ -250,10 +250,14 @@ type AsyncType() =
             let! result = tcs.Task |> Async.AwaitTask
             return result }
 
-        try
-            Async.RunSynchronously(a, cancellationToken = cts.Token)
-                |> ignore
-        with :? OperationCanceledException as o -> ()
+        let cancelled =
+            try
+                Async.RunSynchronously(a, cancellationToken = cts.Token) |> ignore
+                false
+            with :? OperationCanceledException as o -> true
+                 | _ -> false
+
+        Assert.True (cancelled, "Task is not cancelled")
 
     [<Fact>]
     member this.ExceptionPropagatesToTask () =
@@ -433,7 +437,7 @@ type AsyncType() =
                 let! s1 = Async.AwaitTask(t)
                 return s = s1
             }
-        Async.RunSynchronously(a, 1000) |> Assert.True
+        Async.RunSynchronously(a) |> Assert.True
 
     [<Fact>]
     member this.AwaitTaskCancellation () =
@@ -486,9 +490,10 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 1000) |> Assert.True
+        Async.RunSynchronously(a) |> Assert.True
 
-    [<Fact>]
+    // test is flaky: https://github.com/dotnet/fsharp/issues/11586
+    //[<Fact>]
     member this.TaskAsyncValueCancellation () =
         use ewh = new ManualResetEvent(false)
         let cts = new CancellationTokenSource()
@@ -500,10 +505,16 @@ type AsyncType() =
 #endif
           Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
-        let a = async {
+        let a = 
+            async {
+                try
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
+                // AwaitTask raises TaskCanceledException when it is canceled, it is a valid result of this test
+                with
+                   :? TaskCanceledException -> 
+                      ewh.Set() |> ignore // this is ok
             }
         Async.Start a
         cts.Cancel()
@@ -522,7 +533,7 @@ type AsyncType() =
                 do! Async.AwaitTask(t)
                 return true
             }
-        let result =Async.RunSynchronously(a, 1000)
+        let result =Async.RunSynchronously(a)
         (!hasBeenCalled && result) |> Assert.True
 
     [<Fact>]
@@ -539,7 +550,7 @@ type AsyncType() =
                     return false
                 with e -> return true
               }
-        Async.RunSynchronously(a, 3000) |> Assert.True
+        Async.RunSynchronously(a) |> Assert.True
 
     [<Fact>]
     member this.NonGenericTaskAsyncValueCancellation () =
@@ -552,10 +563,16 @@ type AsyncType() =
         use t =
 #endif
             Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
-        let a = async {
+        let a =
+            async {
+                try
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
                     let! v = Async.AwaitTask(t)
                     return v
+                // AwaitTask raises TaskCanceledException when it is canceled, it is a valid result of this test
+                with
+                   :? TaskCanceledException -> 
+                      ewh.Set() |> ignore // this is ok
             }
         Async.Start a
         cts.Cancel()

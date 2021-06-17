@@ -488,12 +488,9 @@ let report f =
 
 let deprecatedWithError s m = errorR(Deprecated(s, m))
 
-// Note: global state, but only for compiling FSharp.Core.dll
-let mutable reportLibraryOnlyFeatures = true
+let libraryOnlyError m = errorR(LibraryUseOnly m)
 
-let libraryOnlyError m = if reportLibraryOnlyFeatures then errorR(LibraryUseOnly m)
-
-let libraryOnlyWarning m = if reportLibraryOnlyFeatures then warning(LibraryUseOnly m)
+let libraryOnlyWarning m = warning(LibraryUseOnly m)
 
 let deprecatedOperator m = deprecatedWithError (FSComp.SR.elDeprecatedOperator()) m
 

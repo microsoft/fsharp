@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Struct01
 {
-  // Offset: 0x00000000 Length: 0x0000079F
+  // Offset: 0x00000000 Length: 0x000007A1
 }
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
   // Offset: 0x000007A8 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
-// MVID: {5F1FA087-05F6-D6CB-A745-038387A01F5F}
+// MVID: {60B68B90-05F6-D6CB-A745-0383908BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x053B0000
+// Image base: 0x05BE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -77,7 +77,7 @@
       .locals init ([0] valuetype StaticInit_Struct01/C& V_0,
                [1] class [mscorlib]System.Collections.IComparer V_1)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 4,4 : 6,7 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
+      .line 4,4 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Struct01.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -229,32 +229,28 @@
     .method assembly static int32  f() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       41 (0x29)
+      // Code size       37 (0x25)
       .maxstack  8
       .line 7,7 : 23,37 ''
       IL_0000:  volatile.
       IL_0002:  ldsfld     int32 StaticInit_Struct01/C::init@4
       IL_0007:  ldc.i4.1
-      IL_0008:  bge.s      IL_000c
-
-      IL_000a:  br.s       IL_000e
-
-      IL_000c:  br.s       IL_0017
+      IL_0008:  bge.s      IL_0013
 
       .line 100001,100001 : 0,0 ''
-      IL_000e:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+      IL_000f:  nop
+      .line 100001,100001 : 0,0 ''
+      IL_0010:  nop
+      IL_0011:  br.s       IL_0014
+
+      .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      .line 100001,100001 : 0,0 ''
-      IL_0014:  nop
-      IL_0015:  br.s       IL_0018
-
-      .line 100001,100001 : 0,0 ''
-      IL_0017:  nop
-      IL_0018:  ldsfld     int32 StaticInit_Struct01/C::x
-      IL_001d:  ldstr      "2"
-      IL_0022:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-      IL_0027:  add
-      IL_0028:  ret
+      IL_0014:  ldsfld     int32 StaticInit_Struct01/C::x
+      IL_0019:  ldstr      "2"
+      IL_001e:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+      IL_0023:  add
+      IL_0024:  ret
     } // end of method C::f
 
     .method public hidebysig virtual final 

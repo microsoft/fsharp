@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly NoBoxingOnDispose01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.NoBoxingOnDispose01
 {
-  // Offset: 0x00000000 Length: 0x0000021A
+  // Offset: 0x00000000 Length: 0x00000216
 }
 .mresource public FSharpOptimizationData.NoBoxingOnDispose01
 {
   // Offset: 0x00000220 Length: 0x0000007F
 }
 .module NoBoxingOnDispose01.exe
-// MVID: {59B19213-4EA9-C934-A745-03831392B159}
+// MVID: {60B68B7F-4EA9-C934-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00590000
+// Image base: 0x06C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,7 +60,7 @@
              [2] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_2,
              [3] !!T a)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 3,16 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\NoBoxingOnDispose01.fs'
+    .line 6,6 : 3,16 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\NoBoxingOnDispose01.fs'
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     .line 6,6 : 3,16 ''

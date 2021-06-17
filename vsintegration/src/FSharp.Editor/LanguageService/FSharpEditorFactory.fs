@@ -26,6 +26,9 @@ module Constants =
     [<Literal>]
     let FSharpEditorFactoryPhysicalViewAttributes = 2
 
+    [<Literal>]
+    let FSharpAnalysisSaveFileHandler = "FSharp Analysis Save File Handler"
+
 [<Guid(Constants.FSharpEditorFactoryIdString)>]
 type FSharpEditorFactory(parentPackage: ShellPackage) =
 

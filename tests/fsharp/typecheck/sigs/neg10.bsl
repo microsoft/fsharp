@@ -15,7 +15,7 @@ neg10.fs(16,32,16,34): typecheck error FS1207: Interfaces inherited by other int
 
 neg10.fs(17,28,17,30): typecheck error FS0887: The type 'C1' is not an interface type
 
-neg10.fs(19,17,19,28): typecheck error FS0870: Structs cannot have an object constructor with no arguments. This is a restriction imposed on all CLI languages as structs automatically support a default constructor.
+neg10.fs(19,17,19,22): typecheck error FS0870: Structs cannot have an object constructor with no arguments. This is a restriction imposed on all CLI languages as structs automatically support a default constructor.
 
 neg10.fs(21,16,21,46): typecheck error FS0001: A generic construct requires that the type 'System.Enum' have a public default constructor
 

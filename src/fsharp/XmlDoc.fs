@@ -1,14 +1,19 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.Syntax
+namespace FSharp.Compiler.Xml
 
 open System
+open System.IO
+open System.Xml
 open System.Xml.Linq
 open Internal.Utilities.Library
+open Internal.Utilities.Collections
 open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.AbstractIL.IL
 
 /// Represents collected XmlDoc lines
 [<RequireQualifiedAccess>]
@@ -20,7 +25,7 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             let lineAT = lineA.TrimStart([|' '|])
             if lineAT = "" then processLines rest
             elif lineAT.StartsWithOrdinal("<") then lines
-            else 
+            else
                 ["<summary>"] @
                 (lines |> List.map Internal.Utilities.XmlAdapters.escape) @
                 ["</summary>"]
@@ -39,16 +44,16 @@ type XmlDoc(unprocessedLines: string[], range: range) =
     member _.Range = range
 
     static member Empty = XmlDocStatics.Empty
-    
+
     member _.IsEmpty =
         unprocessedLines  |> Array.forall String.IsNullOrWhiteSpace
 
     member doc.NonEmpty = not doc.IsEmpty
-    
-    static member Merge (doc1: XmlDoc) (doc2: XmlDoc) = 
+
+    static member Merge (doc1: XmlDoc) (doc2: XmlDoc) =
         XmlDoc(Array.append doc1.UnprocessedLines doc2.UnprocessedLines,
                unionRanges doc1.Range doc2.Range)
-    
+
     member doc.GetXmlText() =
         if doc.IsEmpty then ""
         else
@@ -61,29 +66,29 @@ type XmlDoc(unprocessedLines: string[], range: range) =
             let xml =
                 XDocument.Parse("<doc>\n"+doc.GetXmlText()+"\n</doc>",
                     LoadOptions.SetLineInfo ||| LoadOptions.PreserveWhitespace)
-                
-            // The parameter names are checked for consistency, so parameter references and 
+
+            // The parameter names are checked for consistency, so parameter references and
             // parameter documentation must match an actual parameter.  In addition, if any parameters
             // have documentation then all parameters must have documentation
-            match paramNamesOpt with 
+            match paramNamesOpt with
             | None -> ()
-            | Some paramNames -> 
+            | Some paramNames ->
                 for p in xml.Descendants(XName.op_Implicit "param") do
-                    match p.Attribute(XName.op_Implicit "name") with 
-                    | null -> 
+                    match p.Attribute(XName.op_Implicit "name") with
+                    | null ->
                         warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
-                    | attr -> 
+                    | attr ->
                         let nm = attr.Value
                         if not (paramNames |> List.contains nm) then
                             warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
 
-                let paramsWithDocs = 
+                let paramsWithDocs =
                     [ for p in xml.Descendants(XName.op_Implicit "param") do
-                        match p.Attribute(XName.op_Implicit "name") with 
+                        match p.Attribute(XName.op_Implicit "name") with
                         | null -> ()
                         | attr -> attr.Value ]
 
-                if paramsWithDocs.Length > 0 then 
+                if paramsWithDocs.Length > 0 then
                     for p in paramNames do
                         if not (paramsWithDocs |> List.contains p) then
                             warning (Error (FSComp.SR.xmlDocMissingParameter(p), doc.Range))
@@ -94,38 +99,38 @@ type XmlDoc(unprocessedLines: string[], range: range) =
                     warning (Error (FSComp.SR.xmlDocDuplicateParameter(d), doc.Range))
 
                 for pref in xml.Descendants(XName.op_Implicit "paramref") do
-                    match pref.Attribute(XName.op_Implicit "name") with 
+                    match pref.Attribute(XName.op_Implicit "name") with
                     | null -> warning (Error (FSComp.SR.xmlDocMissingParameterName(), doc.Range))
-                    | attr -> 
+                    | attr ->
                         let nm = attr.Value
                         if not (paramNames |> List.contains nm) then
                             warning (Error (FSComp.SR.xmlDocInvalidParameterName(nm), doc.Range))
 
-        with e -> 
+        with e ->
             warning (Error (FSComp.SR.xmlDocBadlyFormed(e.Message), doc.Range))
 
 #if CREF_ELABORATION
     member doc.Elaborate (crefResolver) =
-                for see in seq { yield! xml.Descendants(XName.op_Implicit "see") 
+                for see in seq { yield! xml.Descendants(XName.op_Implicit "see")
                                  yield! xml.Descendants(XName.op_Implicit "seealso")
                                  yield! xml.Descendants(XName.op_Implicit "exception") } do
-                    match see.Attribute(XName.op_Implicit "cref") with 
+                    match see.Attribute(XName.op_Implicit "cref") with
                     | null -> warning (Error (FSComp.SR.xmlDocMissingCrossReference(), doc.Range))
-                    | attr -> 
+                    | attr ->
                         let cref = attr.Value
-                        if cref.StartsWith("T:") || cref.StartsWith("P:") || cref.StartsWith("M:") || 
-                           cref.StartsWith("E:") || cref.StartsWith("F:") then 
+                        if cref.StartsWith("T:") || cref.StartsWith("P:") || cref.StartsWith("M:") ||
+                           cref.StartsWith("E:") || cref.StartsWith("F:") then
                             ()
                         else
-                            match crefResolver cref with 
+                            match crefResolver cref with
                             | None ->
                                 warning (Error (FSComp.SR.xmlDocUnresolvedCrossReference(nm), doc.Range))
-                            | Some text -> 
+                            | Some text ->
                                 attr.Value <- text
                                 modified <- true
-                if modified then 
-                    let m = doc.Range 
-                    let newLines = 
+                if modified then
+                    let m = doc.Range
+                    let newLines =
                         [| for e in xml.Elements() do
                              yield! e.ToString().Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries)  |]
                     lines <-  newLines
@@ -196,11 +201,11 @@ type PreXmlDoc =
             let preLines = collector.LinesBefore pos
             if preLines.Length = 0 then
                 XmlDoc.Empty
-            else 
+            else
                 let lines = Array.map fst preLines
                 let m = Array.reduce Range.unionRanges (Array.map snd preLines)
                 let doc = XmlDoc (lines, m)
-                if check then 
+                if check then
                    doc.Check(paramNamesOpt)
                 doc
 
@@ -214,3 +219,61 @@ type PreXmlDoc =
 
     static member Merge a b = PreXmlMerge (a, b)
 
+[<Sealed>]
+type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option) =
+
+    // 2 and 4 are arbitrary but should be reasonable enough
+    [<Literal>]
+    static let cacheStrongSize = 2
+    [<Literal>]
+    static let cacheMaxSize = 4
+    static let cacheAreSimilar =
+        fun ((str1: string, dt1: DateTime), (str2: string, dt2: DateTime)) ->
+            str1.Equals(str2, StringComparison.OrdinalIgnoreCase) &&
+            dt1 = dt2
+    static let cache = AgedLookup<unit, string * DateTime, XmlDocument>(keepStrongly=cacheStrongSize, areSimilar=cacheAreSimilar, keepMax=cacheMaxSize)
+
+    let tryGetSummaryNode xmlDocSig =
+        tryGetXmlDocument()
+        |> Option.bind (fun doc ->
+            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" xmlDocSig) with
+            | null -> None
+            | node when node.HasChildNodes -> Some node
+            | _ -> None)
+
+    member _.TryGetXmlDocBySig(xmlDocSig: string) =
+        tryGetSummaryNode xmlDocSig
+        |> Option.map (fun node ->
+            let childNodes = node.ChildNodes
+            let lines = Array.zeroCreate childNodes.Count
+            for i = 0 to childNodes.Count - 1 do
+                let childNode = childNodes.[i]
+                lines.[i] <- childNode.OuterXml
+            XmlDoc(lines, range0)
+        )
+
+    static member TryCreateFromFile(xmlFileName: string) =
+        if not (FileSystem.FileExistsShim(xmlFileName)) || not (String.Equals(Path.GetExtension(xmlFileName), ".xml", StringComparison.OrdinalIgnoreCase)) then
+            None
+        else
+            let tryGetXmlDocument =
+                fun () ->
+                    try
+                        let lastWriteTime = FileSystem.GetLastWriteTimeShim(xmlFileName)
+                        let cacheKey = (xmlFileName, lastWriteTime)
+                        match cache.TryGet((), cacheKey) with
+                        | Some doc -> Some doc
+                        | _ ->
+                            let doc = XmlDocument()
+                            use xmlStream = FileSystem.OpenFileForReadShim(xmlFileName)
+                            doc.Load(xmlStream)
+                            cache.Put((), cacheKey, doc)
+                            Some doc
+                    with
+                    | _ ->
+                        None
+            Some(XmlDocumentationInfo(tryGetXmlDocument))
+
+type IXmlDocumentationInfoLoader =
+
+    abstract TryLoad : assemblyFileName: string * ILModuleDef -> XmlDocumentationInfo option

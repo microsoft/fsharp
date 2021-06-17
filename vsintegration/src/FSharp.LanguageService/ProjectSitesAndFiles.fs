@@ -286,7 +286,7 @@ type internal ProjectSitesAndFiles() =
                    match tryGetOptionsForReferencedProject projectFileName with 
                    | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSiteProvider.GetProjectSite(), serviceProvider, projectFileName, useUniqueStamp) |> snd
                    | Some options -> options
-               yield projectFileName, (outputPath, referencedProjectOptions) |]
+               yield projectFileName, FSharpReferencedProject.CreateFSharp(outputPath, referencedProjectOptions) |]
 
     and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, fileName, useUniqueStamp) =
         let referencedProjectFileNames, referencedProjectOptions = 

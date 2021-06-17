@@ -5,6 +5,7 @@ module internal FSharp.Compiler.AbstractIL.ILAsciiWriter
 open System.IO
 open System.Reflection
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Library
 
@@ -194,20 +195,20 @@ and goutput_typ env os ty =
 
   | ILType.Byref typ -> goutput_typ env os typ; output_string os "&"
   | ILType.Ptr typ -> goutput_typ env os typ; output_string   os "*"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_SByte.TypeSpec.Name -> output_string os "int8"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int16.TypeSpec.Name -> output_string os "int16"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int32.TypeSpec.Name -> output_string os "int32"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Int64.TypeSpec.Name -> output_string os "int64"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_IntPtr.TypeSpec.Name -> output_string os "native int"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Byte.TypeSpec.Name -> output_string os "unsigned int8"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt16.TypeSpec.Name -> output_string os "unsigned int16"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt32.TypeSpec.Name -> output_string os "unsigned int32"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UInt64.TypeSpec.Name -> output_string os "unsigned int64"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_UIntPtr.TypeSpec.Name -> output_string os "native unsigned int"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Double.TypeSpec.Name -> output_string os "float64"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Single.TypeSpec.Name -> output_string os "float32"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Bool.TypeSpec.Name -> output_string os "bool"
-  | ILType.Value tspec when tspec.Name = EcmaMscorlibILGlobals.typ_Char.TypeSpec.Name -> output_string os "char"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_SByte.TypeSpec.Name -> output_string os "int8"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Int16.TypeSpec.Name -> output_string os "int16"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Int32.TypeSpec.Name -> output_string os "int32"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Int64.TypeSpec.Name -> output_string os "int64"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_IntPtr.TypeSpec.Name -> output_string os "native int"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Byte.TypeSpec.Name -> output_string os "unsigned int8"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_UInt16.TypeSpec.Name -> output_string os "unsigned int16"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_UInt32.TypeSpec.Name -> output_string os "unsigned int32"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_UInt64.TypeSpec.Name -> output_string os "unsigned int64"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_UIntPtr.TypeSpec.Name -> output_string os "native unsigned int"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Double.TypeSpec.Name -> output_string os "float64"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Single.TypeSpec.Name -> output_string os "float32"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Bool.TypeSpec.Name -> output_string os "bool"
+  | ILType.Value tspec when tspec.Name = PrimaryAssemblyILGlobals.typ_Char.TypeSpec.Name -> output_string os "char"
   | ILType.Value tspec ->
       output_string os "value class "
       goutput_tref env os tspec.TypeRef
@@ -498,7 +499,7 @@ let output_custom_attr_data os data =
 let goutput_custom_attr env os (attr: ILAttribute) =
   output_string os " .custom "
   goutput_mspec env os attr.Method
-  let data = getCustomAttrData env.ilGlobals attr
+  let data = getCustomAttrData attr
   output_custom_attr_data os data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
@@ -729,7 +730,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(typ, shape))
         output_string os ".ctor"
         let rank = shape.Rank
-        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
+        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) PrimaryAssemblyILGlobals.typ_Int32)
   | I_stelem_any (shape, dt)     ->
       if shape = ILArrayShape.SingleDimensional then
         output_string os "stelem.any "; goutput_typ env os dt
@@ -738,7 +739,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(dt, shape))
         output_string os "Set"
         let rank = shape.Rank
-        let arr = Array.create (rank + 1) EcmaMscorlibILGlobals.typ_Int32
+        let arr = Array.create (rank + 1) PrimaryAssemblyILGlobals.typ_Int32
         arr.[rank] <- dt
         output_parens (output_array ", " (goutput_typ env)) os arr
   | I_ldelem_any (shape, tok) ->
@@ -751,7 +752,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok, shape))
         output_string os "Get"
         let rank = shape.Rank
-        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
+        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) PrimaryAssemblyILGlobals.typ_Int32)
   | I_ldelema   (ro, _, shape, tok)  ->
       if ro = ReadonlyAddress then output_string os "readonly. "
       if shape = ILArrayShape.SingleDimensional then
@@ -763,7 +764,7 @@ let rec goutput_instr env os inst =
         goutput_dlocref env os (mkILArrTy(tok, shape))
         output_string os "Address"
         let rank = shape.Rank
-        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) EcmaMscorlibILGlobals.typ_Int32)
+        output_parens (output_array ", " (goutput_typ env)) os (Array.create ( rank) PrimaryAssemblyILGlobals.typ_Int32)
 
   | I_box       tok     -> output_string os "box "; goutput_typ env os tok
   | I_unbox     tok     -> output_string os "unbox "; goutput_typ env os tok

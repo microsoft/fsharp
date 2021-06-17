@@ -92,13 +92,6 @@ namespace FSharp.Compiler.Diagnostics
         /// Get the captured diagnostics
         member GetDiagnostics: unit -> (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
-    /// This represents the global state established as each task function runs as part of the build.
-    ///
-    /// Use to reset error and warning handlers.
-    type internal CompilationGlobalsScope =
-        new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
-        interface IDisposable
-
     module internal DiagnosticHelpers = 
         val ReportDiagnostic: FSharpDiagnosticOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpDiagnosticSeverity) * suggestNames: bool -> FSharpDiagnostic list
 
@@ -114,7 +107,7 @@ namespace FSharp.Compiler.Symbols
     open FSharp.Compiler.InfoReader
     open FSharp.Compiler.Syntax
     open FSharp.Compiler.Text
-    open FSharp.Compiler.Text
+    open FSharp.Compiler.Xml
     open FSharp.Compiler.TypedTree
     open FSharp.Compiler.TypedTreeOps
 
@@ -136,24 +129,6 @@ namespace FSharp.Compiler.Symbols
     // Implementation details used by other code in the compiler    
     module internal SymbolHelpers =
         val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
-
-        val GetXmlDocSigOfEntityRef : InfoReader -> range -> EntityRef -> (string option * string) option
-
-        val GetXmlDocSigOfScopedValRef : TcGlobals -> TyconRef -> ValRef -> (string option * string) option
-
-        val GetXmlDocSigOfILFieldInfo : InfoReader -> range -> ILFieldInfo -> (string option * string) option
-
-        val GetXmlDocSigOfRecdFieldInfo : RecdFieldInfo -> (string option * string) option
-
-        val GetXmlDocSigOfUnionCaseInfo : UnionCaseInfo -> (string option * string) option
-
-        val GetXmlDocSigOfMethInfo : InfoReader -> range -> MethInfo -> (string option * string) option
-
-        val GetXmlDocSigOfValRef : TcGlobals -> ValRef -> (string option * string) option
-
-        val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
-
-        val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
 
         val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
 

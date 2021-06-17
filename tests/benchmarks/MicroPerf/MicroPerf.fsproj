@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
+    <OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+    <!-- Turn off "Experimental" -->
+    <OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+    <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
+    <OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
+
+    <!-- By default this project will compile with the proto compiler -->
+    <!-- Uncommenting this will build with a previous installed compiler  -->
+    <!--
+    <FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Benchmarks.fs" />
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="CS\MicroPerfCSharp.csproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.12.1" />
+  </ItemGroup>
+
+</Project>

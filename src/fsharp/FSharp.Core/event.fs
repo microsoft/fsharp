@@ -10,6 +10,19 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open System.Reflection
     open System.Diagnostics
+    
+    module private Atomic =
+        open System.Threading
+
+        let inline setWith (thunk: 'a -> 'a) (value: byref<'a>) =
+            let mutable exchanged = false
+            let mutable oldValue = value
+            while not exchanged do
+                let comparand = oldValue
+                let newValue = thunk comparand
+                oldValue <- Interlocked.CompareExchange(&value, newValue, comparand)
+                if obj.ReferenceEquals(comparand, oldValue) then
+                    exchanged <- true
 
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() = 
@@ -21,9 +34,9 @@ namespace Microsoft.FSharp.Control
         member x.Publish = 
             { new IDelegateEvent<'Delegate> with 
                 member x.AddHandler(d) =
-                    multicast <- System.Delegate.Combine(multicast, d)
-                member x.RemoveHandler(d) = 
-                    multicast <- System.Delegate.Remove(multicast, d) }
+                    Atomic.setWith (fun value -> System.Delegate.Combine(value, d)) &multicast
+                member x.RemoveHandler(d) =
+                    Atomic.setWith (fun value -> System.Delegate.Remove(value, d)) &multicast }
     
     type EventDelegee<'Args>(observer: System.IObserver<'Args>) =
         static let makeTuple = 
@@ -54,7 +67,7 @@ namespace Microsoft.FSharp.Control
     type EventWrapper<'Delegate,'Args> = delegate of 'Delegate * obj * 'Args -> unit
 
     [<CompiledName("FSharpEvent`2")>]
-    type Event<'Delegate, 'Args when 'Delegate : delegate<'Args, unit> and 'Delegate :> System.Delegate>() =  
+    type Event<'Delegate, 'Args when 'Delegate : delegate<'Args, unit> and 'Delegate :> System.Delegate and 'Delegate: not struct>() =  
 
         let mutable multicast : 'Delegate = Unchecked.defaultof<_>     
 
@@ -85,6 +98,8 @@ namespace Microsoft.FSharp.Control
                 mi                
 
         member x.Trigger(sender:obj,args: 'Args) = 
+            // Copy multicast value into local variable to avoid changing during member call. 
+            let multicast = multicast
             match box multicast with 
             | null -> () 
             | _ -> 
@@ -102,9 +117,9 @@ namespace Microsoft.FSharp.Control
                   member x.ToString() = "<published event>"
               interface IEvent<'Delegate,'Args> with 
                 member e.AddHandler(d) =
-                    multicast <- System.Delegate.Combine(multicast, d) :?> 'Delegate 
+                    Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> 'Delegate) &multicast
                 member e.RemoveHandler(d) = 
-                    multicast <- System.Delegate.Remove(multicast, d)  :?> 'Delegate 
+                    Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> 'Delegate) &multicast
               interface System.IObservable<'Args> with 
                 member e.Subscribe(observer) = 
                    let obj = new EventDelegee<'Args>(observer)
@@ -128,9 +143,9 @@ namespace Microsoft.FSharp.Control
                   member x.ToString() = "<published event>"
               interface IEvent<'T> with 
                 member e.AddHandler(d) =
-                    x.multicast <- (System.Delegate.Combine(x.multicast, d) :?> Handler<'T>)
+                    Atomic.setWith (fun value -> System.Delegate.Combine(value, d) :?> Handler<'T>) &x.multicast
                 member e.RemoveHandler(d) = 
-                    x.multicast <- (System.Delegate.Remove(x.multicast, d) :?> Handler<'T>)
+                    Atomic.setWith (fun value -> System.Delegate.Remove(value, d) :?> Handler<'T>) &x.multicast
               interface System.IObservable<'T> with 
                 member e.Subscribe(observer) = 
                    let h = new Handler<_>(fun sender args -> observer.OnNext(args))

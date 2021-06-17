@@ -98,8 +98,8 @@ type AttribInfo =
                     let ty = tyOfExpr g origExpr
                     let obj = evalFSharpAttribArg g evaluatedExpr
                     ty, obj) 
-         | ILAttribInfo (g, amap, scoref, cattr, m) -> 
-              let parms, _args = decodeILAttribData g.ilg cattr 
+         | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
+              let parms, _args = decodeILAttribData cattr 
               [ for (argty, argval) in Seq.zip cattr.Method.FormalArgTypes parms ->
                     let ty = ImportILType scoref amap m [] argty
                     let obj = evalILAttribElem argval
@@ -113,8 +113,8 @@ type AttribInfo =
                     let ty = tyOfExpr g origExpr
                     let obj = evalFSharpAttribArg g evaluatedExpr
                     ty, nm, isField, obj) 
-         | ILAttribInfo (g, amap, scoref, cattr, m) -> 
-              let _parms, namedArgs = decodeILAttribData g.ilg cattr 
+         | ILAttribInfo (_g, amap, scoref, cattr, m) -> 
+              let _parms, namedArgs = decodeILAttribData cattr 
               [ for (nm, argty, isProp, argval) in namedArgs ->
                     let ty = ImportILType scoref amap m [] argty
                     let obj = evalILAttribElem argval
@@ -198,7 +198,7 @@ let TryBindMethInfoAttribute g (m: range) (AttribInfo(atref, _) as attribSpec) m
     ignore f3
 #endif
     BindMethInfoAttributes m minfo 
-        (fun ilAttribs -> TryDecodeILAttribute g atref ilAttribs |> Option.bind f1)
+        (fun ilAttribs -> TryDecodeILAttribute atref ilAttribs |> Option.bind f1)
         (fun fsAttribs -> TryFindFSharpAttribute g attribSpec fsAttribs |> Option.bind f2)
 #if !NO_EXTENSIONTYPING
         (fun provAttribs -> 
@@ -230,7 +230,7 @@ let MethInfoHasAttribute g m attribSpec minfo  =
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-    match TryDecodeILAttribute g tref cattrs with 
+    match TryDecodeILAttribute tref cattrs with 
     | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
             WarnD(ObsoleteWarning(msg, m))
     | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef  -> 
@@ -329,7 +329,7 @@ let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProv
 /// Indicate if a list of IL attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckILAttributesForUnseen (g: TcGlobals) cattrs _m = 
     let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
-    Option.isSome (TryDecodeILAttribute g tref cattrs)
+    Option.isSome (TryDecodeILAttribute tref cattrs)
 
 /// Checks the attributes for CompilerMessageAttribute, which has an IsHidden argument that allows
 /// items to be suppressed from intellisense.

@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction3c
 {
-  // Offset: 0x00000000 Length: 0x000001FA
+  // Offset: 0x00000000 Length: 0x000001FC
 }
 .mresource public FSharpOptimizationData.TestFunction3c
 {
   // Offset: 0x00000200 Length: 0x0000008A
 }
 .module TestFunction3c.exe
-// MVID: {5F1FA088-A662-4FAC-A745-038388A01F5F}
+// MVID: {60B68B97-A662-4FAC-A745-0383978BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AD0000
+// Image base: 0x06B00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,7 +61,7 @@
     // Code size       36 (0x24)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 5,20 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction3c.fs'
+    .line 5,5 : 5,20 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction3c.fs'
     IL_0000:  ldstr      "Hello"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
@@ -80,7 +80,7 @@
 
   .method public static void  TestFunction3c() cil managed
   {
-    // Code size       105 (0x69)
+    // Code size       101 (0x65)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_0,
              [1] int32 x,
@@ -111,7 +111,7 @@
       IL_001a:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string> [FSharp.Core]Microsoft.FSharp.Core.Operators::FailurePattern(class [mscorlib]System.Exception)
       IL_001f:  stloc.s    V_4
       IL_0021:  ldloc.s    V_4
-      IL_0023:  brfalse.s  IL_005b
+      IL_0023:  brfalse.s  IL_0057
 
       IL_0025:  ldloc.s    V_4
       IL_0027:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
@@ -120,34 +120,30 @@
       IL_0030:  ldstr      "hello"
       IL_0035:  call       bool [netstandard]System.String::Equals(string,
                                                                    string)
-      IL_003a:  brfalse.s  IL_003e
+      IL_003a:  brfalse.s  IL_0057
 
-      IL_003c:  br.s       IL_0040
-
-      IL_003e:  br.s       IL_005b
-
-      IL_0040:  ldloc.s    V_4
-      IL_0042:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
-      IL_0047:  stloc.s    V_6
+      IL_003c:  ldloc.s    V_4
+      IL_003e:  call       instance !0 class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::get_Value()
+      IL_0043:  stloc.s    V_6
       .line 14,14 : 8,23 ''
-      IL_0049:  ldstr      "World"
-      IL_004e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-      IL_0053:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-      IL_0058:  stloc.0
-      IL_0059:  leave.s    IL_0066
+      IL_0045:  ldstr      "World"
+      IL_004a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+      IL_004f:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+      IL_0054:  stloc.0
+      IL_0055:  leave.s    IL_0062
 
       .line 100001,100001 : 0,0 ''
-      IL_005b:  rethrow
-      IL_005d:  ldnull
-      IL_005e:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
-      IL_0063:  stloc.0
-      IL_0064:  leave.s    IL_0066
+      IL_0057:  rethrow
+      IL_0059:  ldnull
+      IL_005a:  unbox.any  [FSharp.Core]Microsoft.FSharp.Core.Unit
+      IL_005f:  stloc.0
+      IL_0060:  leave.s    IL_0062
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0066:  ldloc.0
-    IL_0067:  pop
-    IL_0068:  ret
+    IL_0062:  ldloc.0
+    IL_0063:  pop
+    IL_0064:  ret
   } // end of method TestFunction3c::TestFunction3c
 
 } // end of class TestFunction3c

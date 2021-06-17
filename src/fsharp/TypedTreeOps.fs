@@ -27,6 +27,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Layout
 open FSharp.Compiler.Text.LayoutRender
 open FSharp.Compiler.Text.TaggedText
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 #if !NO_EXTENSIONTYPING
@@ -2762,7 +2763,8 @@ type DisplayEnv =
       showTyparDefaultConstraints: bool
       showDocumentation: bool
       shrinkOverloads: bool
-      printVerboseSignatures : bool
+      printVerboseSignatures: bool
+      escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout : (Val -> Layout option)
@@ -2798,6 +2800,7 @@ type DisplayEnv =
         useColonForReturnType = false
         shrinkOverloads = true
         printVerboseSignatures = false
+        escapeKeywordNames = false
         g = tcGlobals
         contextAccessibility = taccessPublic
         generatedValueLayout = (fun _ -> None)
@@ -2826,7 +2829,7 @@ type DisplayEnv =
                suppressInlineKeyword = false
                showDocumentation = true
                shrinkOverloads = false
-               }
+               escapeKeywordNames = true }
         denv.SetOpenPaths
             [ FSharpLib.RootPath
               FSharpLib.CorePath
@@ -3051,8 +3054,8 @@ let isILAttrib (tref: ILTypeRef) (attr: ILAttribute) =
 let HasILAttribute tref (attrs: ILAttributes) = 
     attrs.AsArray |> Array.exists (isILAttrib tref) 
 
-let TryDecodeILAttribute (g: TcGlobals) tref (attrs: ILAttributes) = 
-    attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x) else None)
+let TryDecodeILAttribute tref (attrs: ILAttributes) = 
+    attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData x) else None)
 
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref tcref2
@@ -3114,7 +3117,7 @@ let TryBindTyconRefAttribute g (m: range) (AttribInfo (atref, _) as args) (tcref
         | None -> None
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
-        match TryDecodeILAttribute g atref tdef.CustomAttrs with 
+        match TryDecodeILAttribute atref tdef.CustomAttrs with 
         | Some attr -> f1 attr
         | _ -> None
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
@@ -3273,6 +3276,8 @@ let mkPrintfFormatTy (g: TcGlobals) aty bty cty dty ety = TType_app(g.format_tcr
 
 let mkOptionTy (g: TcGlobals) ty = TType_app (g.option_tcr_nice, [ty])
 
+let mkValueOptionTy (g: TcGlobals) ty = TType_app (g.valueoption_tcr_nice, [ty])
+
 let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty])
 
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
@@ -3340,7 +3345,9 @@ let mkSome g ty arg m = mkUnionCaseExpr(mkSomeCase g, [ty], [arg], m)
 
 let mkNone g ty m = mkUnionCaseExpr(mkNoneCase g, [ty], [], m)
 
-let mkOptionGetValueUnprovenViaAddr g expr ty m = mkUnionCaseFieldGetUnprovenViaExprAddr (expr, mkSomeCase g, [ty], 0, m)
+let mkValueSomeCase (g: TcGlobals) = mkUnionCaseRef g.valueoption_tcr_canon "ValueSome"
+
+let mkAnySomeCase g isStruct = (if isStruct then mkValueSomeCase g else mkSomeCase g)
 
 type ValRef with 
     member vref.IsDispatchSlot = 
@@ -4101,7 +4108,7 @@ module DebugPrint =
         | (DecisionTreeTest.Const c) -> wordL(tagText "is") ^^ constL c
         | (DecisionTreeTest.IsNull ) -> wordL(tagText "isnull")
         | (DecisionTreeTest.IsInst (_, ty)) -> wordL(tagText "isinst") ^^ typeL ty
-        | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
+        | (DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _)) -> wordL(tagText "query") ^^ exprL g exp
         | (DecisionTreeTest.Error _) -> wordL (tagText "error recovery")
  
     and targetL g i (TTarget (argvs, body, _)) =
@@ -4578,7 +4585,7 @@ and accFreeInTest (opts: FreeVarOptions) discrim acc =
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> acc
     | DecisionTreeTest.IsInst (srcty, tgty) -> accFreeVarsInTy opts srcty (accFreeVarsInTy opts tgty acc)
-    | DecisionTreeTest.ActivePatternCase (exp, tys, activePatIdentity, _, _) -> 
+    | DecisionTreeTest.ActivePatternCase (exp, tys, _, activePatIdentity, _, _) -> 
         accFreeInExpr opts exp 
             (accFreeVarsInTys opts tys 
                 (Option.foldBack (fun (vref, tinst) acc -> accFreeValRef opts vref (accFreeVarsInTys opts tinst acc)) activePatIdentity acc))
@@ -7341,7 +7348,7 @@ let tref_CompilationSourceNameAttr (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScop
 let tref_SourceConstructFlags (g: TcGlobals) = mkILTyRef (g.fslibCcu.ILScopeRef, tnameSourceConstructFlags)
 
 let mkCompilationMappingAttrPrim (g: TcGlobals) k nums = 
-    mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, 
+    mkILCustomAttribute (tref_CompilationMappingAttr g, 
                                ((mkILNonGenericValueTy (tref_SourceConstructFlags g)) :: (nums |> List.map (fun _ -> g.ilg.typ_Int32))), 
                                ((k :: nums) |> List.map (fun n -> ILAttribElem.Int32 n)), 
                                [])
@@ -7353,17 +7360,17 @@ let mkCompilationMappingAttrWithSeqNum g kind seqNum = mkCompilationMappingAttrP
 let mkCompilationMappingAttrWithVariantNumAndSeqNum g kind varNum seqNum = mkCompilationMappingAttrPrim g kind [varNum;seqNum]
 
 let mkCompilationArgumentCountsAttr (g: TcGlobals) nums = 
-    mkILCustomAttribute g.ilg (tref_CompilationArgumentCountsAttr g, [ mkILArr1DTy g.ilg.typ_Int32 ], 
+    mkILCustomAttribute (tref_CompilationArgumentCountsAttr g, [ mkILArr1DTy g.ilg.typ_Int32 ], 
                                [ILAttribElem.Array (g.ilg.typ_Int32, List.map (fun n -> ILAttribElem.Int32 n) nums)], 
                                [])
 
 let mkCompilationSourceNameAttr (g: TcGlobals) n = 
-    mkILCustomAttribute g.ilg (tref_CompilationSourceNameAttr g, [ g.ilg.typ_String ], 
+    mkILCustomAttribute (tref_CompilationSourceNameAttr g, [ g.ilg.typ_String ], 
                                [ILAttribElem.String(Some n)], 
                                [])
 
 let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILTypeRef list) = 
-    mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, 
+    mkILCustomAttribute (tref_CompilationMappingAttr g, 
                                [ g.ilg.typ_String; mkILArr1DTy g.ilg.typ_Type ], 
                                [ ILAttribElem.String (Some nm); ILAttribElem.Array (g.ilg.typ_Type, [ for ty in tys -> ILAttribElem.TypeRef (Some ty) ]) ], 
                                [])
@@ -7377,9 +7384,9 @@ let mkCompilationMappingAttrForQuotationResource (g: TcGlobals) (nm, tys: ILType
 let isTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr ilg (cattr: ILAttribute) = 
+let TryDecodeTypeProviderAssemblyAttr (cattr: ILAttribute) = 
     if isTypeProviderAssemblyAttr cattr then 
-        let parms, _args = decodeILAttribData ilg cattr 
+        let parms, _args = decodeILAttribData cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.
         | (ILAttribElem.String (Some assemblyName)) :: _ -> Some assemblyName
         | (ILAttribElem.String None) :: _ -> Some null
@@ -7398,11 +7405,11 @@ let tname_SignatureDataVersionAttr = FSharpLib.Core + ".FSharpInterfaceDataVersi
 
 let tnames_SignatureDataVersionAttr = splitILTypeName tname_SignatureDataVersionAttr
 
-let tref_SignatureDataVersionAttr () = mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), tname_SignatureDataVersionAttr)
+let tref_SignatureDataVersionAttr fsharpCoreAssemblyScopeRef = mkILTyRef(fsharpCoreAssemblyScopeRef, tname_SignatureDataVersionAttr)
 
 let mkSignatureDataVersionAttr (g: TcGlobals) (version: ILVersionInfo)  = 
-    mkILCustomAttribute g.ilg
-        (tref_SignatureDataVersionAttr(), 
+    mkILCustomAttribute
+        (tref_SignatureDataVersionAttr g.ilg.fsharpCoreAssemblyScopeRef, 
          [g.ilg.typ_Int32;g.ilg.typ_Int32;g.ilg.typ_Int32], 
          [ILAttribElem.Int32 (int32 version.Major)
           ILAttribElem.Int32 (int32 version.Minor) 
@@ -7412,9 +7419,9 @@ let tname_AutoOpenAttr = FSharpLib.Core + ".AutoOpenAttribute"
 
 let IsSignatureDataVersionAttr cattr = isILAttribByName ([], tname_SignatureDataVersionAttr) cattr
 
-let TryFindAutoOpenAttr (ilg: IL.ILGlobals) cattr = 
+let TryFindAutoOpenAttr cattr = 
     if isILAttribByName ([], tname_AutoOpenAttr) cattr then 
-        match decodeILAttribData ilg cattr with 
+        match decodeILAttribData cattr with 
         | [ILAttribElem.String s], _ -> s
         | [], _ -> None
         | _ -> 
@@ -7425,9 +7432,9 @@ let TryFindAutoOpenAttr (ilg: IL.ILGlobals) cattr =
         
 let tname_InternalsVisibleToAttr = "System.Runtime.CompilerServices.InternalsVisibleToAttribute"
 
-let TryFindInternalsVisibleToAttr ilg cattr = 
+let TryFindInternalsVisibleToAttr cattr = 
     if isILAttribByName ([], tname_InternalsVisibleToAttr) cattr then 
-        match decodeILAttribData ilg cattr with 
+        match decodeILAttribData cattr with 
         | [ILAttribElem.String s], _ -> s
         | [], _ -> None
         | _ -> 
@@ -7436,9 +7443,9 @@ let TryFindInternalsVisibleToAttr ilg cattr =
     else
         None
 
-let IsMatchingSignatureDataVersionAttr ilg (version: ILVersionInfo) cattr = 
+let IsMatchingSignatureDataVersionAttr (version: ILVersionInfo) cattr = 
     IsSignatureDataVersionAttr cattr &&
-    match decodeILAttribData ilg cattr with 
+    match decodeILAttribData cattr with 
     |  [ILAttribElem.Int32 u1; ILAttribElem.Int32 u2;ILAttribElem.Int32 u3 ], _ -> 
         (version.Major = uint16 u1) && (version.Minor = uint16 u2) && (version.Build = uint16 u3)
     | _ -> 
@@ -7446,7 +7453,7 @@ let IsMatchingSignatureDataVersionAttr ilg (version: ILVersionInfo) cattr =
         false
 
 let mkCompilerGeneratedAttr (g: TcGlobals) n = 
-    mkILCustomAttribute g.ilg (tref_CompilationMappingAttr g, [mkILNonGenericValueTy (tref_SourceConstructFlags g)], [ILAttribElem.Int32 n], [])
+    mkILCustomAttribute (tref_CompilationMappingAttr g, [mkILNonGenericValueTy (tref_SourceConstructFlags g)], [ILAttribElem.Int32 n], [])
 
 //--------------------------------------------------------------------------
 // tupled lambda --> method/function with a given topValInfo specification.
@@ -8480,7 +8487,7 @@ let TryGetActivePatternInfo (vref: ValRef) =
 
 type ActivePatternElemRef with 
     member x.Name = 
-        let (APElemRef(_, vref, n)) = x
+        let (APElemRef(_, vref, n, _)) = x
         match TryGetActivePatternInfo vref with
         | None -> error(InternalError("not an active pattern name", vref.Range))
         | Some apinfo -> 
@@ -8511,12 +8518,14 @@ let mkChoiceCaseRef g m n i =
 type PrettyNaming.ActivePatternInfo with 
     member x.Names = x.ActiveTags
 
-    member apinfo.ResultType g m rtys = 
+    member apinfo.ResultType g m rtys isStruct = 
         let choicety = mkChoiceTy g m rtys
-        if apinfo.IsTotal then choicety else mkOptionTy g choicety
+        if apinfo.IsTotal then choicety 
+        elif isStruct then mkValueOptionTy g choicety
+        else mkOptionTy g choicety
     
-    member apinfo.OverallType g m dty rtys = 
-        mkFunTy dty (apinfo.ResultType g m rtys)
+    member apinfo.OverallType g m dty rtys isStruct = 
+        mkFunTy dty (apinfo.ResultType g m rtys isStruct)
 
 //---------------------------------------------------------------------------
 // Active pattern validation

@@ -5,6 +5,7 @@ module internal FSharp.Compiler.TypedTreePickle
 open System.Collections.Generic
 open System.Text
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -22,6 +23,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -210,6 +212,11 @@ let p_bytes (s: byte[]) st =
     let len = s.Length
     p_int32 len st
     st.os.EmitBytes s
+
+let p_memory (s: System.ReadOnlyMemory<byte>) st =
+    let len = s.Length
+    p_int32 len st
+    st.os.EmitMemory s
 
 let p_prim_string (s: string) st =
     let bytes = Encoding.UTF8.GetBytes s
@@ -773,10 +780,13 @@ let p_encoded_simpletyp x st = p_int x st
 let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletys st.oscope x) st
 
+/// Arbitrary value
+[<Literal>]
+let PickleBufferCapacity = 100000
+
 let pickleObjWithDanglingCcus inMem file g scope p x =
-  let ccuNameTab, (ntycons, ntypars, nvals, nanoninfos), stringTab, pubpathTab, nlerefTab, simpleTyTab, phase1bytes =
-    let st1 =
-      { os = ByteBuffer.Create 100000
+  let st1 =
+      { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
         oscope=scope
         occus= Table<_>.Create "occus"
         oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
@@ -791,31 +801,32 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         ofile=file
         oInMem=inMem
         isStructThisArgPos = false}
+  let ccuNameTab, (ntycons, ntypars, nvals, nanoninfos), stringTab, pubpathTab, nlerefTab, simpleTyTab, phase1bytes =
     p x st1
     let sizes =
       st1.oentities.Size,
       st1.otypars.Size,
       st1.ovals.Size,
       st1.oanoninfos.Size
-    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.Close()
+    st1.occus, sizes, st1.ostrings, st1.opubpaths, st1.onlerefs, st1.osimpletys, st1.os.AsMemory()
 
+  let st2 =
+   { os = ByteBuffer.Create(PickleBufferCapacity, useArrayPool = true)
+     oscope=scope
+     occus= Table<_>.Create "occus (fake)"
+     oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
+     otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
+     ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
+     oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
+     ostrings=Table<_>.Create "ostrings (fake)"
+     opubpaths=Table<_>.Create "opubpaths (fake)"
+     onlerefs=Table<_>.Create "onlerefs (fake)"
+     osimpletys=Table<_>.Create "osimpletys (fake)"
+     oglobals=g
+     ofile=file
+     oInMem=inMem
+     isStructThisArgPos = false }
   let phase2bytes =
-    let st2 =
-     { os = ByteBuffer.Create 100000
-       oscope=scope
-       occus= Table<_>.Create "occus (fake)"
-       oentities=NodeOutTable<_, _>.Create((fun (tc: Tycon) -> tc.Stamp), (fun tc -> tc.LogicalName), (fun tc -> tc.Range), (fun osgn -> osgn), "otycons")
-       otypars=NodeOutTable<_, _>.Create((fun (tp: Typar) -> tp.Stamp), (fun tp -> tp.DisplayName), (fun tp -> tp.Range), (fun osgn -> osgn), "otypars")
-       ovals=NodeOutTable<_, _>.Create((fun (v: Val) -> v.Stamp), (fun v -> v.LogicalName), (fun v -> v.Range), (fun osgn -> osgn), "ovals")
-       oanoninfos=NodeOutTable<_, _>.Create((fun (v: AnonRecdTypeInfo) -> v.Stamp), (fun v -> string v.Stamp), (fun _ -> range0), id, "oanoninfos")
-       ostrings=Table<_>.Create "ostrings (fake)"
-       opubpaths=Table<_>.Create "opubpaths (fake)"
-       onlerefs=Table<_>.Create "onlerefs (fake)"
-       osimpletys=Table<_>.Create "osimpletys (fake)"
-       oglobals=g
-       ofile=file
-       oInMem=inMem
-       isStructThisArgPos = false }
     p_array p_encoded_ccuref ccuNameTab.AsArray st2
     // Add a 4th integer indicated by a negative 1st integer
     let z1 = if nanoninfos > 0 then  -ntycons-1 else ntycons
@@ -828,11 +839,14 @@ let pickleObjWithDanglingCcus inMem file g scope p x =
         (p_array p_encoded_pubpath)
         (p_array p_encoded_nleref)
         (p_array p_encoded_simpletyp)
-        p_bytes
+        p_memory
         (stringTab.AsArray, pubpathTab.AsArray, nlerefTab.AsArray, simpleTyTab.AsArray, phase1bytes)
         st2
-    st2.os.Close()
-  phase2bytes
+    st2.os
+
+  let finalBytes = phase2bytes
+  (st1.os :> System.IDisposable).Dispose()
+  finalBytes
 
 let check (ilscope: ILScopeRef) (inMap : NodeInTable<_, _>) =
     for i = 0 to inMap.Count - 1 do
@@ -941,7 +955,7 @@ let u_ILPublicKey st =
     | 1 -> u_bytes st |> PublicKeyToken
     | _ -> ufailwith st "u_ILPublicKey"
 
-let u_ILVersion st = 
+let u_ILVersion st =
     let (major, minor, build, revision) = u_tup4 u_uint16 u_uint16 u_uint16 u_uint16 st
     ILVersionInfo(major, minor, build, revision)
 
@@ -1331,7 +1345,7 @@ let p_namemap p = p_Map p_string p
 let u_Map_core uk uv n st =
     Map.ofSeq (seq { for _ in 1..n -> (uk st, uv st) })
 
-let u_Map uk uv st = 
+let u_Map uk uv st =
     let n = u_int st
     u_Map_core uk uv n st
 
@@ -2669,7 +2683,7 @@ and u_expr st =
     | 14 ->
         let traitInfo = u_trait st
         let m = u_dummy_range st
-        Expr.WitnessArg (traitInfo, m) 
+        Expr.WitnessArg (traitInfo, m)
     | _ -> ufailwith st "u_expr"
 
 and p_static_optimization_constraint x st =

@@ -45,13 +45,13 @@
   // Offset: 0x000003D0 Length: 0x0000012E
 }
 .module Linq101Where01.exe
-// MVID: {5FCFFD0D-FF23-CD21-A745-03830DFDCF5F}
+// MVID: {60B78A59-FF23-CD21-A745-0383598AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C30000
+// Image base: 0x06550000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -363,38 +363,34 @@
     .method public strict virtual instance bool 
             Invoke(class [Utils]Utils/Product p) cil managed
     {
-      // Code size       41 (0x29)
+      // Code size       37 (0x25)
       .maxstack  10
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  callvirt   instance int32 [Utils]Utils/Product::get_UnitsInStock()
       IL_0006:  ldc.i4.0
-      IL_0007:  ble.s      IL_000b
-
-      IL_0009:  br.s       IL_000d
-
-      IL_000b:  br.s       IL_0027
+      IL_0007:  ble.s      IL_0023
 
       .line 100001,100001 : 0,0 ''
-      IL_000d:  ldarg.1
-      IL_000e:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
-      IL_0013:  ldc.i4     0x12c
-      IL_0018:  ldc.i4.0
-      IL_0019:  ldc.i4.0
-      IL_001a:  ldc.i4.0
-      IL_001b:  ldc.i4.2
-      IL_001c:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
+      IL_0009:  ldarg.1
+      IL_000a:  callvirt   instance valuetype [mscorlib]System.Decimal [Utils]Utils/Product::get_UnitPrice()
+      IL_000f:  ldc.i4     0x12c
+      IL_0014:  ldc.i4.0
+      IL_0015:  ldc.i4.0
+      IL_0016:  ldc.i4.0
+      IL_0017:  ldc.i4.2
+      IL_0018:  newobj     instance void [netstandard]System.Decimal::.ctor(int32,
                                                                             int32,
                                                                             int32,
                                                                             bool,
                                                                             uint8)
-      IL_0021:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
+      IL_001d:  call       bool [netstandard]System.Decimal::op_GreaterThan(valuetype [netstandard]System.Decimal,
                                                                             valuetype [netstandard]System.Decimal)
-      IL_0026:  ret
+      IL_0022:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
+      IL_0023:  ldc.i4.0
+      IL_0024:  ret
     } // end of method 'expensiveInStockProducts@33-1'::Invoke
 
     .method private specialname rtspecialname static 
@@ -629,26 +625,22 @@
             Invoke(int32 i,
                    string d) cil managed
     {
-      // Code size       22 (0x16)
+      // Code size       18 (0x12)
       .maxstack  8
       .line 54,54 : 29,49 ''
       IL_0000:  ldarg.2
       IL_0001:  callvirt   instance int32 [mscorlib]System.String::get_Length()
       IL_0006:  ldarg.1
-      IL_0007:  bge.s      IL_000b
-
-      IL_0009:  br.s       IL_000d
-
-      IL_000b:  br.s       IL_0014
+      IL_0007:  bge.s      IL_0010
 
       .line 54,54 : 50,57 ''
-      IL_000d:  ldarg.2
-      IL_000e:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::Some(!0)
-      IL_0013:  ret
+      IL_0009:  ldarg.2
+      IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<!0> class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<string>::Some(!0)
+      IL_000f:  ret
 
       .line 54,54 : 63,67 ''
-      IL_0014:  ldnull
-      IL_0015:  ret
+      IL_0010:  ldnull
+      IL_0011:  ret
     } // end of method 'shortDigits@54-1'::Invoke
 
     .method private specialname rtspecialname static 
@@ -747,7 +739,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       162 (0xa2)
+      // Code size       156 (0x9c)
       .maxstack  7
       .locals init ([0] string d)
       .line 100001,100001 : 0,0 ''
@@ -757,90 +749,84 @@
       IL_0007:  sub
       IL_0008:  switch     ( 
                             IL_001b,
-                            IL_001d,
-                            IL_001f)
-      IL_0019:  br.s       IL_002a
+                            IL_001e,
+                            IL_0021)
+      IL_0019:  br.s       IL_0024
 
-      IL_001b:  br.s       IL_0021
+      .line 100001,100001 : 0,0 ''
+      IL_001b:  nop
+      IL_001c:  br.s       IL_0072
 
-      IL_001d:  br.s       IL_0024
-
-      IL_001f:  br.s       IL_0027
+      .line 100001,100001 : 0,0 ''
+      IL_001e:  nop
+      IL_001f:  br.s       IL_006f
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_0078
+      IL_0022:  br.s       IL_0093
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      IL_0025:  br.s       IL_0075
-
-      .line 100001,100001 : 0,0 ''
-      IL_0027:  nop
-      IL_0028:  br.s       IL_0099
-
-      .line 100001,100001 : 0,0 ''
-      IL_002a:  nop
       .line 52,52 : 9,17 ''
-      IL_002b:  ldarg.0
-      IL_002c:  ldsfld     class Linq101Where01/'shortDigits@51-3' Linq101Where01/'shortDigits@51-3'::@_instance
-      IL_0031:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Where01::get_digits()
-      IL_0036:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<string>,string>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_0025:  ldarg.0
+      IL_0026:  ldsfld     class Linq101Where01/'shortDigits@51-3' Linq101Where01/'shortDigits@51-3'::@_instance
+      IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Where01::get_digits()
+      IL_0030:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<string,class [mscorlib]System.Collections.Generic.IEnumerable`1<string>,string>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_003b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
-      IL_0040:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
-      IL_0045:  ldarg.0
-      IL_0046:  ldc.i4.1
-      IL_0047:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+      IL_0035:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerator`1<!0> class [mscorlib]System.Collections.Generic.IEnumerable`1<string>::GetEnumerator()
+      IL_003a:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
+      IL_003f:  ldarg.0
+      IL_0040:  ldc.i4.1
+      IL_0041:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
       .line 52,52 : 9,17 ''
-      IL_004c:  ldarg.0
-      IL_004d:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
-      IL_0052:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
-      IL_0057:  brfalse.s  IL_0078
+      IL_0046:  ldarg.0
+      IL_0047:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
+      IL_004c:  callvirt   instance bool [mscorlib]System.Collections.IEnumerator::MoveNext()
+      IL_0051:  brfalse.s  IL_0072
 
-      IL_0059:  ldarg.0
-      IL_005a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
-      IL_005f:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
-      IL_0064:  stloc.0
-      IL_0065:  ldarg.0
-      IL_0066:  ldc.i4.2
-      IL_0067:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+      IL_0053:  ldarg.0
+      IL_0054:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
+      IL_0059:  callvirt   instance !0 class [mscorlib]System.Collections.Generic.IEnumerator`1<string>::get_Current()
+      IL_005e:  stloc.0
       .line 52,52 : 16,17 ''
-      IL_006c:  ldarg.0
-      IL_006d:  ldloc.0
-      IL_006e:  stfld      string Linq101Where01/'shortDigits@52-2'::current
-      IL_0073:  ldc.i4.1
-      IL_0074:  ret
+      IL_005f:  ldarg.0
+      IL_0060:  ldc.i4.2
+      IL_0061:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+      IL_0066:  ldarg.0
+      IL_0067:  ldloc.0
+      IL_0068:  stfld      string Linq101Where01/'shortDigits@52-2'::current
+      IL_006d:  ldc.i4.1
+      IL_006e:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0075:  nop
-      IL_0076:  br.s       IL_004c
+      IL_006f:  nop
+      IL_0070:  br.s       IL_0046
 
-      IL_0078:  ldarg.0
-      IL_0079:  ldc.i4.3
-      IL_007a:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+      IL_0072:  ldarg.0
+      IL_0073:  ldc.i4.3
+      IL_0074:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
       .line 52,52 : 9,17 ''
-      IL_007f:  ldarg.0
-      IL_0080:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
-      IL_0085:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-      IL_008a:  nop
-      IL_008b:  ldarg.0
-      IL_008c:  ldnull
-      IL_008d:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
-      IL_0092:  ldarg.0
-      IL_0093:  ldc.i4.3
-      IL_0094:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
-      IL_0099:  ldarg.0
-      IL_009a:  ldnull
-      IL_009b:  stfld      string Linq101Where01/'shortDigits@52-2'::current
-      IL_00a0:  ldc.i4.0
-      IL_00a1:  ret
+      IL_0079:  ldarg.0
+      IL_007a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
+      IL_007f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+      IL_0084:  nop
+      IL_0085:  ldarg.0
+      IL_0086:  ldnull
+      IL_0087:  stfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
+      IL_008c:  ldarg.0
+      IL_008d:  ldc.i4.3
+      IL_008e:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+      IL_0093:  ldarg.0
+      IL_0094:  ldnull
+      IL_0095:  stfld      string Linq101Where01/'shortDigits@52-2'::current
+      IL_009a:  ldc.i4.0
+      IL_009b:  ret
     } // end of method 'shortDigits@52-2'::GenerateNext
 
     .method public strict virtual instance void 
             Close() cil managed
     {
-      // Code size       148 (0x94)
+      // Code size       133 (0x85)
       .maxstack  6
       .locals init ([0] class [mscorlib]System.Exception V_0,
                [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
@@ -852,158 +838,138 @@
       IL_0007:  sub
       IL_0008:  switch     ( 
                             IL_0013)
-      IL_0011:  br.s       IL_0019
+      IL_0011:  br.s       IL_0016
 
       .line 100001,100001 : 0,0 ''
       IL_0013:  nop
-      IL_0014:  br         IL_0087
+      IL_0014:  br.s       IL_007c
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  nop
+      IL_0016:  nop
       .try
       {
-        IL_001a:  ldarg.0
-        IL_001b:  ldfld      int32 Linq101Where01/'shortDigits@52-2'::pc
-        IL_0020:  switch     ( 
+        IL_0017:  ldarg.0
+        IL_0018:  ldfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+        IL_001d:  switch     ( 
+                              IL_0034,
                               IL_0037,
-                              IL_0039,
-                              IL_003b,
+                              IL_003a,
                               IL_003d)
-        IL_0035:  br.s       IL_004b
-
-        IL_0037:  br.s       IL_003f
-
-        IL_0039:  br.s       IL_0042
-
-        IL_003b:  br.s       IL_0045
-
-        IL_003d:  br.s       IL_0048
+        IL_0032:  br.s       IL_0040
 
         .line 100001,100001 : 0,0 ''
-        IL_003f:  nop
-        IL_0040:  br.s       IL_0061
+        IL_0034:  nop
+        IL_0035:  br.s       IL_0056
 
         .line 100001,100001 : 0,0 ''
-        IL_0042:  nop
-        IL_0043:  br.s       IL_004d
+        IL_0037:  nop
+        IL_0038:  br.s       IL_0042
 
         .line 100001,100001 : 0,0 ''
-        IL_0045:  nop
-        IL_0046:  br.s       IL_004c
+        IL_003a:  nop
+        IL_003b:  br.s       IL_0041
 
         .line 100001,100001 : 0,0 ''
-        IL_0048:  nop
-        IL_0049:  br.s       IL_0061
+        IL_003d:  nop
+        IL_003e:  br.s       IL_0056
 
         .line 100001,100001 : 0,0 ''
-        IL_004b:  nop
+        IL_0040:  nop
         .line 100001,100001 : 0,0 ''
-        IL_004c:  nop
-        IL_004d:  ldarg.0
-        IL_004e:  ldc.i4.3
-        IL_004f:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
-        IL_0054:  ldarg.0
-        IL_0055:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
-        IL_005a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
-        IL_005f:  nop
+        IL_0041:  nop
+        IL_0042:  ldarg.0
+        IL_0043:  ldc.i4.3
+        IL_0044:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+        IL_0049:  ldarg.0
+        IL_004a:  ldfld      class [mscorlib]System.Collections.Generic.IEnumerator`1<string> Linq101Where01/'shortDigits@52-2'::'enum'
+        IL_004f:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [mscorlib]System.Collections.Generic.IEnumerator`1<string>>(!!0)
+        IL_0054:  nop
         .line 100001,100001 : 0,0 ''
-        IL_0060:  nop
-        IL_0061:  ldarg.0
-        IL_0062:  ldc.i4.3
-        IL_0063:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
-        IL_0068:  ldarg.0
-        IL_0069:  ldnull
-        IL_006a:  stfld      string Linq101Where01/'shortDigits@52-2'::current
-        IL_006f:  ldnull
-        IL_0070:  stloc.1
-        IL_0071:  leave.s    IL_007f
+        IL_0055:  nop
+        IL_0056:  ldarg.0
+        IL_0057:  ldc.i4.3
+        IL_0058:  stfld      int32 Linq101Where01/'shortDigits@52-2'::pc
+        IL_005d:  ldarg.0
+        IL_005e:  ldnull
+        IL_005f:  stfld      string Linq101Where01/'shortDigits@52-2'::current
+        IL_0064:  ldnull
+        IL_0065:  stloc.1
+        IL_0066:  leave.s    IL_0074
 
       }  // end .try
       catch [mscorlib]System.Object 
       {
-        IL_0073:  castclass  [mscorlib]System.Exception
-        IL_0078:  stloc.2
+        IL_0068:  castclass  [mscorlib]System.Exception
+        IL_006d:  stloc.2
         .line 52,52 : 9,17 ''
-        IL_0079:  ldloc.2
-        IL_007a:  stloc.0
-        IL_007b:  ldnull
-        IL_007c:  stloc.1
-        IL_007d:  leave.s    IL_007f
+        IL_006e:  ldloc.2
+        IL_006f:  stloc.0
+        IL_0070:  ldnull
+        IL_0071:  stloc.1
+        IL_0072:  leave.s    IL_0074
 
         .line 100001,100001 : 0,0 ''
       }  // end handler
-      IL_007f:  ldloc.1
-      IL_0080:  pop
+      IL_0074:  ldloc.1
+      IL_0075:  pop
       .line 100001,100001 : 0,0 ''
-      IL_0081:  nop
-      IL_0082:  br         IL_0000
+      IL_0076:  nop
+      IL_0077:  br         IL_0000
 
-      IL_0087:  ldloc.0
-      IL_0088:  ldnull
-      IL_0089:  cgt.un
-      IL_008b:  brfalse.s  IL_008f
-
-      IL_008d:  br.s       IL_0091
-
-      IL_008f:  br.s       IL_0093
+      IL_007c:  ldloc.0
+      IL_007d:  ldnull
+      IL_007e:  cgt.un
+      IL_0080:  brfalse.s  IL_0084
 
       .line 100001,100001 : 0,0 ''
-      IL_0091:  ldloc.0
-      IL_0092:  throw
+      IL_0082:  ldloc.0
+      IL_0083:  throw
 
       .line 100001,100001 : 0,0 ''
-      IL_0093:  ret
+      IL_0084:  ret
     } // end of method 'shortDigits@52-2'::Close
 
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
     {
-      // Code size       56 (0x38)
+      // Code size       48 (0x30)
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Where01/'shortDigits@52-2'::pc
       IL_0006:  switch     ( 
                             IL_001d,
-                            IL_001f,
-                            IL_0021,
-                            IL_0023)
-      IL_001b:  br.s       IL_0031
-
-      IL_001d:  br.s       IL_0025
-
-      IL_001f:  br.s       IL_0028
-
-      IL_0021:  br.s       IL_002b
-
-      IL_0023:  br.s       IL_002e
+                            IL_0020,
+                            IL_0023,
+                            IL_0026)
+      IL_001b:  br.s       IL_0029
 
       .line 100001,100001 : 0,0 ''
-      IL_0025:  nop
-      IL_0026:  br.s       IL_0036
+      IL_001d:  nop
+      IL_001e:  br.s       IL_002e
 
       .line 100001,100001 : 0,0 ''
-      IL_0028:  nop
-      IL_0029:  br.s       IL_0034
+      IL_0020:  nop
+      IL_0021:  br.s       IL_002c
 
       .line 100001,100001 : 0,0 ''
-      IL_002b:  nop
-      IL_002c:  br.s       IL_0032
+      IL_0023:  nop
+      IL_0024:  br.s       IL_002a
 
       .line 100001,100001 : 0,0 ''
-      IL_002e:  nop
-      IL_002f:  br.s       IL_0036
+      IL_0026:  nop
+      IL_0027:  br.s       IL_002e
 
       .line 100001,100001 : 0,0 ''
-      IL_0031:  nop
-      IL_0032:  ldc.i4.1
-      IL_0033:  ret
+      IL_0029:  nop
+      IL_002a:  ldc.i4.1
+      IL_002b:  ret
 
-      IL_0034:  ldc.i4.1
-      IL_0035:  ret
+      IL_002c:  ldc.i4.1
+      IL_002d:  ret
 
-      IL_0036:  ldc.i4.0
-      IL_0037:  ret
+      IL_002e:  ldc.i4.0
+      IL_002f:  ret
     } // end of method 'shortDigits@52-2'::get_CheckClose
 
     .method public strict virtual instance string 

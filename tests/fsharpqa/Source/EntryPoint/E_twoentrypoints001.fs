@@ -3,7 +3,7 @@
 // Explicit program entry point: [<ExtryPoint>]
 // attribute on multiple functions
 //<CmdLine>Hello</CmdLine>
-//<Expects id="FS0433" span="(19,9-19,19)" status="error">A function labeled with the 'EntryPointAttribute' attribute must be the last declaration in the last file in the compilation sequence.</Expects>
+//<Expects id="FS0433" span="(18,5-19,19)" status="error">A function labeled with the 'EntryPointAttribute' attribute must be the last declaration in the last file in the compilation sequence.</Expects>
 
 #light
 module M =

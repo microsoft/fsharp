@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.SyntaxTreeOps
 
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.Syntax
 
 [<Class>]

@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.Lexhelp
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Text
 
@@ -49,18 +50,18 @@ val resetLexbufPos: string -> Lexbuf -> unit
 
 val mkLexargs: string list * LightSyntaxStatus * LexResourceManager * LexerIfdefStack * ErrorLogger * PathMap -> LexArgs
 
-val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a 
+val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a
 
 val usingLexbufForParsing: Lexbuf * string -> (UnicodeLexing.Lexbuf -> 'a) -> 'a
 
-type LexerStringFinisherContext = 
+type LexerStringFinisherContext =
     | InterpolatedPart = 1
     | Verbatim = 2
     | TripleQuote = 4
 
 type LexerStringFinisher =
     | LexerStringFinisher of (ByteBuffer -> LexerStringKind -> LexerStringFinisherContext -> LexerContinuation -> token)
-    
+
     member Finish: buf: ByteBuffer -> kind: LexerStringKind -> context: LexerStringFinisherContext -> cont: LexerContinuation -> token
 
     static member Default: LexerStringFinisher
@@ -97,7 +98,7 @@ val escape: char -> char
 
 exception ReservedKeyword of string * range
 
-module Keywords = 
+module Keywords =
 
     val KeywordOrIdentifierToken: LexArgs -> Lexbuf -> string -> token
 

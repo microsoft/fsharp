@@ -9,9 +9,6 @@ open FSharp.Test.Utilities
 module LargeExprTests =
 
     [<Test>]
-#if NETCOREAPP
-    [<Ignore("SKIPPED: ")>]
-#endif
     let LargeRecordDoesNotStackOverflow() =
         CompilerAssert.CompileExe
             """
@@ -987,36 +984,6 @@ type TestRecord =
         test968: int
         test969: int
         test970: int
-        test971: int
-        test972: int
-        test973: int
-        test974: int
-        test975: int
-        test976: int
-        test977: int
-        test978: int
-        test979: int
-        test980: int
-        test981: int
-        test982: int
-        test983: int
-        test984: int
-        test985: int
-        test986: int
-        test987: int
-        test988: int
-        test989: int
-        test990: int
-        test991: int
-        test992: int
-        test993: int
-        test994: int
-        test995: int
-        test996: int
-        test997: int
-        test998: int
-        test999: int
-        test1000: int
     }
 
 [<EntryPoint>]
@@ -1999,36 +1966,7 @@ type TestRecord =
         test968: string
         test969: string
         test970: string
-        test971: string
-        test972: string
-        test973: string
-        test974: string
-        test975: string
-        test976: string
-        test977: string
-        test978: string
-        test979: string
-        test980: string
-        test981: string
-        test982: string
-        test983: string
-        test984: string
-        test985: string
-        test986: string
-        test987: string
-        test988: string
-        test989: string
-        test990: string
-        test991: string
-        test992: string
-        test993: string
-        test994: string
-        test995: string
-        test996: string
-        test997: string
-        test998: string
-        test999: string
-        test1000: string
+
     }
 
 [<EntryPoint>]

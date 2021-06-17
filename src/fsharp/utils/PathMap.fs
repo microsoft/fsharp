@@ -6,6 +6,8 @@ namespace Internal.Utilities
 open System
 open System.IO
 
+open FSharp.Compiler.IO
+
 type PathMap = PathMap of Map<string, string>
 
 [<RequireQualifiedAccess>]
@@ -17,7 +19,7 @@ module internal PathMap =
 
     let addMapping (src : string) (dst : string) (PathMap map) : PathMap =
         // Normalise the path
-        let normalSrc = Path.GetFullPath src
+        let normalSrc = FileSystem.GetFullPathShim src
 
         let oldPrefix =
             if normalSrc.EndsWith dirSepStr then normalSrc

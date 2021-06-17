@@ -81,7 +81,7 @@ module DispatchSlotChecking =
     val CheckDispatchSlotsAreImplemented: denv:DisplayEnv * infoReader:InfoReader * m:range * nenv:NameResolutionEnv * sink:TcResultsSink * isOverallTyAbstract:bool * reqdTy:TType * dispatchSlots:RequiredSlot list * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> bool
 
     /// Check all implementations implement some dispatch slot.
-    val CheckOverridesAreAllUsedOnce: denv:DisplayEnv * g:TcGlobals * amap:ImportMap * isObjExpr:bool * reqdTy:TType * dispatchSlotsKeyed:NameMultiMap<RequiredSlot> * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> unit
+    val CheckOverridesAreAllUsedOnce: denv:DisplayEnv * g:TcGlobals * infoReader:InfoReader * isObjExpr:bool * reqdTy:TType * dispatchSlotsKeyed:NameMultiMap<RequiredSlot> * availPriorOverrides:OverrideInfo list * overrides:OverrideInfo list -> unit
 
     /// Get the slots of a type that can or must be implemented. 
     val GetSlotImplSets: infoReader:InfoReader -> denv:DisplayEnv -> ad:AccessorDomain -> isObjExpr:bool -> allReqdTys:(TType * range) list -> SlotImplSet list

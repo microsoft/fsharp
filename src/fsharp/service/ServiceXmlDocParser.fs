@@ -6,6 +6,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 /// Represent an Xml documentation block in source code
 type XmlDocable =

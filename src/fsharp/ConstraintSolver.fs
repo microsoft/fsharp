@@ -195,7 +195,7 @@ type ContextInfo =
 type OverloadInformation = 
     {
         methodSlot: CalledMeth<Expr>
-        amap : ImportMap
+        infoReader : InfoReader
         error: exn
     }
 
@@ -2395,6 +2395,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     let amap = csenv.amap
     let m    = csenv.m
     let denv = csenv.DisplayEnv
+    let infoReader = csenv.InfoReader
 
     match (calledMethGroup |> List.partition (CalledMeth.GetMethod >> IsMethInfoAccessible amap m ad)), 
           (calledMethGroup |> List.partition (fun cmeth -> cmeth.HasCorrectObjArgs(m))), 
@@ -2419,7 +2420,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
     // One method, incorrect name/arg assignment 
     | _, _, _, _, ([], [cmeth]) -> 
         let minfo = cmeth.Method
-        let msgNum, msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo amap m denv minfo)
+        let msgNum, msgText = FSComp.SR.csRequiredSignatureIs(NicePrint.stringOfMethInfo infoReader m denv minfo)
         match cmeth.UnassignedNamedArgs with 
         | CallerNamedArg(id, _) :: _ -> 
             if minfo.IsConstructor then
@@ -2437,7 +2438,7 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
         let minfo = cmeth.Method
         let nReqd = cmeth.TotalNumUnnamedCalledArgs
         let nActual = cmeth.TotalNumUnnamedCallerArgs
-        let signature = NicePrint.stringOfMethInfo amap m denv minfo
+        let signature = NicePrint.stringOfMethInfo infoReader m denv minfo
         if nActual = nReqd then 
             let nreqdTyArgs = cmeth.NumCalledTyArgs
             let nactualTyArgs = cmeth.NumCallerTyArgs
@@ -2526,7 +2527,7 @@ and ResolveOverloading
          reqdRetTyOpt    // The expected return type, if known 
      =
     let g = csenv.g
-    let amap = csenv.amap
+    let infoReader = csenv.InfoReader
     let m    = csenv.m
     let denv = csenv.DisplayEnv
     let isOpConversion = methodName = "op_Explicit" || methodName = "op_Implicit"
@@ -2621,7 +2622,7 @@ and ResolveOverloading
                                              calledMeth) with 
                             | OkResult _ -> None
                             | ErrorResult(_warnings, exn) ->
-                                Some {methodSlot = calledMeth; amap = amap; error = exn })
+                                Some {methodSlot = calledMeth; infoReader = infoReader; error = exn })
 
                 None, ErrorD (failOverloading (NoOverloadsFound (methodName, errors, cx))), NoTrace
 
@@ -2798,8 +2799,8 @@ and ResolveOverloading
                     let methods = 
                         let getMethodSlotsAndErrors methodSlot errors =
                             [ match errors with
-                              | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; amap = amap }
-                              | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; amap = amap } ]
+                              | [] -> yield { methodSlot = methodSlot; error = Unchecked.defaultof<exn>; infoReader = infoReader }
+                              | errors -> for error in errors do yield { methodSlot = methodSlot; error = error; infoReader = infoReader } ]
 
 
                         // use the most precise set

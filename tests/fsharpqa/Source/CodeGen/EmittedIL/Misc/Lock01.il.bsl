@@ -41,13 +41,13 @@
   // Offset: 0x00000188 Length: 0x00000064
 }
 .module Lock01.exe
-// MVID: {5FCFFD09-2BCA-B308-A745-038309FDCF5F}
+// MVID: {60B68B7F-2BCA-B308-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B00000
+// Image base: 0x06BF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -123,7 +123,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       68 (0x44)
+    // Code size       64 (0x40)
     .maxstack  4
     .locals init ([0] object o,
              [1] object V_1,
@@ -152,33 +152,29 @@
       IL_0023:  ldnull
       IL_0024:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
       IL_0029:  stloc.s    V_4
-      IL_002b:  leave.s    IL_0040
+      IL_002b:  leave.s    IL_003c
 
     }  // end .try
     finally
     {
       IL_002d:  ldloc.3
-      IL_002e:  brfalse.s  IL_0032
-
-      IL_0030:  br.s       IL_0034
-
-      IL_0032:  br.s       IL_003d
+      IL_002e:  brfalse.s  IL_0039
 
       .line 100001,100001 : 0,0 ''
-      IL_0034:  ldloc.1
-      IL_0035:  call       void [netstandard]System.Threading.Monitor::Exit(object)
-      IL_003a:  ldnull
-      IL_003b:  pop
-      IL_003c:  endfinally
+      IL_0030:  ldloc.1
+      IL_0031:  call       void [netstandard]System.Threading.Monitor::Exit(object)
+      IL_0036:  ldnull
+      IL_0037:  pop
+      IL_0038:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_003d:  ldnull
-      IL_003e:  pop
-      IL_003f:  endfinally
+      IL_0039:  ldnull
+      IL_003a:  pop
+      IL_003b:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0040:  ldloc.s    V_4
-    IL_0042:  pop
-    IL_0043:  ret
+    IL_003c:  ldloc.s    V_4
+    IL_003e:  pop
+    IL_003f:  ret
   } // end of method $Lock01::main@
 
 } // end of class '<StartupCode$Lock01>'.$Lock01

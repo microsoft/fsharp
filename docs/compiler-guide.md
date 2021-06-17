@@ -585,7 +585,7 @@ See [F# Compiler Service Caches](https://fsharp.github.io/FSharp.Compiler.Servic
 
 ## Bootstrapping
 
-The F# compiler is boostrapped. That is, an existing F# compiler is used to build a "proto" compiler from the current source code. That "proto" compiler is then used to compile itself, producing a "final" compiler. This ensures the final compiler is compiled with all relevant optimizations and fixes.
+The F# compiler is bootstrapped. That is, an existing F# compiler is used to build a "proto" compiler from the current source code. That "proto" compiler is then used to compile itself, producing a "final" compiler. This ensures the final compiler is compiled with all relevant optimizations and fixes.
 
 ## FSharp.Build
 

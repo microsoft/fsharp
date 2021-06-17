@@ -149,3 +149,49 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator<'T> 
         interface IEnumerator 
         interface IDisposable 
+
+    /// Collects elements and builds a list
+    [<Struct; NoEquality; NoComparison>]
+    type ListCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal Result: 'T list
+
+        [<DefaultValue(false)>]
+        val mutable internal LastCons: 'T list
+
+        /// Add an element to the collector
+        member Add: value: 'T -> unit
+
+        /// Add multiple elements to the collector
+        member AddMany: values: seq<'T> -> unit
+
+        /// Add multiple elements to the collector and return the resulting list
+        member AddManyAndClose: values: seq<'T> -> 'T list
+
+        /// Return the resulting list
+        member Close: unit -> 'T list
+
+    /// Collects elements and builds an array
+    [<Struct; NoEquality; NoComparison>]
+    type ArrayCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable internal ResizeArray: ResizeArray<'T>
+        [<DefaultValue(false)>]
+        val mutable internal First: 'T
+        [<DefaultValue(false)>]
+        val mutable internal Second: 'T
+        [<DefaultValue(false)>]
+        val mutable internal Count: int
+
+        /// Add an element to the collector
+        member Add: value: 'T -> unit
+
+        /// Add multiple elements to the collector
+        member AddMany: values: seq<'T> -> unit
+
+        /// Add multiple elements to the collector and return the resulting array
+        member AddManyAndClose: values: seq<'T> -> 'T[]
+
+        /// Return the resulting list
+        member Close: unit -> 'T[]
+

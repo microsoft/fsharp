@@ -25,13 +25,11 @@ type FSharpChecker with
 
             let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
             let! textVersion = document.GetTextVersionAsync(ct) |> Async.AwaitTask
-            let! cacheStamp = document.Project.GetDependentVersionAsync(ct) |> Async.AwaitTask
 
             let filePath = document.FilePath
             let textVersionHash = textVersion.GetHashCode()
-            let cacheStamp = int64(cacheStamp.GetHashCode())
             
-            return! checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToFSharpSourceText(), options,cacheStamp=cacheStamp,userOpName=userOpName)
+            return! checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToFSharpSourceText(), options,userOpName=userOpName)
         }
 
     member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions, userOpName: string) =
@@ -40,15 +38,13 @@ type FSharpChecker with
 
             let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
             let! textVersion = document.GetTextVersionAsync(ct) |> Async.AwaitTask
-            let! cacheStamp = document.Project.GetDependentVersionAsync(ct) |> Async.AwaitTask
 
             let filePath = document.FilePath
             let textVersionHash = textVersion.GetHashCode()
-            let cacheStamp = int64(cacheStamp.GetHashCode())
 
             let parseAndCheckFile =
                 async {
-                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, cacheStamp=cacheStamp, userOpName=userOpName)
+                    let! (parseResults, checkFileAnswer) = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToFSharpSourceText(), options, userOpName=userOpName)
                     return
                         match checkFileAnswer with
                         | FSharpCheckFileAnswer.Aborted -> 
@@ -59,7 +55,7 @@ type FSharpChecker with
 
             let tryGetFreshResultsWithTimeout() =
                 async {
-                    let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
+                    let! worker = Async.StartChild(async { try return! parseAndCheckFile with | _ -> return None }, millisecondsTimeout=languageServicePerformanceOptions.TimeUntilStaleCompletion)
                     try
                         return! worker
                     with :? TimeoutException ->
@@ -80,7 +76,7 @@ type FSharpChecker with
                     | Some x -> async.Return (Some x)
                     | None ->
                         async {
-                            match checker.TryGetRecentCheckResultsForFile(filePath, options, cacheStamp=cacheStamp, userOpName=userOpName) with
+                            match checker.TryGetRecentCheckResultsForFile(filePath, options, userOpName=userOpName) with
                             | Some (parseResults, checkFileResults, _) ->
                                 return Some (parseResults, checkFileResults)
                             | None ->

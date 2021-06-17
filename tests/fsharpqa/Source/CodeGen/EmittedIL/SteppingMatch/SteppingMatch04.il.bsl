@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly SteppingMatch04
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SteppingMatch04
 {
-  // Offset: 0x00000000 Length: 0x00000232
+  // Offset: 0x00000000 Length: 0x00000226
 }
 .mresource public FSharpOptimizationData.SteppingMatch04
 {
-  // Offset: 0x00000238 Length: 0x0000007B
+  // Offset: 0x00000230 Length: 0x0000007B
 }
 .module SteppingMatch04.dll
-// MVID: {59B19213-6D4C-8357-A745-03831392B159}
+// MVID: {60B68B90-6D4C-8357-A745-0383908BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02770000
+// Image base: 0x073C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,7 +53,7 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  funcC2<a,b,c>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3<!!a,!!b,!!c> n) cil managed
   {
-    // Code size       81 (0x51)
+    // Code size       75 (0x4b)
     .maxstack  3
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3<!!a,!!b,!!c> V_0,
              [1] class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3<!!a,!!b,!!c> V_1,
@@ -61,50 +61,44 @@
              [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice3Of3<!!a,!!b,!!c> V_3,
              [4] class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice1Of3<!!a,!!b,!!c> V_4)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 9,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch04.fs'
+    .line 5,5 : 9,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SteppingMatch\\SteppingMatch04.fs'
     IL_0000:  ldarg.0
     IL_0001:  stloc.0
     IL_0002:  ldloc.0
     IL_0003:  stloc.1
     IL_0004:  ldloc.1
     IL_0005:  isinst     class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice3Of3<!!a,!!b,!!c>
-    IL_000a:  brtrue.s   IL_0016
+    IL_000a:  brtrue.s   IL_0026
 
     IL_000c:  ldloc.1
     IL_000d:  isinst     class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice1Of3<!!a,!!b,!!c>
-    IL_0012:  brtrue.s   IL_0018
+    IL_0012:  brtrue.s   IL_0038
 
-    IL_0014:  br.s       IL_001a
-
-    IL_0016:  br.s       IL_002c
-
-    IL_0018:  br.s       IL_003e
-
-    IL_001a:  ldloc.0
-    IL_001b:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice2Of3<!!a,!!b,!!c>
-    IL_0020:  stloc.2
+    IL_0014:  ldloc.0
+    IL_0015:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice2Of3<!!a,!!b,!!c>
+    IL_001a:  stloc.2
     .line 7,7 : 13,35 ''
-    IL_0021:  ldstr      "B"
-    IL_0026:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_002b:  ret
+    IL_001b:  ldstr      "B"
+    IL_0020:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_0025:  ret
 
     .line 5,5 : 9,21 ''
-    IL_002c:  ldloc.0
-    IL_002d:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice3Of3<!!a,!!b,!!c>
-    IL_0032:  stloc.3
+    IL_0026:  ldloc.0
+    IL_0027:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice3Of3<!!a,!!b,!!c>
+    IL_002c:  stloc.3
     .line 9,9 : 13,35 ''
-    IL_0033:  ldstr      "C"
-    IL_0038:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_003d:  ret
+    IL_002d:  ldstr      "C"
+    IL_0032:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_0037:  ret
 
     .line 5,5 : 9,21 ''
-    IL_003e:  ldloc.0
-    IL_003f:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice1Of3<!!a,!!b,!!c>
-    IL_0044:  stloc.s    V_4
+    IL_0038:  ldloc.0
+    IL_0039:  castclass  class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`3/Choice1Of3<!!a,!!b,!!c>
+    IL_003e:  stloc.s    V_4
     .line 11,11 : 13,35 ''
-    IL_0046:  ldstr      "A"
-    IL_004b:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_0050:  ret
+    IL_0040:  ldstr      "A"
+    IL_0045:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_004a:  ret
   } // end of method SteppingMatch04::funcC2
 
 } // end of class SteppingMatch04

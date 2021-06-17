@@ -77,7 +77,6 @@ type LoadClosure =
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText:
-        CompilationThreadToken * 
         legacyReferenceResolver: LegacyReferenceResolver * 
         defaultFSharpBinariesDir: string * 
         filename: string * 
@@ -98,7 +97,6 @@ type LoadClosure =
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 
     static member ComputeClosureOfScriptFiles: 
-        CompilationThreadToken * 
         tcConfig:TcConfig * 
         (string * range) list * 
         implicitDefines:CodeContext * 

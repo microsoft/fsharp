@@ -91,7 +91,7 @@ type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int
             with get() = 20
 
         member x.toBytes () =
-            let buf = ByteBuffer.Create IMAGE_FILE_HEADER.Width
+            use buf = ByteBuffer.Create IMAGE_FILE_HEADER.Width
             buf.EmitUInt16 (uint16 machine)
             buf.EmitUInt16 (uint16 numberOfSections)
             buf.EmitInt32 timeDateStamp
@@ -99,7 +99,7 @@ type IMAGE_FILE_HEADER (m: int16, secs: int16, tds: int32, ptst: int32, nos: int
             buf.EmitInt32 numberOfSymbols
             buf.EmitUInt16 (uint16 sizeOfOptionalHeader)
             buf.EmitUInt16 (uint16 characteristics)
-            buf.Close()
+            buf.AsMemory().ToArray()
 
 let bytesToIFH (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_FILE_HEADER.Width then
@@ -172,7 +172,7 @@ type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32
             with get() = 40
 
         member x.toBytes () =
-            let buf = ByteBuffer.Create IMAGE_SECTION_HEADER.Width
+            use buf = ByteBuffer.Create IMAGE_SECTION_HEADER.Width
             buf.EmitInt64 name
             buf.EmitInt32 addressInfo
             buf.EmitInt32 virtualAddress
@@ -183,7 +183,7 @@ type IMAGE_SECTION_HEADER(n: int64, ai: int32, va: int32, srd: int32, prd: int32
             buf.EmitUInt16 (uint16 numberOfRelocations)
             buf.EmitUInt16 (uint16 numberOfLineNumbers)
             buf.EmitInt32 characteristics
-            buf.Close()
+            buf.AsMemory().ToArray()
 
 
 let bytesToISH (buffer: byte[]) (offset: int) =
@@ -236,14 +236,14 @@ type IMAGE_SYMBOL(n: int64, v: int32, sn: int16, t: int16, sc: byte, nas: byte) 
             with get() = 18
 
         member x.toBytes() =
-            let buf = ByteBuffer.Create IMAGE_SYMBOL.Width
+            use buf = ByteBuffer.Create IMAGE_SYMBOL.Width
             buf.EmitInt64 name
             buf.EmitInt32 value
             buf.EmitUInt16 (uint16 sectionNumber)
             buf.EmitUInt16 (uint16 stype)
             buf.EmitByte storageClass
             buf.EmitByte numberOfAuxSymbols
-            buf.Close()
+            buf.AsMemory().ToArray()
 
 let bytesToIS (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_SYMBOL.Width then
@@ -280,11 +280,11 @@ type IMAGE_RELOCATION(va: int32, sti: int32, t: int16) =
         with get() = 10
 
     member x.toBytes() =
-        let buf = ByteBuffer.Create IMAGE_RELOCATION.Width
+        use buf = ByteBuffer.Create IMAGE_RELOCATION.Width
         buf.EmitInt32 virtualAddress
         buf.EmitInt32 symbolTableIndex
         buf.EmitUInt16 (uint16 ty)
-        buf.Close()
+        buf.AsMemory().ToArray()
 
 let bytesToIR (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RELOCATION.Width then
@@ -328,14 +328,14 @@ type IMAGE_RESOURCE_DIRECTORY(c: int32, tds: int32, mjv: int16, mnv: int16, nne:
     static member Width = 16
 
     member x.toBytes () =
-        let buf = ByteBuffer.Create IMAGE_RESOURCE_DIRECTORY.Width
+        use buf = ByteBuffer.Create IMAGE_RESOURCE_DIRECTORY.Width
         buf.EmitInt32 characteristics
         buf.EmitInt32 timeDateStamp
         buf.EmitUInt16 (uint16 majorVersion)
         buf.EmitUInt16 (uint16 minorVersion)
         buf.EmitUInt16 (uint16 numberOfNamedEntries)
         buf.EmitUInt16 (uint16 numberOfIdEntries)
-        buf.Close()
+        buf.AsMemory().ToArray()
 
 let bytesToIRD (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY.Width then
@@ -368,10 +368,10 @@ type IMAGE_RESOURCE_DIRECTORY_ENTRY(n: int32, o: int32) =
     static member Width = 8
 
     member x.toBytes () =
-        let buf = ByteBuffer.Create IMAGE_RESOURCE_DIRECTORY_ENTRY.Width
+        use buf = ByteBuffer.Create IMAGE_RESOURCE_DIRECTORY_ENTRY.Width
         buf.EmitInt32 name
         buf.EmitInt32 offset
-        buf.Close()
+        buf.AsMemory().ToArray()
 
 let bytesToIRDE (buffer: byte[]) (offset: int) =
     if (buffer.Length - offset) < IMAGE_RESOURCE_DIRECTORY_ENTRY.Width then
@@ -401,7 +401,7 @@ type IMAGE_RESOURCE_DATA_ENTRY(o: int32, s: int32, c: int32, r: int32) =
     static member Width = 16
 
     member x.toBytes() =
-        let buf = ByteBuffer.Create IMAGE_RESOURCE_DATA_ENTRY.Width
+        use buf = ByteBuffer.Create IMAGE_RESOURCE_DATA_ENTRY.Width
         buf.EmitInt32 offsetToData
         buf.EmitInt32 size
         buf.EmitInt32 codePage
@@ -466,7 +466,7 @@ type ResFormatHeader() =
     static member Width = 32
 
     member x.toBytes() =
-        let buf = ByteBuffer.Create ResFormatHeader.Width
+        use buf = ByteBuffer.Create ResFormatHeader.Width
         buf.EmitInt32 dwDataSize
         buf.EmitInt32 dwHeaderSize
         buf.EmitInt32 dwTypeID
@@ -476,7 +476,7 @@ type ResFormatHeader() =
         buf.EmitUInt16 (uint16 wLangID)
         buf.EmitInt32 dwVersion
         buf.EmitInt32 dwCharacteristics
-        buf.Close()
+        buf.AsMemory().ToArray()
 
 type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLinkedResource: byte[]) =
     let mutable resHdr = ResFormatHeader()
@@ -578,14 +578,14 @@ let linkNativeResources (unlinkedResources: byte[] list)  (rva: int32) =
    let resources =
        unlinkedResources
        |> Seq.map (fun s -> new MemoryStream(s))
-       |> Seq.map (fun s -> 
+       |> Seq.map (fun s ->
            let res = CvtResFile.ReadResFile s
            s.Dispose()
            res)
        |> Seq.collect id
        // See MakeWin32ResourceList https://github.com/dotnet/roslyn/blob/f40b89234db51da1e1153c14af184e618504be41/src/Compilers/Core/Portable/Compilation/Compilation.cs
-       |> Seq.map (fun r -> 
-           Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId, 
+       |> Seq.map (fun r ->
+           Win32Resource(data = r.data, codePage = 0u, languageId = uint32 r.LanguageId,
                                id = int (int16 r.pstringName.Ordinal), name = r.pstringName.theString,
                                typeId = int (int16 r.pstringType.Ordinal), typeName = r.pstringType.theString))
    let bb = new System.Reflection.Metadata.BlobBuilder()
@@ -905,7 +905,7 @@ let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
 
     let isLocked filename =
         try
-            use x = File.Open (filename, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+            use x = FileSystem.OpenFileForWriteShim(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
             false
         with
         | _ -> true
@@ -931,7 +931,7 @@ let hashSizeOfMD5 = 16
 // In this case, catch the failure, and not set a checksum.
 let internal setCheckSum (url: string, writer: ISymUnmanagedDocumentWriter) =
     try
-        use file = FileSystem.FileStreamReadShim url
+        use file = FileSystem.OpenFileForReadShim(url)
         use md5 = System.Security.Cryptography.MD5.Create()
         let checkSum = md5.ComputeHash file
         if (checkSum.Length = hashSizeOfMD5) then

@@ -133,27 +133,27 @@ let rec celem_ty2ty f celem =
 let cnamedarg_ty2ty f ((nm, ty, isProp, elem) : ILAttributeNamedArg)  =
     (nm, f ty, isProp, celem_ty2ty f elem) 
 
-let cattr_ty2ty ilg f (c: ILAttribute) =
+let cattr_ty2ty f (c: ILAttribute) =
     let meth = mspec_ty2ty (f, (fun _ -> f)) c.Method
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
         try 
-           let elems,namedArgs = IL.decodeILAttribData ilg c 
+           let elems,namedArgs = IL.decodeILAttribData c 
            let elems = elems |> List.map (celem_ty2ty f)
            let namedArgs = namedArgs |> List.map (cnamedarg_ty2ty f)
-           mkILCustomAttribMethRef ilg (meth, elems, namedArgs)
+           mkILCustomAttribMethRef (meth, elems, namedArgs)
         with _ ->
            c.WithMethod(meth)
     else
         c.WithMethod(meth)
 
 
-let cattrs_ty2ty ilg f (cs: ILAttributes) =
-    mkILCustomAttrs (List.map (cattr_ty2ty ilg f) cs.AsList)
+let cattrs_ty2ty f (cs: ILAttributes) =
+    mkILCustomAttrs (List.map (cattr_ty2ty f) cs.AsList)
 
-let fdef_ty2ty ilg ftye (fd: ILFieldDef) = 
+let fdef_ty2ty ftye (fd: ILFieldDef) = 
     fd.With(fieldType=ftye fd.FieldType,
-            customAttrs=cattrs_ty2ty ilg ftye fd.CustomAttrs)
+            customAttrs=cattrs_ty2ty ftye fd.CustomAttrs)
 
 let local_ty2ty f (l: ILLocal) = {l with Type = f l.Type}
 let varargs_ty2ty f (varargs: ILVarArgs) = Option.map (List.map f) varargs
@@ -197,8 +197,8 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
         | ILToken.ILField fr -> I_ldtoken (ILToken.ILField (conv_fspec fr))
     | x -> x
 
-let return_ty2ty ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty ilg f r.CustomAttrs)}
-let param_ty2ty ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty ilg f p.CustomAttrs)}
+let return_ty2ty f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty f r.CustomAttrs)}
+let param_ty2ty f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty f p.CustomAttrs)}
 
 let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
@@ -222,98 +222,98 @@ let morphILMethodBody (filmbody) (x: MethodBody) =
 
 let ospec_ty2ty f (OverridesSpec(mref,ty)) = OverridesSpec(mref_ty2ty f mref, f ty)
 
-let mdef_ty2ty_ilmbody2ilmbody ilg fs (md: ILMethodDef)  = 
+let mdef_ty2ty_ilmbody2ilmbody fs (md: ILMethodDef)  = 
     let (ftye,filmbody) = fs 
     let ftye' = ftye (Some md) 
     let body' = morphILMethodBody (filmbody (Some md))  md.Body 
     md.With(genericParams=gparams_ty2ty ftye' md.GenericParams,
             body= notlazy body',
-            parameters = List.map (param_ty2ty ilg ftye') md.Parameters,
-            ret = return_ty2ty ilg ftye' md.Return,
-            customAttrs=cattrs_ty2ty ilg ftye' md.CustomAttrs)
+            parameters = List.map (param_ty2ty ftye') md.Parameters,
+            ret = return_ty2ty ftye' md.Return,
+            customAttrs=cattrs_ty2ty ftye' md.CustomAttrs)
 
-let fdefs_ty2ty ilg f x = fdefs_fdef2fdef (fdef_ty2ty ilg f) x
+let fdefs_ty2ty f x = fdefs_fdef2fdef (fdef_ty2ty f) x
 
-let mdefs_ty2ty_ilmbody2ilmbody ilg fs x = morphILMethodDefs (mdef_ty2ty_ilmbody2ilmbody ilg fs) x
+let mdefs_ty2ty_ilmbody2ilmbody fs x = morphILMethodDefs (mdef_ty2ty_ilmbody2ilmbody fs) x
 
 let mimpl_ty2ty f e =
     { Overrides = ospec_ty2ty f e.Overrides
       OverrideBy = mspec_ty2ty (f,(fun _ -> f)) e.OverrideBy; }
 
-let edef_ty2ty ilg f (e: ILEventDef) =
+let edef_ty2ty f (e: ILEventDef) =
     e.With(eventType = Option.map f e.EventType,
            addMethod = mref_ty2ty f e.AddMethod,
            removeMethod = mref_ty2ty f e.RemoveMethod,
            fireMethod = Option.map (mref_ty2ty f) e.FireMethod,
            otherMethods = List.map (mref_ty2ty f) e.OtherMethods,
-           customAttrs = cattrs_ty2ty ilg f e.CustomAttrs)
+           customAttrs = cattrs_ty2ty f e.CustomAttrs)
 
-let pdef_ty2ty ilg f (p: ILPropertyDef) =
+let pdef_ty2ty f (p: ILPropertyDef) =
     p.With(setMethod = Option.map (mref_ty2ty f) p.SetMethod,
            getMethod = Option.map (mref_ty2ty f) p.GetMethod,
            propertyType = f p.PropertyType,
            args = List.map f p.Args,
-           customAttrs = cattrs_ty2ty ilg f p.CustomAttrs)
+           customAttrs = cattrs_ty2ty f p.CustomAttrs)
 
-let pdefs_ty2ty ilg f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_ty2ty ilg f) pdefs.AsList)
-let edefs_ty2ty ilg f (edefs: ILEventDefs) = mkILEvents (List.map (edef_ty2ty ilg f) edefs.AsList)
+let pdefs_ty2ty f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_ty2ty f) pdefs.AsList)
+let edefs_ty2ty f (edefs: ILEventDefs) = mkILEvents (List.map (edef_ty2ty f) edefs.AsList)
 
 let mimpls_ty2ty f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_ty2ty f) mimpls.AsList)
 
-let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg enc fs (td: ILTypeDef) = 
+let rec tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs (td: ILTypeDef) = 
    let (ftye,fmdefs) = fs 
    let ftye' = ftye (Some (enc,td)) None 
    let mdefs' = fmdefs (enc,td) td.Methods 
-   let fdefs' = fdefs_ty2ty ilg ftye' td.Fields 
+   let fdefs' = fdefs_ty2ty ftye' td.Fields 
    td.With(implements= List.map ftye' td.Implements,
            genericParams= gparams_ty2ty ftye' td.GenericParams,
            extends = Option.map ftye' td.Extends,
            methods=mdefs',
-           nestedTypes=tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg (enc@[td]) fs td.NestedTypes,
+           nestedTypes=tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs (enc@[td]) fs td.NestedTypes,
            fields=fdefs',
            methodImpls = mimpls_ty2ty ftye' td.MethodImpls,
-           events = edefs_ty2ty ilg ftye' td.Events,
-           properties = pdefs_ty2ty ilg ftye' td.Properties,
-           customAttrs = cattrs_ty2ty ilg ftye' td.CustomAttrs)
+           events = edefs_ty2ty ftye' td.Events,
+           properties = pdefs_ty2ty ftye' td.Properties,
+           customAttrs = cattrs_ty2ty ftye' td.CustomAttrs)
 
-and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs = 
-  morphILTypeDefs (tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg enc fs) tdefs
+and tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs tdefs = 
+  morphILTypeDefs (tdef_ty2ty_ilmbody2ilmbody_mdefs2mdefs enc fs) tdefs
 
 // --------------------------------------------------------------------
 // Derived versions of the above, e.g. with defaults added
 // -------------------------------------------------------------------- 
 
-let manifest_ty2ty ilg f (m : ILAssemblyManifest) =
-    { m with CustomAttrsStored = storeILCustomAttrs (cattrs_ty2ty ilg f m.CustomAttrs) }
+let manifest_ty2ty f (m : ILAssemblyManifest) =
+    { m with CustomAttrsStored = storeILCustomAttrs (cattrs_ty2ty f m.CustomAttrs) }
 
-let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftye: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
+let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ((ftye: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
 
-    let ftdefs = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftye m,fmdefs m) 
+    let ftdefs = tdefs_ty2ty_ilmbody2ilmbody_mdefs2mdefs [] (ftye m,fmdefs m) 
 
     { m with TypeDefs=ftdefs m.TypeDefs
-             CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty ilg (ftye m None None) m.CustomAttrs)
-             Manifest=Option.map (manifest_ty2ty ilg (ftye m None None)) m.Manifest  }
+             CustomAttrsStored= storeILCustomAttrs (cattrs_ty2ty (ftye m None None) m.CustomAttrs)
+             Manifest=Option.map (manifest_ty2ty (ftye m None None)) m.Manifest  }
     
-let module_instr2instr_ty2ty ilg fs x = 
+let module_instr2instr_ty2ty fs x = 
     let (fcode,ftye) = fs 
     let filmbody modCtxt tdefCtxt mdefCtxt = ilmbody_instr2instr_ty2ty (fcode modCtxt tdefCtxt mdefCtxt, ftye modCtxt (Some tdefCtxt) mdefCtxt) 
-    let fmdefs modCtxt tdefCtxt = mdefs_ty2ty_ilmbody2ilmbody ilg (ftye modCtxt (Some tdefCtxt), filmbody modCtxt tdefCtxt) 
-    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg (ftye, fmdefs) x 
+    let fmdefs modCtxt tdefCtxt = mdefs_ty2ty_ilmbody2ilmbody (ftye modCtxt (Some tdefCtxt), filmbody modCtxt tdefCtxt) 
+    morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs (ftye, fmdefs) x 
 
-let morphILInstrsAndILTypesInILModule ilg (f1,f2) x = 
-  module_instr2instr_ty2ty ilg (f1, f2) x
+let morphILInstrsAndILTypesInILModule (f1,f2) x = 
+  module_instr2instr_ty2ty (f1, f2) x
 
 let morphILInstrsInILCode f x = code_instr2instrs f x
 
-let morphILTypeInILModule ilg ftye y = 
+let morphILTypeInILModule ftye y = 
     let finstr modCtxt tdefCtxt mdefCtxt =
         let fty = ftye modCtxt (Some tdefCtxt) mdefCtxt 
         morphILTypesInILInstr ((fun _instrCtxt -> fty), (fun _instrCtxt _formalCtxt -> fty)) 
-    morphILInstrsAndILTypesInILModule ilg (finstr,ftye) y
+    morphILInstrsAndILTypesInILModule (finstr,ftye) y
 
-let morphILTypeRefsInILModuleMemoized ilg f modul = 
+let morphILTypeRefsInILModuleMemoized f modul = 
     let fty = Tables.memoize (ty_tref2tref f)
-    morphILTypeInILModule ilg (fun _ _ _ ty -> fty ty) modul
+    morphILTypeInILModule (fun _ _ _ ty -> fty ty) modul
 
-let morphILScopeRefsInILModuleMemoized ilg f modul = 
-    morphILTypeRefsInILModuleMemoized ilg (morphILScopeRefsInILTypeRef f) modul
+let morphILScopeRefsInILModuleMemoized f modul = 
+    morphILTypeRefsInILModuleMemoized (morphILScopeRefsInILTypeRef f) modul

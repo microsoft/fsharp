@@ -39,13 +39,13 @@ val TypeCheckOneImplFile :
       -> TcEnv 
       -> ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+      -> Cancellable<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines option * NameResolution.TcResultsSink * bool
       -> TcEnv                             
       -> ParsedSigFileInput
-      -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
+      -> Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
 exception ParameterlessStructCtor of range
 

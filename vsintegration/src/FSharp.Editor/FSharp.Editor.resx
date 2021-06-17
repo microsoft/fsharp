@@ -217,7 +217,7 @@
     <value>F# Properties</value>
   </data>
   <data name="FSharpDisposableTopLevelValuesClassificationType" xml:space="preserve">
-    <value>F# Dispostable Values (top-level)</value>
+    <value>F# Disposable Values (top-level)</value>
   </data>
   <data name="MakeDeclarationMutable" xml:space="preserve">
     <value>Make declaration 'mutable'</value>
@@ -281,5 +281,11 @@
   </data>
   <data name="RemoveUnusedBinding" xml:space="preserve">
     <value>Remove unused binding</value>
+  </data>
+  <data name="AddMissingInstanceMemberParameter" xml:space="preserve">
+    <value>Add missing instance member parameter</value>
+  </data>
+  <data name="UseNameof" xml:space="preserve">
+    <value>Use 'nameof'</value>
   </data>
 </root>

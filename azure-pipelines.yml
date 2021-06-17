@@ -57,7 +57,7 @@ variables:
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: DotNetSdkVersion
-    value: '5.0.100'
+    value: '5.0.300'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -89,6 +89,7 @@ stages:
         enablePublishTestResults: false
         enablePublishBuildAssets: true
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
+        enableSourceBuild: true
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
@@ -189,6 +190,7 @@ stages:
         enablePublishTestResults: false
         enablePublishBuildAssets: true
         enablePublishUsingPipelines: $(_PublishUsingPipelines)
+        enableSourceBuild: true
         enableTelemetry: true
         helixRepo: dotnet/fsharp
         jobs:
@@ -238,7 +240,7 @@ stages:
               ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
               publishLocation: Container
             continueOnError: true
-            condition: eq(variables['_testKind'], 'testFSharpQA')
+            condition: failed()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
@@ -281,6 +283,14 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              ArtifactName: 'Linux $(_BuildConfig) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
@@ -313,6 +323,14 @@ stages:
               searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
             continueOnError: true
             condition: always()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_BuildConfig)'
+              ArtifactName: 'MacOS $(_BuildConfig) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
           - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
             displayName: Dump NuGet cache contents
             condition: failed()
@@ -336,32 +354,6 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
-        # Source Build Windows
-        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-          - job: SourceBuild_Windows
-            pool:
-              vmImage: windows-latest
-            steps:
-            - checkout: self
-              clean: true
-            - script: eng\CIBuild.cmd -configuration Release -noSign -prepareMachine -sourceBuild
-              displayName: Build
-            - task: PublishPipelineArtifact@1
-              displayName: Publish Logs
-              inputs:
-                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                artifactName: 'SourceBuild_Windows Logs'
-              continueOnError: true
-              condition: not(succeeded())
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Logs
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                ArtifactName: 'SourceBuild_Windows_Test'
-                publishLocation: Container
-              continueOnError: true
-              condition: not(succeeded())
-
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:
@@ -374,35 +366,6 @@ stages:
         #    inputs:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
-
-        # Source Build Semi-Official
-        - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
-          - job: SourceBuild_Official
-            # used until https://github.com/dotnet/source-build/issues/1795 is fixed
-            pool:
-              name: NetCorePublic-Pool
-              queue: BuildPool.Ubuntu.1604.amd64.Open
-            timeoutInMinutes: 90
-            steps:
-            - checkout: self
-              clean: true
-            - script: ./eng/cibuild.sh --configuration Release --prepareMachine --docker --sourceBuild
-              displayName: Build
-            - task: PublishPipelineArtifact@1
-              displayName: Publish Logs
-              inputs:
-                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                artifactName: 'SourceBuild_Official Logs'
-              continueOnError: true
-              condition: not(succeeded())
-            - task: PublishBuildArtifacts@1
-              displayName: Publish Logs
-              inputs:
-                PathtoPublish: '$(Build.SourcesDirectory)/artifacts/log/Release'
-                ArtifactName: 'SourceBuild_Official_Test'
-                publishLocation: Container
-              continueOnError: true
-              condition: not(succeeded())
 
         # Plain build Windows
         # Disabled until the Windows Proto compiler is coreclr
@@ -511,3 +474,4 @@ stages:
       insertTargetBranch: rel/d16.9
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
+      completeInsertion: 'auto'

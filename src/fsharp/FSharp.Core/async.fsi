@@ -365,6 +365,17 @@ namespace Microsoft.FSharp.Control
         ///
         /// <param name="task">The task to await.</param>
         ///
+        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
+        /// function.
+        ///        
+        /// If the task is cancelled then <see cref="F:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// that the task may be governed by a different cancellation token to the overall async computation
+        /// where the AwaitTask occurs. In practice you should normally start the task with the
+        /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
+        /// any <see cref="F:System.Threading.Tasks.TaskCanceledException"/> at the point where the
+        /// overall async is started.
+        /// </remarks>
+        ///
         /// <category index="2">Awaiting Results</category>
         static member AwaitTask: task: Task<'T> -> Async<'T>
 
@@ -372,6 +383,17 @@ namespace Microsoft.FSharp.Control
         /// its result.</summary>
         ///
         /// <param name="task">The task to await.</param>
+        ///
+        /// <remarks>If an exception occurs in the asynchronous computation then an exception is re-raised by this
+        /// function.
+        ///        
+        /// If the task is cancelled then <see cref="F:System.Threading.Tasks.TaskCanceledException"/> is raised. Note
+        /// that the task may be governed by a different cancellation token to the overall async computation
+        /// where the AwaitTask occurs. In practice you should normally start the task with the
+        /// cancellation token returned by <c>let! ct = Async.CancellationToken</c>, and catch
+        /// any <see cref="F:System.Threading.Tasks.TaskCanceledException"/> at the point where the
+        /// overall async is started.
+        /// </remarks>
         ///
         /// <category index="2">Awaiting Results</category>
         static member AwaitTask: task: Task -> Async<unit>

@@ -907,9 +907,7 @@ type UsingMSBuild() as this =
         let (project, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file, "System.ConsoleModifiers.Sh")
         let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:F:System.ConsoleModifiers.Shift]") // A message from the mock IDocumentationBuilder
-        AssertContains(tooltip, @"[Filename:") 
-        AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from     
+        AssertContains(tooltip, @"<summary>The left or right SHIFT modifier key.</summary>")    
         
         MoveCursorToEndOfMarker(file, "(3).ToString().Len")
         let tooltip = GetQuickInfoAtCursor file

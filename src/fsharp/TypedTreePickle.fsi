@@ -1,8 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines the framework for serializing and de-serializing TAST data structures as binary blobs for the F# metadata format.
-module internal FSharp.Compiler.TypedTreePickle 
+module internal FSharp.Compiler.TypedTreePickle
 
+open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
@@ -11,22 +12,22 @@ open FSharp.Compiler.TcGlobals
 
 /// Represents deserialized data with a dangling set of CCU fixup thunks indexed by name
 [<NoEquality; NoComparison>]
-type PickledDataWithReferences<'RawData> = 
+type PickledDataWithReferences<'RawData> =
     {
       /// The data that uses a collection of CcuThunks internally
-      RawData: 'RawData 
+      RawData: 'RawData
 
       /// The assumptions that need to be fixed up
       FixupThunks: CcuThunk []
-    } 
+    }
 
     member Fixup : (CcuReference -> CcuThunk) -> 'RawData
 
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
-    
+
 /// The type of state written to by picklers
-type WriterState 
+type WriterState
 
 /// A function to pickle a value into a given stateful writer
 type pickler<'T> = 'T -> WriterState -> unit
@@ -83,10 +84,10 @@ val internal p_ty : pickler<TType>
 val internal pickleCcuInfo : pickler<PickledCcuInfo>
 
 /// Serialize an arbitrary object using the given pickler
-val pickleObjWithDanglingCcus : inMem: bool -> file: string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> byte[]
+val pickleObjWithDanglingCcus : inMem: bool -> file: string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> ByteBuffer
 
 /// The type of state unpicklers read from
-type ReaderState 
+type ReaderState
 
 /// A function to read a value from a given state
 type unpickler<'T> = ReaderState -> 'T
@@ -133,7 +134,7 @@ val internal u_tcref : unpickler<TyconRef>
 /// Deserialize a TAST union case reference
 val internal u_ucref : unpickler<UnionCaseRef>
 
-/// Deserialize a TAST expression 
+/// Deserialize a TAST expression
 val internal u_expr : unpickler<Expr>
 
 /// Deserialize a TAST type

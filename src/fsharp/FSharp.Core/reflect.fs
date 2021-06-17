@@ -187,6 +187,58 @@ module internal Impl =
 
         expr.Compile ()
 
+    let compileTupleReader tupleEncField getTupleElementAccessors typ =
+        let rec writeTupleIntoArray (typ: Type) (tuple: Expression) outputArray startIndex = seq {
+            let elements =
+                match getTupleElementAccessors typ with
+                // typ is a struct tuple and its elements are accessed via fields 
+                | Choice1Of2 (fi: FieldInfo[]) -> fi |> Array.map (fun fi -> Expression.Field (tuple, fi), fi.FieldType)
+                // typ is a class tuple and its elements are accessed via properties 
+                | Choice2Of2 (pi: PropertyInfo[]) -> pi |> Array.map (fun pi -> Expression.Property (tuple, pi), pi.PropertyType)
+
+            for index, (element, elementType) in elements |> Array.indexed do
+                if index = tupleEncField then
+                    let innerTupleParam = Expression.Parameter (elementType, "innerTuple")
+                    Expression.Block (
+                        [ innerTupleParam ],
+                        [
+                            yield Expression.Assign (innerTupleParam, element) :> Expression
+                            yield! writeTupleIntoArray elementType innerTupleParam outputArray (startIndex + index)
+                        ]
+                    ) :> Expression
+                else
+                    Expression.Assign (
+                        Expression.ArrayAccess (outputArray, Expression.Constant (index + startIndex)),
+                        Expression.Convert (element, typeof<obj>)
+                    ) :> Expression }
+
+        let param = Expression.Parameter (typeof<obj>, "outerTuple")
+        let outputArray = Expression.Variable (typeof<obj[]>, "output")
+        let rec outputLength tupleEncField (typ: Type) =
+            let genericArgs = typ.GetGenericArguments ()
+
+            if genericArgs.Length > tupleEncField then
+                tupleEncField + outputLength tupleEncField genericArgs.[genericArgs.Length - 1]
+            else
+                genericArgs.Length
+
+        let expr =
+            Expression.Lambda<Func<obj, obj[]>> (
+                Expression.Block (
+                    [ outputArray ],
+                    [
+                        yield Expression.Assign (
+                            outputArray,
+                            Expression.NewArrayBounds (typeof<obj>, Expression.Constant (outputLength tupleEncField typ))
+                        ) :> Expression
+                        yield! writeTupleIntoArray typ (Expression.Convert (param, typ)) outputArray 0
+                        yield outputArray :> Expression
+                    ]
+                ),
+                param)
+
+        expr.Compile ()
+
     //-----------------------------------------------------------------
     // ATTRIBUTE DECOMPILATION
 
@@ -634,16 +686,19 @@ module internal Impl =
           (fun (args: obj[]) ->
               ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
 
+    let getTupleElementAccessors (typ: Type) =
+        if typ.IsValueType then
+            Choice1Of2 (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
+        else
+            Choice2Of2 (typ.GetProperties (instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
+
     let rec getTupleReader (typ: Type) =
         let etys = typ.GetGenericArguments()
         // Get the reader for the outer tuple record
         let reader =
-            if typ.IsValueType then
-                let fields = (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
-                ((fun (obj: obj) -> fields |> Array.map (fun field -> field.GetValue obj)))
-            else
-                let props = (typ.GetProperties (instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
-                ((fun (obj: obj) -> props |> Array.map (fun prop -> prop.GetValue (obj, null))))
+            match getTupleElementAccessors typ with
+            | Choice1Of2 fi -> fun obj -> fi |> Array.map (fun f -> f.GetValue obj)
+            | Choice2Of2 pi -> fun obj -> pi |> Array.map (fun p -> p.GetValue (obj, null))
         if etys.Length < maxTuple
         then reader
         else
@@ -1009,7 +1064,7 @@ type FSharpValue =
 
     static member PreComputeTupleReader(tupleType: Type) : (obj -> obj[])  =
         checkTupleType("tupleType", tupleType)
-        getTupleReader tupleType
+        (compileTupleReader tupleEncField getTupleElementAccessors tupleType).Invoke
 
     static member PreComputeTuplePropertyInfo(tupleType: Type, index: int) =
         checkTupleType("tupleType", tupleType)

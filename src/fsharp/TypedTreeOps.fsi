@@ -11,7 +11,7 @@ open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TcGlobals
 
@@ -994,6 +994,7 @@ type DisplayEnv =
       showDocumentation: bool
       shrinkOverloads: bool
       printVerboseSignatures: bool
+      escapeKeywordNames: bool
       g: TcGlobals
       contextAccessibility: Accessibility
       generatedValueLayout: (Val -> Layout option)
@@ -1712,6 +1713,9 @@ val mkListTy: TcGlobals -> TType -> TType
 /// Create the option type for a given element type
 val mkOptionTy: TcGlobals -> TType -> TType
 
+/// Create the voption type for a given element type
+val mkValueOptionTy  : TcGlobals -> TType -> TType
+
 /// Create the Nullable type for a given element type
 val mkNullableTy: TcGlobals -> TType -> TType
 
@@ -1720,6 +1724,12 @@ val mkNoneCase: TcGlobals -> UnionCaseRef
 
 /// Create the union case 'Some(expr)' for an option type
 val mkSomeCase: TcGlobals -> UnionCaseRef
+
+/// Create the struct union case 'ValueSome(expr)' for a voption type
+val mkValueSomeCase: TcGlobals -> UnionCaseRef
+
+/// Create the struct union case 'Some' or 'ValueSome(expr)' for a voption type
+val mkAnySomeCase: TcGlobals -> isStruct: bool -> UnionCaseRef
 
 /// Create the expression '[]' for a list type
 val mkNil: TcGlobals -> range -> TType -> Expr
@@ -1732,9 +1742,6 @@ val mkSome: TcGlobals -> TType -> Expr -> range -> Expr
 
 /// Create the expression 'None' for an option-type
 val mkNone: TcGlobals -> TType -> range -> Expr
-
-/// Create the expression 'expr.Value' for an option-typed expression
-val mkOptionGetValueUnprovenViaAddr: TcGlobals -> Expr -> TType -> range -> Expr
 
 val mkOptionToNullable: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2087,7 +2094,7 @@ val mkLdelem: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Analyze attribute sets 
 //------------------------------------------------------------------------- 
 
-val TryDecodeILAttribute: TcGlobals -> ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val TryDecodeILAttribute: ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
 
 val TryFindILAttribute: BuiltinAttribInfo -> ILAttributes -> bool
 
@@ -2129,16 +2136,16 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILGlobals -> ILAttribute -> string option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool
 
-val TryFindAutoOpenAttr: IL.ILGlobals -> ILAttribute -> string option 
+val TryFindAutoOpenAttr: ILAttribute -> string option 
 
-val TryFindInternalsVisibleToAttr: IL.ILGlobals -> ILAttribute -> string option 
+val TryFindInternalsVisibleToAttr: ILAttribute -> string option 
 
-val IsMatchingSignatureDataVersionAttr: IL.ILGlobals -> ILVersionInfo -> ILAttribute -> bool
+val IsMatchingSignatureDataVersionAttr: ILVersionInfo -> ILAttribute -> bool
 
 val mkCompilationMappingAttr: TcGlobals -> int -> ILAttribute
 val mkCompilationMappingAttrWithSeqNum: TcGlobals -> int -> int -> ILAttribute
@@ -2280,15 +2287,15 @@ type ActivePatternElemRef with
 
 val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
 
-val mkChoiceCaseRef: TcGlobals -> range -> int -> int -> UnionCaseRef
+val mkChoiceCaseRef: g: TcGlobals -> m: range -> n: int -> i: int -> UnionCaseRef
 
 type PrettyNaming.ActivePatternInfo with 
 
     member Names: string list 
 
-    member ResultType: TcGlobals -> range -> TType list -> TType
+    member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
-    member OverallType: TcGlobals -> range -> TType -> TType list -> TType
+    member OverallType: g: TcGlobals -> m: range -> dty: TType -> rtys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
 

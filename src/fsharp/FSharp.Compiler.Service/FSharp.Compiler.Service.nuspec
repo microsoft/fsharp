@@ -30,6 +30,7 @@
             <dependency id="System.Threading.Tasks.Parallel" version="$SystemThreadingTasksParallelPackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Threading.Thread" version="$SystemThreadingThreadPackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Threading.ThreadPool" version="$SystemThreadingThreadPoolPackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Runtime.CompilerServices.Unsafe" version="$SystemRuntimeCompilerServicesUnsafePackageVersion$" exclude="Build,Analyzers" />
           </group>
         </dependencies>
     </metadata>

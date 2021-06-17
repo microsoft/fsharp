@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.Options
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -20,6 +21,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
@@ -62,6 +64,7 @@ type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager) =
         member _.OnAfterCloseSolution(_) =
             projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             projectManager.MetadataAsSource.ClearGeneratedFiles()
+            projectManager.ClearAllCaches()
             VSConstants.S_OK
 
         member _.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
@@ -182,11 +185,17 @@ type internal FSharpPackage() as this =
 
                     solutionEventsOpt <- Some(solutionEvents)
                     solution.AdviseSolutionEvents(solutionEvents) |> ignore
-
+                    
                     let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
-                    let _singleFileWorkspaceMap = new SingleFileWorkspaceMap(workspace, miscFilesWorkspace, projectInfoManager, projectContextFactory, rdt)
+                    let _singleFileWorkspaceMap = 
+                        new SingleFileWorkspaceMap(
+                            workspace, 
+                            miscFilesWorkspace, 
+                            projectInfoManager, 
+                            projectContextFactory, 
+                            rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, projectInfoManager, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()

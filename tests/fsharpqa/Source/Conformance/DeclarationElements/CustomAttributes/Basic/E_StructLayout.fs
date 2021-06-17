@@ -1,8 +1,8 @@
 // #Regression #Conformance #DeclarationElements #Attributes 
 // Tests to ensure that you can't use StructLayout inappropriately
 // Regression tests for FSHARP1.0:5931
-//<Expects status="error" span="(14,1-15,1)" id="FS1206">The type 'SExplicitBroken' has been marked as having an Explicit layout, but the field 'v2' has not been marked with the 'FieldOffset' attribute$</Expects>
-//<Expects status="error" span="(24,1-25,1)" id="FS1211">The FieldOffset attribute can only be placed on members of types marked with the StructLayout\(LayoutKind\.Explicit\)$</Expects>
+//<Expects status="error" span="(12,1-13,1)" id="FS1206">The type 'SExplicitBroken' has been marked as having an Explicit layout, but the field 'v2' has not been marked with the 'FieldOffset' attribute$</Expects>
+//<Expects status="error" span="(22,1-23,1)" id="FS1211">The FieldOffset attribute can only be placed on members of types marked with the StructLayout\(LayoutKind\.Explicit\)$</Expects>
 
 module M
 

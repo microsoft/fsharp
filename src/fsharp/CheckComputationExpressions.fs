@@ -1668,7 +1668,6 @@ let mkSeqDelay (cenv: cenv) env m genTy lam =
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqDelay cenv.g m genResultTy (mkUnitDelayLambda cenv.g m lam) 
 
-
 let mkSeqAppend (cenv: cenv) env m genTy e1 e2 =
     let genResultTy = NewInferenceType ()
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
@@ -1717,20 +1716,26 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
         cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
         && (YieldFree cenv comp)
 
-    let mkDelayedExpr (coreExpr: Expr) = 
-        let m = coreExpr.Range
+    let mkDelayedExpr m (coreExpr: Expr) = 
         let overallTy = tyOfExpr cenv.g coreExpr
         mkSeqDelay cenv env m overallTy coreExpr
 
     let rec tryTcSequenceExprBody env genOuterTy tpenv comp =
         match comp with 
-        | SynExpr.ForEach (_spBind, SeqExprOnly _seqExprOnly, _isFromSource, pat, pseudoEnumExpr, innerComp, m) -> 
+        | SynExpr.ForEach (spFor, SeqExprOnly _seqExprOnly, _isFromSource, pat, pseudoEnumExpr, innerComp, m) -> 
             // This expression is not checked with the knowledge it is an IEnumerable, since we permit other enumerable types with GetEnumerator/MoveNext methods, as does C# 
             let pseudoEnumExpr, arb_ty, tpenv = TcExprOfUnknownType cenv env tpenv pseudoEnumExpr
-            let (enumExpr: Expr), enumElemTy = ConvertArbitraryExprToEnumerable cenv arb_ty env pseudoEnumExpr
+            let enumExpr, enumElemTy = ConvertArbitraryExprToEnumerable cenv arb_ty env pseudoEnumExpr
             let pat', _, (vspecs: Val list), envinner, tpenv = TcMatchPattern cenv enumElemTy env tpenv (pat, None)
             let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
                 
+            let enumExprMark = enumExpr.Range
+            // We attach the debug point to the lambda expression so we can fetch it out again in LowerComputedListOrArraySeqExpr
+            let mFor = 
+                match spFor with 
+                | DebugPointAtFor.Yes m -> m
+                | _ -> enumExprMark
+
             match pat', vspecs, innerExpr with 
             // peephole optimization: "for x in e1 -> e2" == "e1 |> List.map (fun x -> e2)" *)
             | (TPat_as (TPat_wild _, PBind (v, _), _), 
@@ -1738,8 +1743,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 Expr.App (Expr.Val (vf, _, _), _, [genEnumElemTy], [yexpr], _)) 
                     when vs.Length = 1 && valRefEq cenv.g vf cenv.g.seq_singleton_vref ->
           
-                let enumExprMark = enumExpr.Range
-                let lam = mkLambda enumExprMark v (yexpr, genEnumElemTy)
+                let lam = mkLambda mFor v (yexpr, genEnumElemTy)
                     
                 // SEQUENCE POINTS: need to build a let here consuming spBind
                 let enumExpr = mkCoerceIfNeeded cenv.g (mkSeqTy cenv.g enumElemTy) (tyOfExpr cenv.g enumExpr) enumExpr
@@ -1751,31 +1755,47 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 // SEQUENCE POINTS: need to build a let here consuming spBind
 
                 let matchv, matchExpr = compileSeqExprMatchClauses cenv env enumExprMark (pat', vspecs) innerExpr None enumElemTy genOuterTy
-                let lam = mkLambda enumExprMark matchv (matchExpr, tyOfExpr cenv.g matchExpr)
+                let lam = mkLambda mFor matchv (matchExpr, tyOfExpr cenv.g matchExpr)
                 Some(mkSeqCollect cenv env m enumElemTy genOuterTy lam enumExpr, tpenv)
 
         | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
             Some(tcSequenceExprBody env genOuterTy tpenv (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)))
 
-        | SynExpr.While (_spWhile, guardExpr, innerComp, _m) -> 
+        | SynExpr.While (spWhile, guardExpr, innerComp, _m) -> 
             let guardExpr, tpenv = TcExpr cenv cenv.g.bool_ty env tpenv guardExpr
             let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp
     
             let guardExprMark = guardExpr.Range
             let guardExpr = mkUnitDelayLambda cenv.g guardExprMark guardExpr
-            let innerExpr = mkDelayedExpr innerExpr
+            
+            // We attach the debug point to the lambda expression so we can fetch it out again in LowerComputedListOrArraySeqExpr
+            let mWhile = 
+                match spWhile with 
+                | DebugPointAtWhile.Yes m -> m
+                | _ -> guardExprMark
+
+            let innerExpr = mkDelayedExpr mWhile innerExpr
             Some(mkSeqFromFunctions cenv env guardExprMark genOuterTy guardExpr innerExpr, tpenv)
 
-        | SynExpr.TryFinally (innerComp, unwindExpr, _mTryToLast, _spTry, _spFinally) ->
+        | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally) ->
             let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp
             let (unwindExpr: Expr), tpenv = TcExpr cenv cenv.g.unit_ty env tpenv unwindExpr
             
-            let unwindExprMark = unwindExpr.Range
-            let unwindExpr = mkUnitDelayLambda cenv.g unwindExprMark unwindExpr
-            let innerExpr = mkDelayedExpr innerExpr
-            let innerExprMark = innerExpr.Range
+            // We attach the debug points to the lambda expressions so we can fetch it out again in LowerComputedListOrArraySeqExpr
+            let mTry = 
+                match spTry with 
+                | DebugPointAtTry.Yes m -> m
+                | _ -> unwindExpr.Range
+
+            let mFinally = 
+                match spFinally with 
+                | DebugPointAtFinally.Yes m -> m
+                | _ -> unwindExpr.Range
+
+            let innerExpr = mkDelayedExpr mTry innerExpr
+            let unwindExpr = mkUnitDelayLambda cenv.g mFinally unwindExpr
                 
-            Some(mkSeqFinally cenv env innerExprMark genOuterTy innerExpr unwindExpr, tpenv)
+            Some(mkSeqFinally cenv env mTryToLast genOuterTy innerExpr unwindExpr, tpenv)
 
         | SynExpr.Paren (_, _, _, m) when not (cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield)->
             error(Error(FSComp.SR.tcConstructIsAmbiguousInSequenceExpression(), m))
@@ -1793,7 +1813,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             match res with 
             | Choice1Of2 innerExpr1 -> 
                 let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
-                let innerExpr2 = mkDelayedExpr innerExpr2
+                let innerExpr2 = mkDelayedExpr innerExpr2.Range innerExpr2
                 Some(mkSeqAppend cenv env innerComp1.Range genOuterTy innerExpr1 innerExpr2, tpenv)
             | Choice2Of2 stmt1 -> 
                 let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
@@ -1817,7 +1837,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 (fun x -> x) |> Some
 
         // 'use x = expr in expr'
-        | SynExpr.LetOrUse (_isRec, true, [SynBinding (_vis, SynBindingKind.Normal, _, _, _, _, _, pat, _, rhsExpr, _, _spBind)], innerComp, wholeExprMark) ->
+        | SynExpr.LetOrUse (_isRec, true, [SynBinding (_vis, SynBindingKind.Normal, _, _, _, _, _, pat, _, rhsExpr, _, spBind)], innerComp, wholeExprMark) ->
 
             let bindPatTy = NewInferenceType ()
             let inputExprTy = NewInferenceType ()
@@ -1825,9 +1845,13 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             UnifyTypes cenv env m inputExprTy bindPatTy
             let (inputExpr: Expr), tpenv = TcExpr cenv inputExprTy env tpenv rhsExpr
             let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
+            let mBind = 
+                match spBind with 
+                | DebugPointAtBinding.Yes m -> m
+                | _ -> inputExpr.Range
             let inputExprMark = inputExpr.Range
             let matchv, matchExpr = compileSeqExprMatchClauses cenv env inputExprMark (pat', vspecs) innerExpr (Some inputExpr) bindPatTy genOuterTy 
-            let consumeExpr = mkLambda wholeExprMark matchv (matchExpr, genOuterTy)
+            let consumeExpr = mkLambda mBind matchv (matchExpr, genOuterTy)
             //SEQPOINT NEEDED - we must consume spBind on this path
             Some(mkSeqUsing cenv env wholeExprMark bindPatTy genOuterTy inputExpr consumeExpr, tpenv)
 
@@ -1901,7 +1925,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 Choice2Of2 stmt, tpenv
 
     let coreExpr, tpenv = tcSequenceExprBody env overallTy tpenv comp
-    let delayedExpr = mkDelayedExpr coreExpr
+    let delayedExpr = mkDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
 let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m =
@@ -1965,6 +1989,7 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
 
         let expr = 
             if cenv.g.compilingFslib then 
+                //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
                 expr 
             else 
                 // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the

@@ -66,13 +66,13 @@ let private SimulatedMSBuildResolver =
             | Net48 -> Some TargetDotNetFrameworkVersion.Version48
             | _ -> assert false; None
         match v with
-        | Some v -> 
+        | Some v ->
             match ToolLocationHelper.GetPathToDotNetFramework v with
             | null -> []
             | x -> [x]
         | _ -> []
 
-    let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
+    let GetPathToDotNetFrameworkReferenceAssemblies(version) =
 #if NETSTANDARD
         ignore version
         let r : string list = []
@@ -87,7 +87,7 @@ let private SimulatedMSBuildResolver =
         member x.HighestInstalledNetFrameworkVersion() =
 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> Directory.Exists(Path.Combine(root, fw) ))
+            let fwOpt = SupportedDesktopFrameworkVersions |> Seq.tryFind(fun fw -> FileSystem.DirectoryExistsShim(Path.Combine(root, fw) ))
             match fwOpt with
             | Some fw -> fw
             | None -> "v4.5"
@@ -158,8 +158,8 @@ let private SimulatedMSBuildResolver =
                         results.Add { itemSpec = path; prepareToolTip = snd; baggage=baggage }
 
                 try
-                    if not found && Path.IsPathRooted r then
-                        if FileSystem.SafeExists r then
+                    if not found && FileSystem.IsPathRootedShim r then
+                        if FileSystem.FileExistsShim r then
                             success r
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
@@ -174,7 +174,7 @@ let private SimulatedMSBuildResolver =
                                 | s -> s
                             PF + @"\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\"  + n.Version.ToString()
                         let trialPath = Path.Combine(fscoreDir0, n.Name + ".dll")
-                        if FileSystem.SafeExists trialPath then
+                        if FileSystem.FileExistsShim trialPath then
                             success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
@@ -188,7 +188,7 @@ let private SimulatedMSBuildResolver =
                   try
                     if not found then
                         let trialPath = Path.Combine(searchPath, qual)
-                        if FileSystem.SafeExists trialPath then
+                        if FileSystem.FileExistsShim trialPath then
                             success trialPath
                   with e -> logWarningOrError false "SR001" (e.ToString())
 
@@ -201,13 +201,13 @@ let private SimulatedMSBuildResolver =
                         match n.Version, n.GetPublicKeyToken()  with
                         | null, _ | _, null ->
                             let options =
-                                [ if Directory.Exists gac then
-                                    for gacDir in Directory.EnumerateDirectories gac do
+                                [ if FileSystem.DirectoryExistsShim gac then
+                                    for gacDir in FileSystem.EnumerateDirectoriesShim gac do
                                         let assemblyDir = Path.Combine(gacDir, n.Name)
-                                        if Directory.Exists assemblyDir then
-                                            for tdir in Directory.EnumerateDirectories assemblyDir do
+                                        if FileSystem.DirectoryExistsShim assemblyDir then
+                                            for tdir in FileSystem.EnumerateDirectoriesShim assemblyDir do
                                                 let trialPath = Path.Combine(tdir, qual)
-                                                if FileSystem.SafeExists trialPath then
+                                                if FileSystem.FileExistsShim trialPath then
                                                     yield trialPath ]
                             //printfn "sorting GAC paths: %A" options
                             options
@@ -216,21 +216,21 @@ let private SimulatedMSBuildResolver =
                             |> function None -> () | Some p -> success p
 
                         | v, tok ->
-                            if Directory.Exists gac then
+                            if FileSystem.DirectoryExistsShim gac then
                                 for gacDir in Directory.EnumerateDirectories gac do
                                     //printfn "searching GAC directory: %s" gacDir
                                     let assemblyDir = Path.Combine(gacDir, n.Name)
-                                    if Directory.Exists assemblyDir then
+                                    if FileSystem.DirectoryExistsShim assemblyDir then
                                         //printfn "searching GAC directory: %s" assemblyDir
 
                                         let tokText = String.concat "" [| for b in tok -> sprintf "%02x" b |]
                                         let verDir = Path.Combine(assemblyDir, "v4.0_"+v.ToString()+"__"+tokText)
                                         //printfn "searching GAC directory: %s" verDir
 
-                                        if Directory.Exists verDir then
+                                        if FileSystem.DirectoryExistsShim verDir then
                                             let trialPath = Path.Combine(verDir, qual)
                                             //printfn "searching GAC: %s" trialPath
-                                            if FileSystem.SafeExists trialPath then
+                                            if FileSystem.FileExistsShim trialPath then
                                                 success trialPath
                 with e -> logWarningOrError false "SR001" (e.ToString())
 

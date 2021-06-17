@@ -11,6 +11,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 
 /// Try to select an F# value when querying members, and if so return a MethInfo that wraps the F# value.
@@ -153,3 +154,27 @@ val IsStandardEventInfo: infoReader:InfoReader -> m:range -> ad:AccessorDomain -
 val ArgsTypOfEventInfo: infoReader:InfoReader -> m:range -> ad:AccessorDomain -> einfo:EventInfo -> TType
 
 val PropTypOfEventInfo: infoReader:InfoReader -> m:range -> ad:AccessorDomain -> einfo:EventInfo -> TType
+
+/// Try to find the name of the metadata file for this external definition 
+val TryFindMetadataInfoOfExternalEntityRef: infoReader:InfoReader -> m:range -> eref:EntityRef -> (string option * Typars * ILTypeInfo) option
+
+/// Try to find the xml doc associated with the assembly name and metadata key
+val TryFindXmlDocByAssemblyNameAndSig: infoReader:InfoReader -> assemblyName: string -> xmlDocSig: string -> XmlDoc option
+
+val GetXmlDocSigOfEntityRef: infoReader:InfoReader -> m:range -> eref:EntityRef -> (string option * string) option
+
+val GetXmlDocSigOfScopedValRef: TcGlobals -> tcref:TyconRef -> vref:ValRef -> (string option * string) option
+
+val GetXmlDocSigOfRecdFieldRef: rfref:RecdFieldRef -> (string option * string) option
+
+val GetXmlDocSigOfUnionCaseRef: ucref:UnionCaseRef -> (string option * string) option
+
+val GetXmlDocSigOfMethInfo: infoReader: InfoReader -> m:range -> minfo:MethInfo -> (string option * string) option
+
+val GetXmlDocSigOfValRef: TcGlobals -> vref: ValRef -> (string option * string) option
+
+val GetXmlDocSigOfProp: infoReader:InfoReader -> m:range -> pinfo:PropInfo -> (string option * string) option
+
+val GetXmlDocSigOfEvent: infoReader:InfoReader -> m:range -> einfo:EventInfo -> (string option * string) option
+
+val GetXmlDocSigOfILFieldInfo: infoReader:InfoReader -> m:range -> finfo:ILFieldInfo -> (string option * string) option

@@ -66,7 +66,7 @@ module internal MetadataAsSource =
         let (_, _, _, _, windowFrame) = openDocumentService.OpenDocumentViaProject(filePath, ref VSConstants.LOGVIEWID.TextView_guid)
 
         let componentModel = serviceProvider.GetService<SComponentModel, IComponentModel>()
-        let editorAdaptersFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>();
+        let editorAdaptersFactory = componentModel.GetService<IVsEditorAdaptersFactoryService>()
         let documentCookie = vsRunningDocumentTable4.GetDocumentCookie(filePath)
         let vsTextBuffer = vsRunningDocumentTable4.GetDocumentData(documentCookie) :?> IVsTextBuffer
         let textBuffer = editorAdaptersFactory.GetDataBuffer(vsTextBuffer)

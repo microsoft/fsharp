@@ -4,6 +4,7 @@ parameters:
   insertTargetBranch: ''
   insertTeamEmail: ''
   insertTeamName: ''
+  completeInsertion: 'false' # 'true', 'false', 'auto'
   dependsOn: [build]
 
 stages:
@@ -49,10 +50,23 @@ stages:
       inputs:
         filePath: $(Build.SourcesDirectory)/eng/release/scripts/GetAssemblyVersions.ps1
         arguments: -assemblyVersionsPath $(Build.ArtifactStagingDirectory)\VSSetup\DevDivPackages\DependentAssemblyVersions.csv
+    - task: PowerShell@2
+      displayName: Calculate autocompletion state
+      inputs:
+        targetType: 'inline'
+        pwsh: true
+        script: |
+          # mark the insertion for auto-completion if:
+          #   `parameters.completeInsertion` == `true`
+          # OR
+          #   `parameters.completeInsertion` == `auto` AND `parameters.insertTargetBranch` does not contain 'rel/'
+          $completeInsertion = '${{ parameters.completeInsertion }}'
+          $autoComplete = ($completeInsertion -Eq 'true') -Or (($completeInsertion -Eq 'auto') -And (-Not ($env:INSERTTARGETBRANCH.Contains('rel/'))))
+          $autoCompleteStr = if ($autoComplete) { 'true' } else { 'false' }
+          Write-Host "Setting InsertAutoComplete to '$autoCompleteStr'"
+          Write-Host "##vso[task.setvariable variable=InsertAutoComplete]$autoCompleteStr"
     - task: ms-vseng.MicroBuildShipTasks.55100717-a81d-45ea-a363-b8fe3ec375ad.MicroBuildInsertVsPayload@3
       displayName: 'Insert VS Payload'
       inputs:
-        # only auto-complete if the target branch is not `rel/*`
-        AutoCompletePR: ${{ not(contains(parameters.insertTargetBranch, 'rel/')) }}
         LinkWorkItemsToPR: false
       condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], '${{ parameters.componentBranchName }}'), eq(variables['Build.SourceBranch'], 'refs/heads/${{ parameters.componentBranchName }}')))

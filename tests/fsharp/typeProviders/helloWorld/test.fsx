@@ -760,6 +760,9 @@ module String =
     check "vlkrrevpojvr1"
         FSharp.HelloWorld.HelloWorldTypeWithStaticStringParameter<"10000">.StaticProperty1
         "You got a static property"
+    check "vlkrrevpojvr1c"
+        FSharp.HelloWorld.HelloWorldTypeWithStaticStringParameter<__SOURCE_DIRECTORY__>.StaticProperty1
+        "You got a static property"
 
 module Bool = 
     check "vlkrrevpojvr1"

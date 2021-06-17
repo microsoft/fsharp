@@ -40,39 +40,39 @@ val prettyLayoutsOfUnresolvedOverloading: denv:DisplayEnv -> argInfos:(TType * A
 
 val dataExprL: denv:DisplayEnv -> expr:Expr -> Layout
 
-val outputValOrMember: denv:DisplayEnv -> os:StringBuilder -> x:Val -> unit
+val outputValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> os:StringBuilder -> x:ValRef -> unit
 
-val stringValOrMember: denv:DisplayEnv -> x:Val -> string
+val stringValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> x:ValRef -> string
 
-val layoutQualifiedValOrMember: denv:DisplayEnv -> typarInst:TyparInst -> v:Val -> TyparInst * Layout
+val layoutQualifiedValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> typarInst:TyparInst -> v:ValRef -> TyparInst * Layout
 
-val outputQualifiedValOrMember: denv:DisplayEnv -> os:StringBuilder -> v:Val -> unit
+val outputQualifiedValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> os:StringBuilder -> v:ValRef -> unit
 
-val outputQualifiedValSpec: denv:DisplayEnv -> os:StringBuilder -> v:Val -> unit
+val outputQualifiedValSpec: denv:DisplayEnv -> infoReader:InfoReader -> os:StringBuilder -> v:ValRef -> unit
 
-val stringOfQualifiedValOrMember: denv:DisplayEnv -> v:Val -> string
+val stringOfQualifiedValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> v:ValRef -> string
 
-val formatMethInfoToBufferFreeStyle: amap:ImportMap -> m:range -> denv:DisplayEnv -> buf:StringBuilder -> d:MethInfo -> unit
+val formatMethInfoToBufferFreeStyle: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> buf:StringBuilder -> d:MethInfo -> unit
 
-val prettyLayoutOfMethInfoFreeStyle: amap:ImportMap -> m:range -> denv:DisplayEnv -> typarInst:TyparInst -> minfo:MethInfo -> TyparInst * Layout
+val prettyLayoutOfMethInfoFreeStyle: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> typarInst:TyparInst -> minfo:MethInfo -> TyparInst * Layout
 
 val prettyLayoutOfPropInfoFreeStyle: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:PropInfo -> Layout
 
-val stringOfMethInfo: amap:ImportMap -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
+val stringOfMethInfo: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
 
 val stringOfParamData: denv:DisplayEnv -> paramData:ParamData -> string
 
 val layoutOfParamData: denv:DisplayEnv -> paramData:ParamData -> Layout
 
-val layoutExnDef: denv:DisplayEnv -> x:Entity -> Layout
+val layoutExnDef: denv:DisplayEnv -> infoReader:InfoReader -> x:EntityRef -> Layout
 
 val stringOfTyparConstraints: denv:DisplayEnv -> x:(Typar * TyparConstraint) list -> string
 
 val layoutTycon: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Tycon -> Layout
 
-val layoutEntity: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:Entity -> Layout
+val layoutEntityRef: denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> x:EntityRef -> Layout
 
-val layoutUnionCases: denv:DisplayEnv -> x:RecdField list -> Layout
+val layoutUnionCases: denv:DisplayEnv -> infoReader:InfoReader -> enclosingTcref:TyconRef -> x:RecdField list -> Layout
 
 val isGeneratedUnionCaseField: pos:int -> f:RecdField -> bool
 
@@ -90,11 +90,11 @@ val prettyStringOfTy: denv:DisplayEnv -> x:TType -> string
 
 val prettyStringOfTyNoCx: denv:DisplayEnv -> x:TType -> string
 
-val stringOfRecdField: denv:DisplayEnv -> x:RecdField -> string
+val stringOfRecdField: denv:DisplayEnv -> infoReader:InfoReader -> enclosingTcref:TyconRef -> x:RecdField -> string
 
-val stringOfUnionCase: denv:DisplayEnv -> x:UnionCase -> string
+val stringOfUnionCase: denv:DisplayEnv -> infoReader:InfoReader -> enclosingTcref:TyconRef -> x:UnionCase -> string
 
-val stringOfExnDef: denv:DisplayEnv -> x:Entity -> string
+val stringOfExnDef: denv:DisplayEnv -> infoReader:InfoReader -> x:EntityRef -> string
 
 val stringOfFSAttrib: denv:DisplayEnv -> x:Attrib -> string
 
@@ -102,9 +102,9 @@ val stringOfILAttrib: denv:DisplayEnv -> ILType * ILAttribElem list -> string
 
 val layoutInferredSigOfModuleExpr: showHeader:bool -> denv:DisplayEnv -> infoReader:InfoReader -> ad:AccessorDomain -> m:range -> expr:ModuleOrNamespaceExprWithSig -> Layout
 
-val prettyLayoutOfValOrMember: denv:DisplayEnv -> typarInst:TyparInst -> v:Val -> TyparInst * Layout
+val prettyLayoutOfValOrMember: denv:DisplayEnv -> infoReader:InfoReader -> typarInst:TyparInst -> v:ValRef -> TyparInst * Layout
 
-val prettyLayoutOfValOrMemberNoInst: denv:DisplayEnv -> v:Val -> Layout
+val prettyLayoutOfValOrMemberNoInst: denv:DisplayEnv -> infoReader:InfoReader -> v:ValRef -> Layout
 
 val prettyLayoutOfMemberNoInstShort: denv:DisplayEnv -> v:Val -> Layout
 
@@ -112,6 +112,6 @@ val prettyLayoutOfInstAndSig: denv:DisplayEnv -> TyparInst * TTypes * TType -> T
 
 val minimalStringsOfTwoTypes: denv:DisplayEnv -> t1:TType -> t2:TType -> string * string * string
 
-val minimalStringsOfTwoValues: denv:DisplayEnv -> v1:Val -> v2:Val -> string * string
+val minimalStringsOfTwoValues: denv:DisplayEnv -> infoReader:InfoReader -> v1:ValRef -> v2:ValRef -> string * string
 
 val minimalStringOfType: denv:DisplayEnv -> ty:TType -> string

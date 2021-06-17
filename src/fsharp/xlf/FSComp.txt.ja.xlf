@@ -97,6 +97,11 @@
         <target state="translated">既定のインターフェイス メンバーの消費</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureDiscardUseValue">
+        <source>discard pattern in use binding</source>
+        <target state="new">discard pattern in use binding</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">ドットなしの float32 リテラル</target>
@@ -152,6 +157,11 @@
         <target state="translated">パッケージの管理</target>
         <note />
       </trans-unit>
+      <trans-unit id="featurePrintfBinaryFormat">
+        <source>binary formatting for integers</source>
+        <target state="new">binary formatting for integers</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
         <source>whitespace relexation</source>
         <target state="translated">空白の緩和</target>
@@ -165,6 +175,11 @@
       <trans-unit id="featureStringInterpolation">
         <source>string interpolation</source>
         <target state="translated">文字列の補間</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureStructActivePattern">
+        <source>struct representation for active patterns</source>
+        <target state="new">struct representation for active patterns</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -245,6 +260,11 @@
       <trans-unit id="nativeResourceHeaderMalformed">
         <source>Resource header beginning at offset {0} is malformed.</source>
         <target state="translated">オフセット {0} で始まるリソース ヘッダーの形式に誤りがあります。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsAllSigs">
+        <source>Print the inferred interfaces of all compilation files to associated signature files</source>
+        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -330,6 +350,11 @@
       <trans-unit id="scriptSdkNotDetermined">
         <source>The .NET SDK for this script could not be determined. If the script is in a directory using a 'global.json' then ensure the relevant .NET SDK is installed. The output from '{0} --version' in the directory '{1}' was: '{2}' and the exit code was '{3}'.</source>
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。ディレクトリ '{1}' の '{0} --version' からの出力は '{2}' で、終了コードは '{3}' でした。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="scriptSdkNotDeterminedNoHost">
+        <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
+        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -5957,6 +5982,16 @@
         <target state="translated">アセンブリ '{0}' はコマンド ラインに一覧表示されます。アセンブリは '-r' などのコマンド ライン フラグを使用して参照する必要があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeArgumentCount">
+        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
+        <target state="new">The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
         <target state="translated">サーバーとの通信で問題が発生したため、常駐コンパイル サービスが使用されませんでした。</target>
@@ -6240,11 +6275,6 @@
       <trans-unit id="tcInferredGenericTypeGivesRiseToInconsistency">
         <source>The function or member '{0}' is used in a way that requires further type annotations at its definition to ensure consistency of inferred types. The inferred signature is '{1}'.</source>
         <target state="translated">現在使用されている関数またはメンバー '{0}' では、推論された型の一貫性を確保するために、さらに型の注釈が必要です。推論されたシグネチャは '{1}' です。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidTypeArgumentCount">
-        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
-        <target state="translated">型引数の数が一致しません: 指定されているのは '{0}' 個ですが、'{1}' 個にする必要があります。このエラーは、前に報告されたエラーに関係する場合があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotOverrideSealedMethod">

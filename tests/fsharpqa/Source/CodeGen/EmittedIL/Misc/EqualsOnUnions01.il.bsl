@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly EqualsOnUnions01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.EqualsOnUnions01
 {
-  // Offset: 0x00000000 Length: 0x0000064B
+  // Offset: 0x00000000 Length: 0x0000063B
 }
 .mresource public FSharpOptimizationData.EqualsOnUnions01
 {
-  // Offset: 0x00000650 Length: 0x000001C7
+  // Offset: 0x00000640 Length: 0x000001C7
 }
 .module EqualsOnUnions01.exe
-// MVID: {59B19213-BBFB-14A0-A745-03831392B159}
+// MVID: {60B68B7F-BBFB-14A0-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01350000
+// Image base: 0x07200000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -339,7 +339,7 @@
             instance int32  CompareTo(class EqualsOnUnions01/U obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       158 (0x9e)
+      // Code size       131 (0x83)
       .maxstack  4
       .locals init ([0] int32 V_0,
                [1] class EqualsOnUnions01/U V_1,
@@ -351,130 +351,106 @@
                [7] int32 V_7,
                [8] int32 V_8)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\EqualsOnUnions01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\EqualsOnUnions01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000d
-
-      IL_0008:  br         IL_0090
+      IL_0004:  brfalse    IL_0079
 
       .line 100001,100001 : 0,0 ''
-      IL_000d:  ldarg.1
-      IL_000e:  ldnull
-      IL_000f:  cgt.un
-      IL_0011:  brfalse.s  IL_0015
-
-      IL_0013:  br.s       IL_001a
-
-      IL_0015:  br         IL_008e
+      IL_0009:  ldarg.1
+      IL_000a:  ldnull
+      IL_000b:  cgt.un
+      IL_000d:  brfalse.s  IL_0077
 
       .line 100001,100001 : 0,0 ''
-      IL_001a:  ldarg.0
-      IL_001b:  stloc.1
-      IL_001c:  ldloc.1
-      IL_001d:  isinst     EqualsOnUnions01/U/B
-      IL_0022:  brfalse.s  IL_0027
+      IL_000f:  ldarg.0
+      IL_0010:  stloc.1
+      IL_0011:  ldloc.1
+      IL_0012:  isinst     EqualsOnUnions01/U/B
+      IL_0017:  brfalse.s  IL_001c
 
-      IL_0024:  ldc.i4.1
-      IL_0025:  br.s       IL_0028
+      IL_0019:  ldc.i4.1
+      IL_001a:  br.s       IL_001d
 
-      IL_0027:  ldc.i4.0
-      IL_0028:  stloc.0
-      IL_0029:  ldarg.1
-      IL_002a:  stloc.3
-      IL_002b:  ldloc.3
-      IL_002c:  isinst     EqualsOnUnions01/U/B
-      IL_0031:  brfalse.s  IL_0036
+      IL_001c:  ldc.i4.0
+      IL_001d:  stloc.0
+      IL_001e:  ldarg.1
+      IL_001f:  stloc.3
+      IL_0020:  ldloc.3
+      IL_0021:  isinst     EqualsOnUnions01/U/B
+      IL_0026:  brfalse.s  IL_002b
 
-      IL_0033:  ldc.i4.1
-      IL_0034:  br.s       IL_0037
+      IL_0028:  ldc.i4.1
+      IL_0029:  br.s       IL_002c
 
-      IL_0036:  ldc.i4.0
-      IL_0037:  stloc.2
-      IL_0038:  ldloc.0
-      IL_0039:  ldloc.2
-      IL_003a:  bne.un.s   IL_003e
-
-      IL_003c:  br.s       IL_0040
-
-      IL_003e:  br.s       IL_008a
+      IL_002b:  ldc.i4.0
+      IL_002c:  stloc.2
+      IL_002d:  ldloc.0
+      IL_002e:  ldloc.2
+      IL_002f:  bne.un.s   IL_0073
 
       .line 100001,100001 : 0,0 ''
-      IL_0040:  ldarg.0
-      IL_0041:  isinst     EqualsOnUnions01/U/B
-      IL_0046:  brfalse.s  IL_004a
-
-      IL_0048:  br.s       IL_004c
-
-      IL_004a:  br.s       IL_0088
+      IL_0031:  ldarg.0
+      IL_0032:  isinst     EqualsOnUnions01/U/B
+      IL_0037:  brfalse.s  IL_0071
 
       .line 100001,100001 : 0,0 ''
-      IL_004c:  ldarg.0
-      IL_004d:  castclass  EqualsOnUnions01/U/B
-      IL_0052:  stloc.s    V_4
-      IL_0054:  ldarg.1
-      IL_0055:  castclass  EqualsOnUnions01/U/B
-      IL_005a:  stloc.s    V_5
-      IL_005c:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0061:  stloc.s    V_6
-      IL_0063:  ldloc.s    V_4
-      IL_0065:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_006a:  stloc.s    V_7
-      IL_006c:  ldloc.s    V_5
-      IL_006e:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_0073:  stloc.s    V_8
-      IL_0075:  ldloc.s    V_7
-      IL_0077:  ldloc.s    V_8
-      IL_0079:  bge.s      IL_007d
+      IL_0039:  ldarg.0
+      IL_003a:  castclass  EqualsOnUnions01/U/B
+      IL_003f:  stloc.s    V_4
+      IL_0041:  ldarg.1
+      IL_0042:  castclass  EqualsOnUnions01/U/B
+      IL_0047:  stloc.s    V_5
+      IL_0049:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_004e:  stloc.s    V_6
+      IL_0050:  ldloc.s    V_4
+      IL_0052:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_0057:  stloc.s    V_7
+      IL_0059:  ldloc.s    V_5
+      IL_005b:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_0060:  stloc.s    V_8
+      IL_0062:  ldloc.s    V_7
+      IL_0064:  ldloc.s    V_8
+      IL_0066:  bge.s      IL_006a
 
-      IL_007b:  br.s       IL_007f
+      .line 100001,100001 : 0,0 ''
+      IL_0068:  ldc.i4.m1
+      IL_0069:  ret
 
-      IL_007d:  br.s       IL_0081
+      .line 100001,100001 : 0,0 ''
+      IL_006a:  ldloc.s    V_7
+      IL_006c:  ldloc.s    V_8
+      IL_006e:  cgt
+      IL_0070:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0071:  ldc.i4.0
+      IL_0072:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0073:  ldloc.0
+      IL_0074:  ldloc.2
+      IL_0075:  sub
+      IL_0076:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0077:  ldc.i4.1
+      IL_0078:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0079:  ldarg.1
+      IL_007a:  ldnull
+      IL_007b:  cgt.un
+      IL_007d:  brfalse.s  IL_0081
 
       .line 100001,100001 : 0,0 ''
       IL_007f:  ldc.i4.m1
       IL_0080:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0081:  ldloc.s    V_7
-      IL_0083:  ldloc.s    V_8
-      IL_0085:  cgt
-      IL_0087:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0088:  ldc.i4.0
-      IL_0089:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_008a:  ldloc.0
-      IL_008b:  ldloc.2
-      IL_008c:  sub
-      IL_008d:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_008e:  ldc.i4.1
-      IL_008f:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0090:  ldarg.1
-      IL_0091:  ldnull
-      IL_0092:  cgt.un
-      IL_0094:  brfalse.s  IL_0098
-
-      IL_0096:  br.s       IL_009a
-
-      IL_0098:  br.s       IL_009c
-
-      .line 100001,100001 : 0,0 ''
-      IL_009a:  ldc.i4.m1
-      IL_009b:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_009c:  ldc.i4.0
-      IL_009d:  ret
+      IL_0081:  ldc.i4.0
+      IL_0082:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 
@@ -496,7 +472,7 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       173 (0xad)
+      // Code size       146 (0x92)
       .maxstack  4
       .locals init ([0] class EqualsOnUnions01/U V_0,
                [1] int32 V_1,
@@ -515,135 +491,111 @@
       IL_0007:  ldarg.0
       IL_0008:  ldnull
       IL_0009:  cgt.un
-      IL_000b:  brfalse.s  IL_000f
-
-      IL_000d:  br.s       IL_0014
-
-      IL_000f:  br         IL_009a
+      IL_000b:  brfalse    IL_0083
 
       .line 100001,100001 : 0,0 ''
-      IL_0014:  ldarg.1
-      IL_0015:  unbox.any  EqualsOnUnions01/U
-      IL_001a:  ldnull
-      IL_001b:  cgt.un
-      IL_001d:  brfalse.s  IL_0021
-
-      IL_001f:  br.s       IL_0026
-
-      IL_0021:  br         IL_0098
+      IL_0010:  ldarg.1
+      IL_0011:  unbox.any  EqualsOnUnions01/U
+      IL_0016:  ldnull
+      IL_0017:  cgt.un
+      IL_0019:  brfalse.s  IL_0081
 
       .line 100001,100001 : 0,0 ''
-      IL_0026:  ldarg.0
-      IL_0027:  stloc.2
-      IL_0028:  ldloc.2
-      IL_0029:  isinst     EqualsOnUnions01/U/B
-      IL_002e:  brfalse.s  IL_0033
+      IL_001b:  ldarg.0
+      IL_001c:  stloc.2
+      IL_001d:  ldloc.2
+      IL_001e:  isinst     EqualsOnUnions01/U/B
+      IL_0023:  brfalse.s  IL_0028
 
-      IL_0030:  ldc.i4.1
-      IL_0031:  br.s       IL_0034
+      IL_0025:  ldc.i4.1
+      IL_0026:  br.s       IL_0029
 
-      IL_0033:  ldc.i4.0
-      IL_0034:  stloc.1
-      IL_0035:  ldloc.0
-      IL_0036:  stloc.s    V_4
-      IL_0038:  ldloc.s    V_4
-      IL_003a:  isinst     EqualsOnUnions01/U/B
-      IL_003f:  brfalse.s  IL_0044
+      IL_0028:  ldc.i4.0
+      IL_0029:  stloc.1
+      IL_002a:  ldloc.0
+      IL_002b:  stloc.s    V_4
+      IL_002d:  ldloc.s    V_4
+      IL_002f:  isinst     EqualsOnUnions01/U/B
+      IL_0034:  brfalse.s  IL_0039
 
-      IL_0041:  ldc.i4.1
-      IL_0042:  br.s       IL_0045
+      IL_0036:  ldc.i4.1
+      IL_0037:  br.s       IL_003a
 
-      IL_0044:  ldc.i4.0
-      IL_0045:  stloc.3
-      IL_0046:  ldloc.1
-      IL_0047:  ldloc.3
-      IL_0048:  bne.un.s   IL_004c
-
-      IL_004a:  br.s       IL_004e
-
-      IL_004c:  br.s       IL_0094
+      IL_0039:  ldc.i4.0
+      IL_003a:  stloc.3
+      IL_003b:  ldloc.1
+      IL_003c:  ldloc.3
+      IL_003d:  bne.un.s   IL_007d
 
       .line 100001,100001 : 0,0 ''
-      IL_004e:  ldarg.0
-      IL_004f:  isinst     EqualsOnUnions01/U/B
-      IL_0054:  brfalse.s  IL_0058
-
-      IL_0056:  br.s       IL_005a
-
-      IL_0058:  br.s       IL_0092
+      IL_003f:  ldarg.0
+      IL_0040:  isinst     EqualsOnUnions01/U/B
+      IL_0045:  brfalse.s  IL_007b
 
       .line 100001,100001 : 0,0 ''
-      IL_005a:  ldarg.0
-      IL_005b:  castclass  EqualsOnUnions01/U/B
-      IL_0060:  stloc.s    V_5
-      IL_0062:  ldloc.0
-      IL_0063:  castclass  EqualsOnUnions01/U/B
-      IL_0068:  stloc.s    V_6
-      IL_006a:  ldarg.2
-      IL_006b:  stloc.s    V_7
-      IL_006d:  ldloc.s    V_5
-      IL_006f:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_0074:  stloc.s    V_8
-      IL_0076:  ldloc.s    V_6
-      IL_0078:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_007d:  stloc.s    V_9
-      IL_007f:  ldloc.s    V_8
-      IL_0081:  ldloc.s    V_9
-      IL_0083:  bge.s      IL_0087
-
-      IL_0085:  br.s       IL_0089
-
-      IL_0087:  br.s       IL_008b
+      IL_0047:  ldarg.0
+      IL_0048:  castclass  EqualsOnUnions01/U/B
+      IL_004d:  stloc.s    V_5
+      IL_004f:  ldloc.0
+      IL_0050:  castclass  EqualsOnUnions01/U/B
+      IL_0055:  stloc.s    V_6
+      IL_0057:  ldarg.2
+      IL_0058:  stloc.s    V_7
+      IL_005a:  ldloc.s    V_5
+      IL_005c:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_0061:  stloc.s    V_8
+      IL_0063:  ldloc.s    V_6
+      IL_0065:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_006a:  stloc.s    V_9
+      IL_006c:  ldloc.s    V_8
+      IL_006e:  ldloc.s    V_9
+      IL_0070:  bge.s      IL_0074
 
       .line 100001,100001 : 0,0 ''
-      IL_0089:  ldc.i4.m1
-      IL_008a:  ret
+      IL_0072:  ldc.i4.m1
+      IL_0073:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_008b:  ldloc.s    V_8
-      IL_008d:  ldloc.s    V_9
-      IL_008f:  cgt
+      IL_0074:  ldloc.s    V_8
+      IL_0076:  ldloc.s    V_9
+      IL_0078:  cgt
+      IL_007a:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_007b:  ldc.i4.0
+      IL_007c:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_007d:  ldloc.1
+      IL_007e:  ldloc.3
+      IL_007f:  sub
+      IL_0080:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0081:  ldc.i4.1
+      IL_0082:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0083:  ldarg.1
+      IL_0084:  unbox.any  EqualsOnUnions01/U
+      IL_0089:  ldnull
+      IL_008a:  cgt.un
+      IL_008c:  brfalse.s  IL_0090
+
+      .line 100001,100001 : 0,0 ''
+      IL_008e:  ldc.i4.m1
+      IL_008f:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_0090:  ldc.i4.0
       IL_0091:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0092:  ldc.i4.0
-      IL_0093:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0094:  ldloc.1
-      IL_0095:  ldloc.3
-      IL_0096:  sub
-      IL_0097:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_0098:  ldc.i4.1
-      IL_0099:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_009a:  ldarg.1
-      IL_009b:  unbox.any  EqualsOnUnions01/U
-      IL_00a0:  ldnull
-      IL_00a1:  cgt.un
-      IL_00a3:  brfalse.s  IL_00a7
-
-      IL_00a5:  br.s       IL_00a9
-
-      IL_00a7:  br.s       IL_00ab
-
-      .line 100001,100001 : 0,0 ''
-      IL_00a9:  ldc.i4.m1
-      IL_00aa:  ret
-
-      .line 100001,100001 : 0,0 ''
-      IL_00ab:  ldc.i4.0
-      IL_00ac:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       75 (0x4b)
+      // Code size       67 (0x43)
       .maxstack  7
       .locals init ([0] int32 V_0,
                [1] class EqualsOnUnions01/U/B V_1,
@@ -653,63 +605,55 @@
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000a
-
-      IL_0008:  br.s       IL_0049
+      IL_0004:  brfalse.s  IL_0041
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldc.i4.0
-      IL_000b:  stloc.0
-      IL_000c:  ldarg.0
-      IL_000d:  isinst     EqualsOnUnions01/U/B
-      IL_0012:  brfalse.s  IL_0016
-
-      IL_0014:  br.s       IL_0018
-
-      IL_0016:  br.s       IL_003a
+      IL_0006:  ldc.i4.0
+      IL_0007:  stloc.0
+      IL_0008:  ldarg.0
+      IL_0009:  isinst     EqualsOnUnions01/U/B
+      IL_000e:  brfalse.s  IL_0032
 
       .line 100001,100001 : 0,0 ''
-      IL_0018:  ldarg.0
-      IL_0019:  castclass  EqualsOnUnions01/U/B
-      IL_001e:  stloc.1
-      IL_001f:  ldc.i4.1
-      IL_0020:  stloc.0
-      IL_0021:  ldc.i4     0x9e3779b9
-      IL_0026:  ldarg.1
-      IL_0027:  stloc.2
-      IL_0028:  ldloc.1
-      IL_0029:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_002e:  ldloc.0
-      IL_002f:  ldc.i4.6
-      IL_0030:  shl
-      IL_0031:  ldloc.0
-      IL_0032:  ldc.i4.2
-      IL_0033:  shr
-      IL_0034:  add
-      IL_0035:  add
-      IL_0036:  add
-      IL_0037:  stloc.0
-      IL_0038:  ldloc.0
-      IL_0039:  ret
+      IL_0010:  ldarg.0
+      IL_0011:  castclass  EqualsOnUnions01/U/B
+      IL_0016:  stloc.1
+      IL_0017:  ldc.i4.1
+      IL_0018:  stloc.0
+      IL_0019:  ldc.i4     0x9e3779b9
+      IL_001e:  ldarg.1
+      IL_001f:  stloc.2
+      IL_0020:  ldloc.1
+      IL_0021:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_0026:  ldloc.0
+      IL_0027:  ldc.i4.6
+      IL_0028:  shl
+      IL_0029:  ldloc.0
+      IL_002a:  ldc.i4.2
+      IL_002b:  shr
+      IL_002c:  add
+      IL_002d:  add
+      IL_002e:  add
+      IL_002f:  stloc.0
+      IL_0030:  ldloc.0
+      IL_0031:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_003a:  ldarg.0
-      IL_003b:  stloc.3
-      IL_003c:  ldloc.3
-      IL_003d:  isinst     EqualsOnUnions01/U/B
-      IL_0042:  brfalse.s  IL_0047
+      IL_0032:  ldarg.0
+      IL_0033:  stloc.3
+      IL_0034:  ldloc.3
+      IL_0035:  isinst     EqualsOnUnions01/U/B
+      IL_003a:  brfalse.s  IL_003f
 
-      IL_0044:  ldc.i4.1
-      IL_0045:  br.s       IL_0048
+      IL_003c:  ldc.i4.1
+      IL_003d:  br.s       IL_0040
 
-      IL_0047:  ldc.i4.0
-      IL_0048:  ret
+      IL_003f:  ldc.i4.0
+      IL_0040:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0049:  ldc.i4.0
-      IL_004a:  ret
+      IL_0041:  ldc.i4.0
+      IL_0042:  ret
     } // end of method U::GetHashCode
 
     .method public hidebysig virtual final 
@@ -730,7 +674,7 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       133 (0x85)
+      // Code size       114 (0x72)
       .maxstack  4
       .locals init ([0] class EqualsOnUnions01/U V_0,
                [1] class EqualsOnUnions01/U V_1,
@@ -745,107 +689,91 @@
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000d
-
-      IL_0008:  br         IL_007d
+      IL_0004:  brfalse.s  IL_006a
 
       .line 100001,100001 : 0,0 ''
-      IL_000d:  ldarg.1
-      IL_000e:  isinst     EqualsOnUnions01/U
-      IL_0013:  stloc.0
-      IL_0014:  ldloc.0
-      IL_0015:  brfalse.s  IL_0019
-
-      IL_0017:  br.s       IL_001b
-
-      IL_0019:  br.s       IL_007b
+      IL_0006:  ldarg.1
+      IL_0007:  isinst     EqualsOnUnions01/U
+      IL_000c:  stloc.0
+      IL_000d:  ldloc.0
+      IL_000e:  brfalse.s  IL_0068
 
       .line 100001,100001 : 0,0 ''
-      IL_001b:  ldloc.0
-      IL_001c:  stloc.1
-      IL_001d:  ldarg.0
-      IL_001e:  stloc.3
-      IL_001f:  ldloc.3
-      IL_0020:  isinst     EqualsOnUnions01/U/B
-      IL_0025:  brfalse.s  IL_002a
+      IL_0010:  ldloc.0
+      IL_0011:  stloc.1
+      IL_0012:  ldarg.0
+      IL_0013:  stloc.3
+      IL_0014:  ldloc.3
+      IL_0015:  isinst     EqualsOnUnions01/U/B
+      IL_001a:  brfalse.s  IL_001f
 
-      IL_0027:  ldc.i4.1
-      IL_0028:  br.s       IL_002b
+      IL_001c:  ldc.i4.1
+      IL_001d:  br.s       IL_0020
 
-      IL_002a:  ldc.i4.0
-      IL_002b:  stloc.2
-      IL_002c:  ldloc.1
-      IL_002d:  stloc.s    V_5
-      IL_002f:  ldloc.s    V_5
-      IL_0031:  isinst     EqualsOnUnions01/U/B
-      IL_0036:  brfalse.s  IL_003b
+      IL_001f:  ldc.i4.0
+      IL_0020:  stloc.2
+      IL_0021:  ldloc.1
+      IL_0022:  stloc.s    V_5
+      IL_0024:  ldloc.s    V_5
+      IL_0026:  isinst     EqualsOnUnions01/U/B
+      IL_002b:  brfalse.s  IL_0030
 
-      IL_0038:  ldc.i4.1
-      IL_0039:  br.s       IL_003c
+      IL_002d:  ldc.i4.1
+      IL_002e:  br.s       IL_0031
 
-      IL_003b:  ldc.i4.0
-      IL_003c:  stloc.s    V_4
-      IL_003e:  ldloc.2
-      IL_003f:  ldloc.s    V_4
-      IL_0041:  bne.un.s   IL_0045
-
-      IL_0043:  br.s       IL_0047
-
-      IL_0045:  br.s       IL_0079
+      IL_0030:  ldc.i4.0
+      IL_0031:  stloc.s    V_4
+      IL_0033:  ldloc.2
+      IL_0034:  ldloc.s    V_4
+      IL_0036:  bne.un.s   IL_0066
 
       .line 100001,100001 : 0,0 ''
-      IL_0047:  ldarg.0
-      IL_0048:  isinst     EqualsOnUnions01/U/B
-      IL_004d:  brfalse.s  IL_0051
-
-      IL_004f:  br.s       IL_0053
-
-      IL_0051:  br.s       IL_0077
+      IL_0038:  ldarg.0
+      IL_0039:  isinst     EqualsOnUnions01/U/B
+      IL_003e:  brfalse.s  IL_0064
 
       .line 100001,100001 : 0,0 ''
-      IL_0053:  ldarg.0
-      IL_0054:  castclass  EqualsOnUnions01/U/B
-      IL_0059:  stloc.s    V_6
-      IL_005b:  ldloc.1
-      IL_005c:  castclass  EqualsOnUnions01/U/B
-      IL_0061:  stloc.s    V_7
-      IL_0063:  ldarg.2
-      IL_0064:  stloc.s    V_8
-      IL_0066:  ldloc.s    V_6
-      IL_0068:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_006d:  ldloc.s    V_7
-      IL_006f:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_0074:  ceq
-      IL_0076:  ret
+      IL_0040:  ldarg.0
+      IL_0041:  castclass  EqualsOnUnions01/U/B
+      IL_0046:  stloc.s    V_6
+      IL_0048:  ldloc.1
+      IL_0049:  castclass  EqualsOnUnions01/U/B
+      IL_004e:  stloc.s    V_7
+      IL_0050:  ldarg.2
+      IL_0051:  stloc.s    V_8
+      IL_0053:  ldloc.s    V_6
+      IL_0055:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_005a:  ldloc.s    V_7
+      IL_005c:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_0061:  ceq
+      IL_0063:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0077:  ldc.i4.1
-      IL_0078:  ret
+      IL_0064:  ldc.i4.1
+      IL_0065:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0079:  ldc.i4.0
-      IL_007a:  ret
+      IL_0066:  ldc.i4.0
+      IL_0067:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_007b:  ldc.i4.0
-      IL_007c:  ret
+      IL_0068:  ldc.i4.0
+      IL_0069:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_007d:  ldarg.1
-      IL_007e:  ldnull
-      IL_007f:  cgt.un
-      IL_0081:  ldc.i4.0
-      IL_0082:  ceq
-      IL_0084:  ret
+      IL_006a:  ldarg.1
+      IL_006b:  ldnull
+      IL_006c:  cgt.un
+      IL_006e:  ldc.i4.0
+      IL_006f:  ceq
+      IL_0071:  ret
     } // end of method U::Equals
 
     .method public hidebysig virtual final 
             instance bool  Equals(class EqualsOnUnions01/U obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       120 (0x78)
+      // Code size       101 (0x65)
       .maxstack  4
       .locals init ([0] int32 V_0,
                [1] class EqualsOnUnions01/U V_1,
@@ -857,102 +785,86 @@
       IL_0000:  ldarg.0
       IL_0001:  ldnull
       IL_0002:  cgt.un
-      IL_0004:  brfalse.s  IL_0008
-
-      IL_0006:  br.s       IL_000d
-
-      IL_0008:  br         IL_0070
+      IL_0004:  brfalse.s  IL_005d
 
       .line 100001,100001 : 0,0 ''
-      IL_000d:  ldarg.1
-      IL_000e:  ldnull
-      IL_000f:  cgt.un
-      IL_0011:  brfalse.s  IL_0015
-
-      IL_0013:  br.s       IL_0017
-
-      IL_0015:  br.s       IL_006e
+      IL_0006:  ldarg.1
+      IL_0007:  ldnull
+      IL_0008:  cgt.un
+      IL_000a:  brfalse.s  IL_005b
 
       .line 100001,100001 : 0,0 ''
-      IL_0017:  ldarg.0
-      IL_0018:  stloc.1
-      IL_0019:  ldloc.1
-      IL_001a:  isinst     EqualsOnUnions01/U/B
-      IL_001f:  brfalse.s  IL_0024
+      IL_000c:  ldarg.0
+      IL_000d:  stloc.1
+      IL_000e:  ldloc.1
+      IL_000f:  isinst     EqualsOnUnions01/U/B
+      IL_0014:  brfalse.s  IL_0019
 
-      IL_0021:  ldc.i4.1
-      IL_0022:  br.s       IL_0025
+      IL_0016:  ldc.i4.1
+      IL_0017:  br.s       IL_001a
 
-      IL_0024:  ldc.i4.0
-      IL_0025:  stloc.0
-      IL_0026:  ldarg.1
-      IL_0027:  stloc.3
-      IL_0028:  ldloc.3
-      IL_0029:  isinst     EqualsOnUnions01/U/B
-      IL_002e:  brfalse.s  IL_0033
+      IL_0019:  ldc.i4.0
+      IL_001a:  stloc.0
+      IL_001b:  ldarg.1
+      IL_001c:  stloc.3
+      IL_001d:  ldloc.3
+      IL_001e:  isinst     EqualsOnUnions01/U/B
+      IL_0023:  brfalse.s  IL_0028
 
-      IL_0030:  ldc.i4.1
-      IL_0031:  br.s       IL_0034
+      IL_0025:  ldc.i4.1
+      IL_0026:  br.s       IL_0029
 
-      IL_0033:  ldc.i4.0
-      IL_0034:  stloc.2
-      IL_0035:  ldloc.0
-      IL_0036:  ldloc.2
-      IL_0037:  bne.un.s   IL_003b
-
-      IL_0039:  br.s       IL_003d
-
-      IL_003b:  br.s       IL_006c
+      IL_0028:  ldc.i4.0
+      IL_0029:  stloc.2
+      IL_002a:  ldloc.0
+      IL_002b:  ldloc.2
+      IL_002c:  bne.un.s   IL_0059
 
       .line 100001,100001 : 0,0 ''
-      IL_003d:  ldarg.0
-      IL_003e:  isinst     EqualsOnUnions01/U/B
-      IL_0043:  brfalse.s  IL_0047
-
-      IL_0045:  br.s       IL_0049
-
-      IL_0047:  br.s       IL_006a
+      IL_002e:  ldarg.0
+      IL_002f:  isinst     EqualsOnUnions01/U/B
+      IL_0034:  brfalse.s  IL_0057
 
       .line 100001,100001 : 0,0 ''
-      IL_0049:  ldarg.0
-      IL_004a:  castclass  EqualsOnUnions01/U/B
-      IL_004f:  stloc.s    V_4
-      IL_0051:  ldarg.1
-      IL_0052:  castclass  EqualsOnUnions01/U/B
-      IL_0057:  stloc.s    V_5
-      IL_0059:  ldloc.s    V_4
-      IL_005b:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_0060:  ldloc.s    V_5
-      IL_0062:  ldfld      int32 EqualsOnUnions01/U/B::item
-      IL_0067:  ceq
-      IL_0069:  ret
+      IL_0036:  ldarg.0
+      IL_0037:  castclass  EqualsOnUnions01/U/B
+      IL_003c:  stloc.s    V_4
+      IL_003e:  ldarg.1
+      IL_003f:  castclass  EqualsOnUnions01/U/B
+      IL_0044:  stloc.s    V_5
+      IL_0046:  ldloc.s    V_4
+      IL_0048:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_004d:  ldloc.s    V_5
+      IL_004f:  ldfld      int32 EqualsOnUnions01/U/B::item
+      IL_0054:  ceq
+      IL_0056:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_006a:  ldc.i4.1
-      IL_006b:  ret
+      IL_0057:  ldc.i4.1
+      IL_0058:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_006c:  ldc.i4.0
-      IL_006d:  ret
+      IL_0059:  ldc.i4.0
+      IL_005a:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_006e:  ldc.i4.0
-      IL_006f:  ret
+      IL_005b:  ldc.i4.0
+      IL_005c:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0070:  ldarg.1
-      IL_0071:  ldnull
-      IL_0072:  cgt.un
-      IL_0074:  ldc.i4.0
-      IL_0075:  ceq
-      IL_0077:  ret
+      IL_005d:  ldarg.1
+      IL_005e:  ldnull
+      IL_005f:  cgt.un
+      IL_0061:  ldc.i4.0
+      IL_0062:  ceq
+      IL_0064:  ret
     } // end of method U::Equals
 
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       24 (0x18)
+      // Code size       20 (0x14)
       .maxstack  4
       .locals init ([0] class EqualsOnUnions01/U V_0)
       .line 6,6 : 6,7 ''
@@ -960,21 +872,17 @@
       IL_0001:  isinst     EqualsOnUnions01/U
       IL_0006:  stloc.0
       IL_0007:  ldloc.0
-      IL_0008:  brfalse.s  IL_000c
-
-      IL_000a:  br.s       IL_000e
-
-      IL_000c:  br.s       IL_0016
+      IL_0008:  brfalse.s  IL_0012
 
       .line 100001,100001 : 0,0 ''
-      IL_000e:  ldarg.0
-      IL_000f:  ldloc.0
-      IL_0010:  callvirt   instance bool EqualsOnUnions01/U::Equals(class EqualsOnUnions01/U)
-      IL_0015:  ret
+      IL_000a:  ldarg.0
+      IL_000b:  ldloc.0
+      IL_000c:  callvirt   instance bool EqualsOnUnions01/U::Equals(class EqualsOnUnions01/U)
+      IL_0011:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0016:  ldc.i4.0
-      IL_0017:  ret
+      IL_0012:  ldc.i4.0
+      IL_0013:  ret
     } // end of method U::Equals
 
     .property instance int32 Tag()

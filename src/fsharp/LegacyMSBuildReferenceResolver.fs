@@ -129,7 +129,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                     let v = if dotNetVersion.StartsWith("v") then dotNetVersion.Substring(1) else dotNetVersion
                     let frameworkName = new System.Runtime.Versioning.FrameworkName(".NETFramework", new Version(v))
                     match ToolLocationHelper.GetPathToReferenceAssemblies(frameworkName) |> Seq.tryHead with
-                    | Some p -> if Directory.Exists(p) then true else false
+                    | Some p -> if FileSystem.DirectoryExistsShim(p) then true else false
                     | None -> false
                 with _ -> false
             else false

@@ -347,6 +347,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
                      { new System.IDisposable with
                           member x.Dispose() = removeHandler h } }
 
+        let inline SetFreshConsTail cons tail = cons.( :: ).1 <- tail
+
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+        let inline FreshConsNoTail head = head :: (# "ldnull" : 'T list #)
 
     [<AbstractClass>]
     type GeneratedSequenceBase<'T>() =
@@ -400,3 +404,137 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.MoveNext() = x.MoveNextImpl()
 
             member _.Reset() = raise <| new System.NotSupportedException()
+
+    [<Struct; NoEquality; NoComparison>]
+    type ListCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable Result : 'T list
+
+        [<DefaultValue(false)>]
+        val mutable LastCons : 'T list
+
+        member this.Add (value: 'T) =
+            match box this.Result with 
+            | null -> 
+                let ra = RuntimeHelpers.FreshConsNoTail value
+                this.Result <- ra
+                this.LastCons <- ra
+            | _ -> 
+                let ra = RuntimeHelpers.FreshConsNoTail value
+                RuntimeHelpers.SetFreshConsTail this.LastCons ra
+                this.LastCons <- ra
+
+        member this.AddMany (values: seq<'T>) =
+            // cook a faster iterator for lists and arrays
+            match values with 
+            | :? ('T[]) as valuesAsArray -> 
+                for v in valuesAsArray do
+                   this.Add v
+            | :? ('T list) as valuesAsList -> 
+                for v in valuesAsList do
+                   this.Add v
+            | _ ->
+                for v in values do
+                   this.Add v
+
+        // In the particular case of closing with a final add of an F# list
+        // we can simply stitch the list into the end of the resulting list
+        member this.AddManyAndClose (values: seq<'T>) =
+            match values with 
+            | :? ('T list) as valuesAsList -> 
+                let res =
+                    match box this.Result with 
+                    | null -> 
+                        valuesAsList
+                    | _ -> 
+                        RuntimeHelpers.SetFreshConsTail this.LastCons valuesAsList
+                        this.Result
+                this.Result <- Unchecked.defaultof<_>
+                this.LastCons <- Unchecked.defaultof<_>
+                res
+            | _ ->
+                this.AddMany values
+                this.Close()
+
+        member this.Close() =
+            match box this.Result with 
+            | null -> []
+            | _ ->
+                RuntimeHelpers.SetFreshConsTail this.LastCons []
+                let res = this.Result
+                this.Result <- Unchecked.defaultof<_>
+                this.LastCons <- Unchecked.defaultof<_>
+                res
+
+    // Optimized for 0, 1 and 2 sized arrays
+    [<Struct; NoEquality; NoComparison>]
+    type ArrayCollector<'T> =
+        [<DefaultValue(false)>]
+        val mutable ResizeArray: ResizeArray<'T>
+
+        [<DefaultValue(false)>]
+        val mutable First: 'T
+
+        [<DefaultValue(false)>]
+        val mutable Second: 'T
+
+        [<DefaultValue(false)>]
+        val mutable Count: int
+
+        member this.Add (value: 'T) = 
+            match this.Count with 
+            | 0 -> 
+                this.Count <- 1
+                this.First <- value
+            | 1 -> 
+                this.Count <- 2
+                this.Second <- value
+            | 2 ->
+                let ra = ResizeArray<'T>()
+                ra.Add(this.First)
+                ra.Add(this.Second)
+                ra.Add(value)
+                this.Count <- 3
+                this.ResizeArray <- ra
+            | _ -> 
+                this.ResizeArray.Add(value)
+
+        member this.AddMany (values: seq<'T>) =
+            if this.Count > 2 then
+                this.ResizeArray.AddRange(values)
+            else
+                // cook a faster iterator for lists and arrays
+                match values with 
+                | :? ('T[]) as valuesAsArray -> 
+                    for v in valuesAsArray do
+                       this.Add v
+                | :? ('T list) as valuesAsList -> 
+                    for v in valuesAsList do
+                       this.Add v
+                | _ ->
+                    for v in values do
+                       this.Add v
+
+        member this.AddManyAndClose (values: seq<'T>) =
+            this.AddMany(values)
+            this.Close()
+
+        member this.Close() =
+            match this.Count with 
+            | 0 -> Array.Empty<'T>()
+            | 1 -> 
+                let res = [| this.First |]
+                this.Count <- 0
+                this.First <- Unchecked.defaultof<_>
+                res
+            | 2 -> 
+                let res = [| this.First; this.Second |]
+                this.Count <- 0
+                this.First <- Unchecked.defaultof<_>
+                this.Second <- Unchecked.defaultof<_>
+                res           
+            | _ ->
+                let res = this.ResizeArray.ToArray()
+                this <- ArrayCollector<'T>()
+                res
+            

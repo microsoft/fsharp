@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly StaticInit_Module01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Module01
 {
-  // Offset: 0x00000000 Length: 0x000002A7
+  // Offset: 0x00000000 Length: 0x000002A3
 }
 .mresource public FSharpOptimizationData.StaticInit_Module01
 {
-  // Offset: 0x000002B0 Length: 0x000000DF
+  // Offset: 0x000002A8 Length: 0x000000DF
 }
 .module StaticInit_Module01.dll
-// MVID: {59B19250-705F-DF4F-A745-03835092B159}
+// MVID: {60B68B90-705F-DF4F-A745-0383908BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00370000
+// Image base: 0x050C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -94,7 +94,7 @@
     {
       // Code size       6 (0x6)
       .maxstack  8
-      IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-1'
+      IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::x@5
       IL_0005:  ret
     } // end of method M::get_x
 
@@ -110,7 +110,7 @@
 .class private abstract auto ansi sealed '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 'x@5-1'
+  .field static assembly initonly int32 x@5
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly initonly int32 y@7
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -129,11 +129,11 @@
              [1] int32 y,
              [2] int32 z)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 3,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Module01.fs'
+    .line 5,5 : 3,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Module01.fs'
     IL_0000:  ldstr      "1"
     IL_0005:  callvirt   instance int32 [mscorlib]System.String::get_Length()
     IL_000a:  dup
-    IL_000b:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-1'
+    IL_000b:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::x@5
     IL_0010:  stloc.0
     .line 7,7 : 5,27 ''
     IL_0011:  call       int32 StaticInit_Module01/M::get_x()

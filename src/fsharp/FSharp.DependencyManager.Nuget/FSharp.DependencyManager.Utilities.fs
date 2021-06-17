@@ -7,6 +7,7 @@ open System.IO
 open System.Reflection
 open FSDependencyManager
 open System.Runtime.InteropServices
+open Internal.Utilities.FSharpEnvironment
 
 [<AttributeUsage(AttributeTargets.Assembly ||| AttributeTargets.Class , AllowMultiple = false)>]
 type DependencyManagerAttribute() = inherit System.Attribute()
@@ -67,79 +68,6 @@ module internal Utilities =
         result
         |> List.ofSeq
         |> List.map (fun option -> split option)
-
-    // Path to the directory containing the fsharp compilers
-    let fsharpCompilerPath = Path.Combine(Path.GetDirectoryName(typeof<DependencyManagerAttribute>.GetTypeInfo().Assembly.Location), "Tools")
-
-    // We are running on dotnet core if the executing mscorlib is System.Private.CoreLib
-    let isRunningOnCoreClr = (typeof<obj>.Assembly).FullName.StartsWith("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
-
-    let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-
-    let dotnet =
-        if isWindows then "dotnet.exe" else "dotnet"
-
-    let sdks = "Sdks"
-
-    let dotnetHostPath =
-        // How to find dotnet.exe --- woe is me; probing rules make me sad.
-        // Algorithm:
-        // 1. Look for DOTNET_HOST_PATH environment variable
-        //    this is the main user programable override .. provided by user to find a specific dotnet.exe
-        // 2. Probe for are we part of an .NetSDK install
-        //    In an sdk install we are always installed in:   sdk\3.0.100-rc2-014234\FSharp
-        //    dotnet or dotnet.exe will be found in the directory that contains the sdk directory
-        // 3. We are loaded in-process to some other application ... Eg. try .net
-        //    See if the host is dotnet.exe ... from net5.0 on this is fairly unlikely
-        // 4. If it's none of the above we are going to have to rely on the path containing the way to find dotnet.exe
-        let fileExists pathToFile =
-            try
-                if File.Exists(pathToFile) then 
-                    true
-                else
-                    false
-            with | _ -> false
-        // Use the path to search for dotnet.exe
-        let probePathForDotnetHost () =
-            let paths =
-                let p = Environment.GetEnvironmentVariable("PATH")
-                if not(isNull p) then p.Split(Path.PathSeparator) 
-                else [||]
-            paths |> Array.tryFind (fun f -> fileExists (Path.Combine(f, dotnet)))
-
-        if isRunningOnCoreClr then
-            match (Environment.GetEnvironmentVariable("DOTNET_HOST_PATH")) with
-            // Value set externally
-            | value when not (String.IsNullOrEmpty(value)) && fileExists value -> Some value
-            | _ ->
-                // Probe for netsdk install, dotnet. and dotnet.exe is a constant offset from the location of System.Int32
-                let candidate =
-                    let assemblyLocation = Path.GetDirectoryName(typeof<Int32>.GetTypeInfo().Assembly.Location)
-                    Path.GetFullPath(Path.Combine(assemblyLocation, "..", "..", "..", dotnet))
-                if fileExists candidate then
-                    Some candidate
-                else
-                    let main = Process.GetCurrentProcess().MainModule
-                    if main.ModuleName ="dotnet" then
-                        Some main.FileName
-                    else
-                        Some dotnet
-        elif isWindows then
-            // Use the path to search for dotnet.exe
-            match probePathForDotnetHost () with
-            | Some f -> Some (Path.Combine(f, dotnet))
-            | None ->
-                // Not in paths so look for global install of dotnet sdk
-                let pf = Environment.GetEnvironmentVariable("ProgramW6432")
-                let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
-                let candidate = Path.Combine(pf, "dotnet", dotnet)
-                if fileExists candidate then
-                    Some candidate
-                else
-                    // Can't find it --- give up
-                    None
-        else
-            None
 
     let executeTool pathToExe arguments workingDir timeout =
         match pathToExe with
@@ -205,7 +133,7 @@ module internal Utilities =
         let workingDir = Path.GetDirectoryName projectPath
 
         let success, stdOut, stdErr =
-            executeTool dotnetHostPath (arguments "msbuild -v:quiet") workingDir timeout
+            executeTool (getDotnetHostPath()) (arguments "msbuild -v:quiet") workingDir timeout
 
 #if DEBUG
         File.WriteAllLines(Path.Combine(workingDir, "build_StandardOutput.txt"), stdOut)
@@ -222,7 +150,7 @@ module internal Utilities =
 
     let generateSourcesFromNugetConfigs scriptDirectory workingDir timeout =
         let success, stdOut, stdErr =
-            executeTool dotnetHostPath "nuget list source --format short" scriptDirectory timeout
+            executeTool (getDotnetHostPath()) "nuget list source --format short" scriptDirectory timeout
 #if DEBUG
         File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardOutput.txt"), stdOut)
         File.WriteAllLines(Path.Combine(workingDir, "nuget_StandardError.txt"), stdErr)

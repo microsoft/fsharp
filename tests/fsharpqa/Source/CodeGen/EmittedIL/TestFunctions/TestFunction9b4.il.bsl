@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:3:0
+  .ver 5:0:0:0
 }
 .assembly TestFunction9b4
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction9b4
 {
-  // Offset: 0x00000000 Length: 0x0000024C
+  // Offset: 0x00000000 Length: 0x00000240
 }
 .mresource public FSharpOptimizationData.TestFunction9b4
 {
-  // Offset: 0x00000250 Length: 0x00000085
+  // Offset: 0x00000248 Length: 0x00000085
 }
 .module TestFunction9b4.exe
-// MVID: {5B17FC67-A091-56C1-A745-038367FC175B}
+// MVID: {60B68B97-A091-56C1-A745-0383978BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x026C0000
+// Image base: 0x06CC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,7 +58,7 @@
     .maxstack  3
     .locals init ([0] !!a V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 8,8 : 12,16 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction9b4.fs'
+    .line 8,8 : 12,16 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction9b4.fs'
     IL_0000:  ldloc.0
     IL_0001:  ret
   } // end of method TestFunction9b4::Null

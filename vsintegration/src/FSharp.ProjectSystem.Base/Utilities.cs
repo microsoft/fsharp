@@ -740,7 +740,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 var lclGlobalProperties = (null == globalProperties) ? new Dictionary<string, string>() : new Dictionary<string, string>(globalProperties)
                 {
-                    { "FSharpCompilerPath", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) }
+                    { "FSharpCompilerPath", Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Tools") }
                 };
                 buildProject = buildEngine.LoadProject(fullProjectPath, lclGlobalProperties, null);
                 buildProject.IsBuildEnabled = true;

@@ -8,8 +8,6 @@ open System.Diagnostics
 open System.IO
 open System.Text
 
-open Internal.Utilities
-open Internal.Utilities.Filename
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library
 open Internal.Utilities.Text
@@ -37,7 +35,6 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
-open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
@@ -47,7 +44,7 @@ open FSharp.Compiler.TypedTreeOps
 module internal CompilerService =
     let showAssertForUnexpectedException = ref true
 #endif // DEBUG
-        
+
 /// This exception is an old-style way of reporting a diagnostic
 exception HashIncludeNotAllowedInNonScript of range
 
@@ -78,149 +75,149 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-let GetRangeOfDiagnostic(err: PhasedDiagnostic) = 
+let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
   let rec RangeFromException = function
-      | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2 
+      | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2
 #if !NO_EXTENSIONTYPING
       | ExtensionTyping.ProvidedTypeResolutionNoRange e -> RangeFromException e
       | ExtensionTyping.ProvidedTypeResolution(m, _)
 #endif
       | ReservedKeyword(_, m)
       | IndentationProblem(_, m)
-      | ErrorFromAddingTypeEquation(_, _, _, _, _, m) 
-      | ErrorFromApplyingDefault(_, _, _, _, _, m) 
+      | ErrorFromAddingTypeEquation(_, _, _, _, _, m)
+      | ErrorFromApplyingDefault(_, _, _, _, _, m)
       | ErrorsFromAddingSubsumptionConstraint(_, _, _, _, _, _, m)
       | FunctionExpected(_, _, m)
       | BakedInMemberConstraintName(_, m)
       | StandardOperatorRedefinitionWarning(_, m)
       | BadEventTransformation m
       | ParameterlessStructCtor m
-      | FieldNotMutable (_, _, m) 
-      | Recursion (_, _, _, _, m) 
-      | InvalidRuntimeCoercion(_, _, _, m) 
+      | FieldNotMutable (_, _, m)
+      | Recursion (_, _, _, _, m)
+      | InvalidRuntimeCoercion(_, _, _, m)
       | IndeterminateRuntimeCoercion(_, _, _, m)
       | IndeterminateStaticCoercion (_, _, _, m)
       | StaticCoercionShouldUseBox (_, _, _, m)
       | CoercionTargetSealed(_, _, m)
       | UpcastUnnecessary m
-      | QuotationTranslator.IgnoringPartOfQuotedTermWarning (_, m) 
-      
+      | QuotationTranslator.IgnoringPartOfQuotedTermWarning (_, m)
+
       | TypeTestUnnecessary m
       | RuntimeCoercionSourceSealed(_, _, m)
       | OverrideDoesntOverride(_, _, _, _, _, m)
-      | UnionPatternsBindDifferentNames m 
-      | UnionCaseWrongArguments (_, _, _, m) 
-      | TypeIsImplicitlyAbstract m 
-      | RequiredButNotSpecified (_, _, _, _, m) 
+      | UnionPatternsBindDifferentNames m
+      | UnionCaseWrongArguments (_, _, _, m)
+      | TypeIsImplicitlyAbstract m
+      | RequiredButNotSpecified (_, _, _, _, m)
       | FunctionValueUnexpected (_, _, m)
       | UnitTypeExpected (_, _, m)
       | UnitTypeExpectedWithEquality (_, _, m)
       | UnitTypeExpectedWithPossiblePropertySetter (_, _, _, _, m)
       | UnitTypeExpectedWithPossibleAssignment (_, _, _, _, m)
-      | UseOfAddressOfOperator m 
-      | DeprecatedThreadStaticBindingWarning m 
-      | NonUniqueInferredAbstractSlot (_, _, _, _, _, m) 
+      | UseOfAddressOfOperator m
+      | DeprecatedThreadStaticBindingWarning m
+      | NonUniqueInferredAbstractSlot (_, _, _, _, _, m)
       | DefensiveCopyWarning (_, m)
-      | LetRecCheckedAtRuntime m 
+      | LetRecCheckedAtRuntime m
       | UpperCaseIdentifierInPattern m
       | NotUpperCaseConstructor m
-      | RecursiveUseCheckedAtRuntime (_, _, m) 
-      | LetRecEvaluatedOutOfOrder (_, _, _, m) 
+      | RecursiveUseCheckedAtRuntime (_, _, m)
+      | LetRecEvaluatedOutOfOrder (_, _, _, m)
       | Error (_, m)
       | ErrorWithSuggestions (_, m, _, _)
-      | SyntaxError (_, m) 
+      | SyntaxError (_, m)
       | InternalError (_, m)
-      | InterfaceNotRevealed(_, _, m) 
+      | InterfaceNotRevealed(_, _, m)
       | WrappedError (_, m)
       | PatternMatchCompilation.MatchIncomplete (_, _, m)
       | PatternMatchCompilation.EnumMatchIncomplete (_, _, m)
-      | PatternMatchCompilation.RuleNeverMatched m 
+      | PatternMatchCompilation.RuleNeverMatched m
       | ValNotMutable(_, _, m)
-      | ValNotLocal(_, _, m) 
-      | MissingFields(_, m) 
+      | ValNotLocal(_, _, m)
+      | MissingFields(_, m)
       | OverrideInIntrinsicAugmentation m
-      | IntfImplInIntrinsicAugmentation m 
+      | IntfImplInIntrinsicAugmentation m
       | OverrideInExtrinsicAugmentation m
-      | IntfImplInExtrinsicAugmentation m 
-      | ValueRestriction(_, _, _, _, m) 
-      | LetRecUnsound (_, _, m) 
-      | ObsoleteError (_, m) 
-      | ObsoleteWarning (_, m) 
-      | Experimental (_, m) 
+      | IntfImplInExtrinsicAugmentation m
+      | ValueRestriction(_, _, _, _, _, m)
+      | LetRecUnsound (_, _, m)
+      | ObsoleteError (_, m)
+      | ObsoleteWarning (_, m)
+      | Experimental (_, m)
       | PossibleUnverifiableCode m
-      | UserCompilerMessage (_, _, m) 
-      | Deprecated(_, m) 
-      | LibraryUseOnly m 
-      | FieldsFromDifferentTypes (_, _, _, m) 
+      | UserCompilerMessage (_, _, m)
+      | Deprecated(_, m)
+      | LibraryUseOnly m
+      | FieldsFromDifferentTypes (_, _, _, m)
       | IndeterminateType m
-      | TyconBadArgs(_, _, _, m) -> 
+      | TyconBadArgs(_, _, _, m) ->
           Some m
 
-      | FieldNotContained(_, arf, _, _) -> Some arf.Range
-      | ValueNotContained(_, _, aval, _, _) -> Some aval.Range
-      | ConstrNotContained(_, aval, _, _) -> Some aval.Id.idRange
-      | ExnconstrNotContained(_, aexnc, _, _) -> Some aexnc.Range
+      | FieldNotContained(_, _, _, arf, _, _) -> Some arf.Range
+      | ValueNotContained(_, _, _, aval, _, _) -> Some aval.Range
+      | ConstrNotContained(_, _, _, aval, _, _) -> Some aval.Id.idRange
+      | ExnconstrNotContained(_, _, aexnc, _, _) -> Some aexnc.Range
 
-      | VarBoundTwice id 
-      | UndefinedName(_, _, id, _) -> 
-          Some id.idRange 
+      | VarBoundTwice id
+      | UndefinedName(_, _, id, _) ->
+          Some id.idRange
 
-      | Duplicate(_, _, m) 
-      | NameClash(_, _, _, m, _, _, _) 
-      | UnresolvedOverloading(_, _, _, m) 
+      | Duplicate(_, _, m)
+      | NameClash(_, _, _, m, _, _, _)
+      | UnresolvedOverloading(_, _, _, m)
       | UnresolvedConversionOperator (_, _, _, m)
       | VirtualAugmentationOnNullValuedType m
       | NonVirtualAugmentationOnNullValuedType m
       | NonRigidTypar(_, _, _, _, _, m)
-      | ConstraintSolverTupleDiffLengths(_, _, _, m, _) 
-      | ConstraintSolverInfiniteTypes(_, _, _, _, m, _) 
-      | ConstraintSolverMissingConstraint(_, _, _, m, _) 
+      | ConstraintSolverTupleDiffLengths(_, _, _, m, _)
+      | ConstraintSolverInfiniteTypes(_, _, _, _, m, _)
+      | ConstraintSolverMissingConstraint(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
-      | ConstraintSolverError(_, m, _) 
-      | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _) 
-      | ConstraintSolverRelatedInformation(_, m, _) 
-      | SelfRefObjCtor(_, m) -> 
+      | ConstraintSolverError(_, m, _)
+      | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
+      | ConstraintSolverRelatedInformation(_, m, _)
+      | SelfRefObjCtor(_, m) ->
           Some m
 
-      | NotAFunction(_, _, mfun, _) -> 
+      | NotAFunction(_, _, mfun, _) ->
           Some mfun
-          
-      | NotAFunctionButIndexer(_, _, _, mfun, _) -> 
+
+      | NotAFunctionButIndexer(_, _, _, mfun, _) ->
           Some mfun
 
       | IllegalFileNameChar(_) -> Some rangeCmdArgs
 
-      | UnresolvedReferenceError(_, m) 
-      | UnresolvedPathReference(_, _, m) 
-      | DeprecatedCommandLineOptionFull(_, m) 
-      | DeprecatedCommandLineOptionForHtmlDoc(_, m) 
-      | DeprecatedCommandLineOptionSuggestAlternative(_, _, m) 
-      | DeprecatedCommandLineOptionNoDescription(_, m) 
+      | UnresolvedReferenceError(_, m)
+      | UnresolvedPathReference(_, _, m)
+      | DeprecatedCommandLineOptionFull(_, m)
+      | DeprecatedCommandLineOptionForHtmlDoc(_, m)
+      | DeprecatedCommandLineOptionSuggestAlternative(_, _, m)
+      | DeprecatedCommandLineOptionNoDescription(_, m)
       | InternalCommandLineOption(_, m)
       | HashIncludeNotAllowedInNonScript m
-      | HashReferenceNotAllowedInNonScript m 
-      | HashDirectiveNotAllowedInNonScript m  
-      | FileNameNotResolved(_, _, m) 
-      | LoadedSourceNotFoundIgnoring(_, m) 
-      | MSBuildReferenceResolutionWarning(_, _, m) 
-      | MSBuildReferenceResolutionError(_, _, m) 
-      | AssemblyNotResolved(_, m) 
-      | HashLoadedSourceHasIssues(_, _, m) 
-      | HashLoadedScriptConsideredSource m -> 
+      | HashReferenceNotAllowedInNonScript m
+      | HashDirectiveNotAllowedInNonScript m
+      | FileNameNotResolved(_, _, m)
+      | LoadedSourceNotFoundIgnoring(_, m)
+      | MSBuildReferenceResolutionWarning(_, _, m)
+      | MSBuildReferenceResolutionError(_, _, m)
+      | AssemblyNotResolved(_, m)
+      | HashLoadedSourceHasIssues(_, _, m)
+      | HashLoadedScriptConsideredSource m ->
           Some m
       // Strip TargetInvocationException wrappers
-      | :? System.Reflection.TargetInvocationException as e -> 
+      | :? System.Reflection.TargetInvocationException as e ->
           RangeFromException e.InnerException
 #if !NO_EXTENSIONTYPING
       | :? TypeProviderError as e -> e.Range |> Some
 #endif
-      
+
       | _ -> None
-  
+
   RangeFromException err.Exception
 
-let GetDiagnosticNumber(err: PhasedDiagnostic) = 
-    let rec GetFromException(e: exn) = 
+let GetDiagnosticNumber(err: PhasedDiagnostic) =
+    let rec GetFromException(e: exn) =
       match e with
       (* DO NOT CHANGE THESE NUMBERS *)
       | ErrorFromAddingTypeEquation _ -> 1
@@ -238,7 +235,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | IndeterminateStaticCoercion _ -> 13
       | StaticCoercionShouldUseBox _ -> 14
       // 15 cannot be reused
-      | RuntimeCoercionSourceSealed _ -> 16 
+      | RuntimeCoercionSourceSealed _ -> 16
       | OverrideDoesntOverride _ -> 17
       | UnionPatternsBindDifferentNames _ -> 18
       | UnionCaseWrongArguments _ -> 19
@@ -283,7 +280,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | DeprecatedThreadStaticBindingWarning _ -> 56
       | Experimental _ -> 57
       | IndentationProblem _ -> 58
-      | CoercionTargetSealed _ -> 59 
+      | CoercionTargetSealed _ -> 59
       | OverrideInIntrinsicAugmentation _ -> 60
       | NonVirtualAugmentationOnNullValuedType _ -> 61
       | UserCompilerMessage (_, n, _) -> n
@@ -299,19 +296,19 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | IndeterminateType _ -> 72
       | InternalError _ -> 73
       | UnresolvedReferenceNoRange _
-      | UnresolvedReferenceError _ 
-      | UnresolvedPathReferenceNoRange _ 
+      | UnresolvedReferenceError _
+      | UnresolvedPathReferenceNoRange _
       | UnresolvedPathReference _ -> 74
       | DeprecatedCommandLineOptionFull _
       | DeprecatedCommandLineOptionForHtmlDoc _
       | DeprecatedCommandLineOptionSuggestAlternative _
-      | DeprecatedCommandLineOptionNoDescription _ 
+      | DeprecatedCommandLineOptionNoDescription _
       | InternalCommandLineOption _ -> 75
-      | HashIncludeNotAllowedInNonScript _ 
-      | HashReferenceNotAllowedInNonScript _ 
+      | HashIncludeNotAllowedInNonScript _
+      | HashReferenceNotAllowedInNonScript _
       | HashDirectiveNotAllowedInNonScript _ -> 76
       | BakedInMemberConstraintName _ -> 77
-      | FileNameNotResolved _ -> 78  
+      | FileNameNotResolved _ -> 78
       | LoadedSourceNotFoundIgnoring _ -> 79
       // 80 cannot be reused
       | ParameterlessStructCtor _ -> 81
@@ -337,10 +334,10 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
        (* DO NOT CHANGE THE NUMBERS *)
 
       // Strip TargetInvocationException wrappers
-      | :? System.Reflection.TargetInvocationException as e -> 
+      | :? System.Reflection.TargetInvocationException as e ->
           GetFromException e.InnerException
-      
-      | WrappedError(e, _) -> GetFromException e   
+
+      | WrappedError(e, _) -> GetFromException e
 
       | Error ((n, _), _) -> n
       | ErrorWithSuggestions ((n, _), _, _, _) -> n
@@ -352,58 +349,58 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
       | _ -> 193
     GetFromException err.Exception
-   
-let GetWarningLevel err = 
-    match err.Exception with 
+
+let GetWarningLevel err =
+    match err.Exception with
     // Level 5 warnings
     | RecursiveUseCheckedAtRuntime _
     | LetRecEvaluatedOutOfOrder _
     | DefensiveCopyWarning _  -> 5
 
     | Error((n, _), _)
-    | ErrorWithSuggestions((n, _), _, _, _) -> 
+    | ErrorWithSuggestions((n, _), _, _, _) ->
         // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
         // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
         // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
         // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
         if (n = 1178) then 5 else 2
-    // Level 2 
+    // Level 2
     | _ -> 2
 
-let warningOn err level specificWarnOn = 
+let warningOn err level specificWarnOn =
     let n = GetDiagnosticNumber err
     List.contains n specificWarnOn ||
     // Some specific warnings are never on by default, i.e. unused variable warnings
-    match n with 
+    match n with
     | 1182 -> false // chkUnusedValue - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
-    | _ -> level >= GetWarningLevel err 
+    | _ -> level >= GetWarningLevel err
 
-let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list = 
+let SplitRelatedDiagnostics(err: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
     let ToPhased e = {Exception=e; Phase = err.Phase}
     let rec SplitRelatedException = function
-      | ConstraintSolverRelatedInformation(fopt, m2, e) -> 
+      | ConstraintSolverRelatedInformation(fopt, m2, e) ->
           let e, related = SplitRelatedException e
           ConstraintSolverRelatedInformation(fopt, m2, e.Exception)|>ToPhased, related
       | ErrorFromAddingTypeEquation(g, denv, t1, t2, e, m) ->
           let e, related = SplitRelatedException e
           ErrorFromAddingTypeEquation(g, denv, t1, t2, e.Exception, m)|>ToPhased, related
-      | ErrorFromApplyingDefault(g, denv, tp, defaultType, e, m) ->  
+      | ErrorFromApplyingDefault(g, denv, tp, defaultType, e, m) ->
           let e, related = SplitRelatedException e
           ErrorFromApplyingDefault(g, denv, tp, defaultType, e.Exception, m)|>ToPhased, related
-      | ErrorsFromAddingSubsumptionConstraint(g, denv, t1, t2, e, contextInfo, m) ->  
+      | ErrorsFromAddingSubsumptionConstraint(g, denv, t1, t2, e, contextInfo, m) ->
           let e, related = SplitRelatedException e
           ErrorsFromAddingSubsumptionConstraint(g, denv, t1, t2, e.Exception, contextInfo, m)|>ToPhased, related
-      | ErrorFromAddingConstraint(x, e, m) ->  
+      | ErrorFromAddingConstraint(x, e, m) ->
           let e, related = SplitRelatedException e
           ErrorFromAddingConstraint(x, e.Exception, m)|>ToPhased, related
-      | WrappedError (e, m) -> 
+      | WrappedError (e, m) ->
           let e, related = SplitRelatedException e
           WrappedError(e.Exception, m)|>ToPhased, related
       // Strip TargetInvocationException wrappers
-      | :? System.Reflection.TargetInvocationException as e -> 
+      | :? System.Reflection.TargetInvocationException as e ->
           SplitRelatedException e.InnerException
-      | e -> 
+      | e ->
            ToPhased e, []
     SplitRelatedException err.Exception
 
@@ -562,7 +559,7 @@ let FileNameNotResolvedE() = DeclareResourceString("FileNameNotResolved", "%s%s"
 let AssemblyNotResolvedE() = DeclareResourceString("AssemblyNotResolved", "%s")
 let HashLoadedSourceHasIssues1E() = DeclareResourceString("HashLoadedSourceHasIssues1", "")
 let HashLoadedSourceHasIssues2E() = DeclareResourceString("HashLoadedSourceHasIssues2", "")
-let HashLoadedScriptConsideredSourceE() = DeclareResourceString("HashLoadedScriptConsideredSource", "")  
+let HashLoadedScriptConsideredSourceE() = DeclareResourceString("HashLoadedScriptConsideredSource", "")
 let InvalidInternalsVisibleToAssemblyName1E() = DeclareResourceString("InvalidInternalsVisibleToAssemblyName1", "%s%s")
 let InvalidInternalsVisibleToAssemblyName2E() = DeclareResourceString("InvalidInternalsVisibleToAssemblyName2", "%s")
 let LoadedSourceNotFoundIgnoringE() = DeclareResourceString("LoadedSourceNotFoundIgnoring", "%s")
@@ -592,12 +589,12 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       os.Append "   " |> ignore
                       os.Append(DecompileOpName value) |> ignore
 
-    let rec OutputExceptionR (os: StringBuilder) error = 
+    let rec OutputExceptionR (os: StringBuilder) error =
 
       match error with
-      | ConstraintSolverTupleDiffLengths(_, tl1, tl2, m, m2) -> 
+      | ConstraintSolverTupleDiffLengths(_, tl1, tl2, m, m2) ->
           os.Append(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length) |> ignore
-          if m.StartLine <> m2.StartLine then 
+          if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
       | ConstraintSolverInfiniteTypes(denv, contextInfo, t1, t2, m, m2) ->
@@ -612,30 +609,30 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
             os.Append(" " + FSComp.SR.yieldUsedInsteadOfYieldBang()) |> ignore
           | _ -> ()
 
-          if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
-
-      | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) -> 
-          os.Append(ConstraintSolverMissingConstraintE().Format (NicePrint.stringOfTyparConstraint denv (tpr, tpc))) |> ignore
-          if m.StartLine <> m2.StartLine then 
-             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
-
-      | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as t1), (TType_measure _ as t2), m, m2, _) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-          
-          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 ) |> ignore
-          
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverTypesNotInEqualityRelation(denv, t1, t2, m, m2, contextInfo) -> 
+      | ConstraintSolverMissingConstraint(denv, tpr, tpc, m, m2) ->
+          os.Append(ConstraintSolverMissingConstraintE().Format (NicePrint.stringOfTyparConstraint denv (tpr, tpc))) |> ignore
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as t1), (TType_measure _ as t2), m, m2, _) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-          
+
+          os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 ) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverTypesNotInEqualityRelation(denv, t1, t2, m, m2, contextInfo) ->
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
+
           match contextInfo with
           | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m -> 
+          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m ->
             if isArray then
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
@@ -645,34 +642,34 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | ContextInfo.FollowingPatternMatchClause range when Range.equals range m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
           | ContextInfo.PatternMatchGuard range when Range.equals range m -> os.Append(FSComp.SR.patternMatchGuardIsNotBool(t2)) |> ignore
           | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
-          if m.StartLine <> m2.StartLine then 
+          if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverTypesNotInSubsumptionRelation(denv, t1, t2, m, m2) -> 
+      | ConstraintSolverTypesNotInSubsumptionRelation(denv, t1, t2, m, m2) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           os.Append(ConstraintSolverTypesNotInSubsumptionRelationE().Format t2 t1 cxs) |> ignore
-          if m.StartLine <> m2.StartLine then 
+          if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
 
-      | ConstraintSolverError(msg, m, m2) -> 
+      | ConstraintSolverError(msg, m, m2) ->
          os.Append msg |> ignore
-         if m.StartLine <> m2.StartLine then 
+         if m.StartLine <> m2.StartLine then
             os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
 
-      | ConstraintSolverRelatedInformation(fopt, _, e) -> 
-          match e with 
+      | ConstraintSolverRelatedInformation(fopt, _, e) ->
+          match e with
           | ConstraintSolverError _ -> OutputExceptionR os e
           | _ -> ()
           fopt |> Option.iter (Printf.bprintf os " %s")
 
-      | ErrorFromAddingTypeEquation(g, denv, t1, t2, ConstraintSolverTypesNotInEqualityRelation(_, t1', t2', m, _, contextInfo), _) 
+      | ErrorFromAddingTypeEquation(g, denv, t1, t2, ConstraintSolverTypesNotInEqualityRelation(_, t1', t2', m, _, contextInfo), _)
          when typeEquiv g t1 t1'
               && typeEquiv g t2 t2' ->
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
           | ContextInfo.IfExpression range when Range.equals range m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
-          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m -> 
+          | ContextInfo.CollectionElement (isArray, range) when Range.equals range m ->
             if isArray then
                 os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
@@ -690,10 +687,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
 
       | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _)
-              when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->  
+              when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->
           OutputExceptionR os e
 
-      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->  
+      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->
           OutputExceptionR os e
 
       | ErrorFromAddingTypeEquation(g, denv, t1, t2, e, _) ->
@@ -703,7 +700,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
           OutputExceptionR os e
 
-      | ErrorFromApplyingDefault(_, denv, _, defaultType, e, _) ->  
+      | ErrorFromApplyingDefault(_, denv, _, defaultType, e, _) ->
           let defaultType = NicePrint.minimalStringOfType denv defaultType
           os.Append(ErrorFromApplyingDefault1E().Format defaultType) |> ignore
           OutputExceptionR os e
@@ -711,7 +708,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | ErrorsFromAddingSubsumptionConstraint(g, denv, t1, t2, e, contextInfo, _) ->
           match contextInfo with
-          | ContextInfo.DowncastUsedInsteadOfUpcast isOperator -> 
+          | ContextInfo.DowncastUsedInsteadOfUpcast isOperator ->
               let t1, t2, _ = NicePrint.minimalStringsOfTwoTypes denv t1 t2
               if isOperator then
                   os.Append(FSComp.SR.considerUpcastOperator(t1, t2) |> snd) |> ignore
@@ -720,26 +717,26 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           | _ ->
               if not (typeEquiv g t1 t2) then
                   let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
-                  if t1 <> (t2 + tpcs) then 
+                  if t1 <> (t2 + tpcs) then
                       os.Append(ErrorsFromAddingSubsumptionConstraintE().Format t2 t1 tpcs) |> ignore
                   else
                       OutputExceptionR os e
               else
                   OutputExceptionR os e
 
-      | UpperCaseIdentifierInPattern(_) -> 
+      | UpperCaseIdentifierInPattern(_) ->
           os.Append(UpperCaseIdentifierInPatternE().Format) |> ignore
 
-      | NotUpperCaseConstructor(_) -> 
+      | NotUpperCaseConstructor(_) ->
           os.Append(NotUpperCaseConstructorE().Format) |> ignore
 
-      | ErrorFromAddingConstraint(_, e, _) ->  
+      | ErrorFromAddingConstraint(_, e, _) ->
           OutputExceptionR os e
 
 #if !NO_EXTENSIONTYPING
       | ExtensionTyping.ProvidedTypeResolutionNoRange e
 
-      | ExtensionTyping.ProvidedTypeResolution(_, e) -> 
+      | ExtensionTyping.ProvidedTypeResolution(_, e) ->
           OutputExceptionR os e
 
       | :? TypeProviderError as e ->
@@ -747,7 +744,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 #endif
 
       | UnresolvedOverloading(denv, callerArgs, failure, m) ->
-          
+
           // extract eventual information (return type and type parameters)
           // from ConstraintTraitInfo
           let knownReturnType, genericParameterTypes =
@@ -755,24 +752,24 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | NoOverloadsFound (cx=Some cx)
               | PossibleCandidates (cx=Some cx) -> cx.ReturnType, cx.ArgumentTypes
               | _ -> None, []
-         
+
           // prepare message parts (known arguments, known return type, known generic parameters)
           let argsMessage, returnType, genericParametersMessage =
-              
+
               let retTy =
                   knownReturnType
                   |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
-              
-              let argRepr = 
+
+              let argRepr =
                   callerArgs.ArgumentNamesAndTypes
                   |> List.map (fun (name,tTy) -> tTy, {ArgReprInfo.Name = name |> Option.map (fun name -> Ident(name, range.Zero)); ArgReprInfo.Attribs = []})
-                  
+
               let argsL,retTyL,genParamTysL = NicePrint.prettyLayoutsOfUnresolvedOverloading denv argRepr retTy genericParameterTypes
-              
+
               match callerArgs.ArgumentNamesAndTypes with
               | [] -> None, LayoutRender.showL retTyL, LayoutRender.showL genParamTysL
               | items ->
-                  let args = LayoutRender.showL argsL  
+                  let args = LayoutRender.showL argsL
                   let prefixMessage =
                       match items with
                       | [_] -> FSComp.SR.csNoOverloadsFoundArgumentsPrefixSingular
@@ -802,9 +799,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                           |> Option.defaultValue (FSComp.SR.csOverloadCandidateIndexedArgumentTypeMismatch ((vsnd x.calledArg.Position) + 1)) //snd
                       sprintf " // %s" nameOrOneBasedIndexMessage
                   | _ -> ""
-                  
-              (NicePrint.stringOfMethInfo x.amap m displayEnv x.methodSlot.Method) + paramInfo
-              
+
+              (NicePrint.stringOfMethInfo x.infoReader m displayEnv x.methodSlot.Method) + paramInfo
+
           let nl = System.Environment.NewLine
           let formatOverloads (overloads: OverloadInformation list) =
               overloads
@@ -812,7 +809,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               |> List.sort
               |> List.map FSComp.SR.formatDashItem
               |> String.concat nl
-         
+
           // assemble final message composing the parts
           let msg =
               let optionalParts =
@@ -821,11 +818,11 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                 |> String.concat (nl + nl)
                 |> function | "" -> nl
                             | result -> nl + nl + result + nl + nl
-              
+
               match failure with
               | NoOverloadsFound (methodName, overloads, _) ->
                   FSComp.SR.csNoOverloadsFound methodName
-                      + optionalParts                      
+                      + optionalParts
                       + (FSComp.SR.csAvailableOverloads (formatOverloads overloads))
               | PossibleCandidates (methodName, [], _) ->
                   FSComp.SR.csMethodIsOverloaded methodName
@@ -833,10 +830,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   FSComp.SR.csMethodIsOverloaded methodName
                       + optionalParts
                       + FSComp.SR.csCandidates (formatOverloads overloads)
-          
+
           os.Append msg |> ignore
 
-      | UnresolvedConversionOperator(denv, fromTy, toTy, _) -> 
+      | UnresolvedConversionOperator(denv, fromTy, toTy, _) ->
           let t1, t2, _tpcs = NicePrint.minimalStringsOfTwoTypes denv fromTy toTy
           os.Append(FSComp.SR.csTypeDoesNotSupportConversion(t1, t2)) |> ignore
 
@@ -846,7 +843,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | BakedInMemberConstraintName(nm, _) ->
           os.Append(BakedInMemberConstraintNameE().Format nm) |> ignore
 
-      | StandardOperatorRedefinitionWarning(msg, _) -> 
+      | StandardOperatorRedefinitionWarning(msg, _) ->
           os.Append msg |> ignore
 
       | BadEventTransformation(_) ->
@@ -869,58 +866,58 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           else
               os.Append(FSComp.SR.notAFunction()) |> ignore
 
-      | TyconBadArgs(_, tcref, d, _) -> 
+      | TyconBadArgs(_, tcref, d, _) ->
           let exp = tcref.TyparsNoRange.Length
           if exp = 0 then
               os.Append(FSComp.SR.buildUnexpectedTypeArgs(fullDisplayTextOfTyconRef tcref, d)) |> ignore
           else
               os.Append(TyconBadArgsE().Format (fullDisplayTextOfTyconRef tcref) exp d) |> ignore
 
-      | IndeterminateType(_) -> 
+      | IndeterminateType(_) ->
           os.Append(IndeterminateTypeE().Format) |> ignore
 
-      | NameClash(nm, k1, nm1, _, k2, nm2, _) -> 
-          if nm = nm1 && nm1 = nm2 && k1 = k2 then 
+      | NameClash(nm, k1, nm1, _, k2, nm2, _) ->
+          if nm = nm1 && nm1 = nm2 && k1 = k2 then
               os.Append(NameClash1E().Format k1 nm1) |> ignore
           else
               os.Append(NameClash2E().Format k1 nm1 nm k2 nm2) |> ignore
 
-      | Duplicate(k, s, _) -> 
-          if k = "member" then 
+      | Duplicate(k, s, _) ->
+          if k = "member" then
               os.Append(Duplicate1E().Format (DecompileOpName s)) |> ignore
-          else 
+          else
               os.Append(Duplicate2E().Format k (DecompileOpName s)) |> ignore
 
       | UndefinedName(_, k, id, suggestionsF) ->
           os.Append(k (DecompileOpName id.idText)) |> ignore
           suggestNames suggestionsF id.idText
 
-      | InternalUndefinedItemRef(f, smr, ccuName, s) ->  
+      | InternalUndefinedItemRef(f, smr, ccuName, s) ->
           let _, errs = f(smr, ccuName, s)
-          os.Append errs |> ignore  
+          os.Append errs |> ignore
 
-      | FieldNotMutable _ -> 
+      | FieldNotMutable _ ->
           os.Append(FieldNotMutableE().Format) |> ignore
 
-      | FieldsFromDifferentTypes (_, fref1, fref2, _) -> 
+      | FieldsFromDifferentTypes (_, fref1, fref2, _) ->
           os.Append(FieldsFromDifferentTypesE().Format fref1.FieldName fref2.FieldName) |> ignore
 
-      | VarBoundTwice id ->  
+      | VarBoundTwice id ->
           os.Append(VarBoundTwiceE().Format (DecompileOpName id.idText)) |> ignore
 
-      | Recursion (denv, id, ty1, ty2, _) -> 
+      | Recursion (denv, id, ty1, ty2, _) ->
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(RecursionE().Format (DecompileOpName id.idText) t1 t2 tpcs) |> ignore
 
-      | InvalidRuntimeCoercion(denv, ty1, ty2, _) -> 
+      | InvalidRuntimeCoercion(denv, ty1, ty2, _) ->
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(InvalidRuntimeCoercionE().Format t1 t2 tpcs) |> ignore
 
-      | IndeterminateRuntimeCoercion(denv, ty1, ty2, _) -> 
+      | IndeterminateRuntimeCoercion(denv, ty1, ty2, _) ->
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(IndeterminateRuntimeCoercionE().Format t1 t2) |> ignore
 
-      | IndeterminateStaticCoercion(denv, ty1, ty2, _) -> 
+      | IndeterminateStaticCoercion(denv, ty1, ty2, _) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(IndeterminateStaticCoercionE().Format t1 t2) |> ignore
@@ -930,59 +927,59 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(StaticCoercionShouldUseBoxE().Format t1 t2) |> ignore
 
-      | TypeIsImplicitlyAbstract(_) -> 
+      | TypeIsImplicitlyAbstract(_) ->
           os.Append(TypeIsImplicitlyAbstractE().Format) |> ignore
 
-      | NonRigidTypar(denv, tpnmOpt, typarRange, ty1, ty, _) -> 
+      | NonRigidTypar(denv, tpnmOpt, typarRange, ty1, ty, _) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let (ty1, ty), _cxs = PrettyTypes.PrettifyTypePair denv.g (ty1, ty)
-          match tpnmOpt with 
-          | None -> 
+          match tpnmOpt with
+          | None ->
               os.Append(NonRigidTypar1E().Format (stringOfRange typarRange) (NicePrint.stringOfTy denv ty)) |> ignore
-          | Some tpnm -> 
-              match ty1 with 
-              | TType_measure _ -> 
+          | Some tpnm ->
+              match ty1 with
+              | TType_measure _ ->
                 os.Append(NonRigidTypar2E().Format tpnm (NicePrint.stringOfTy denv ty)) |> ignore
-              | _ -> 
+              | _ ->
                 os.Append(NonRigidTypar3E().Format tpnm (NicePrint.stringOfTy denv ty)) |> ignore
 
-      | SyntaxError (ctxt, _) -> 
+      | SyntaxError (ctxt, _) ->
           let ctxt = unbox<Parsing.ParseErrorContext<Parser.token>>(ctxt)
-          
-          let (|EndOfStructuredConstructToken|_|) token = 
+
+          let (|EndOfStructuredConstructToken|_|) token =
               match token with
-              | Parser.TOKEN_ODECLEND 
-              | Parser.TOKEN_OBLOCKSEP 
-              | Parser.TOKEN_OEND 
-              | Parser.TOKEN_ORIGHT_BLOCK_END 
+              | Parser.TOKEN_ODECLEND
+              | Parser.TOKEN_OBLOCKSEP
+              | Parser.TOKEN_OEND
+              | Parser.TOKEN_ORIGHT_BLOCK_END
               | Parser.TOKEN_OBLOCKEND | Parser.TOKEN_OBLOCKEND_COMING_SOON | Parser.TOKEN_OBLOCKEND_IS_HERE -> Some()
               | _ -> None
 
-          let tokenIdToText tid = 
-              match tid with 
+          let tokenIdToText tid =
+              match tid with
               | Parser.TOKEN_IDENT -> getErrorString("Parser.TOKEN.IDENT")
-              | Parser.TOKEN_BIGNUM 
-              | Parser.TOKEN_INT8  
-              | Parser.TOKEN_UINT8 
-              | Parser.TOKEN_INT16  
-              | Parser.TOKEN_UINT16 
-              | Parser.TOKEN_INT32 
-              | Parser.TOKEN_UINT32 
-              | Parser.TOKEN_INT64 
-              | Parser.TOKEN_UINT64 
-              | Parser.TOKEN_UNATIVEINT 
+              | Parser.TOKEN_BIGNUM
+              | Parser.TOKEN_INT8
+              | Parser.TOKEN_UINT8
+              | Parser.TOKEN_INT16
+              | Parser.TOKEN_UINT16
+              | Parser.TOKEN_INT32
+              | Parser.TOKEN_UINT32
+              | Parser.TOKEN_INT64
+              | Parser.TOKEN_UINT64
+              | Parser.TOKEN_UNATIVEINT
               | Parser.TOKEN_NATIVEINT -> getErrorString("Parser.TOKEN.INT")
-              | Parser.TOKEN_IEEE32 
+              | Parser.TOKEN_IEEE32
               | Parser.TOKEN_IEEE64 -> getErrorString("Parser.TOKEN.FLOAT")
               | Parser.TOKEN_DECIMAL -> getErrorString("Parser.TOKEN.DECIMAL")
               | Parser.TOKEN_CHAR -> getErrorString("Parser.TOKEN.CHAR")
-                
+
               | Parser.TOKEN_BASE -> getErrorString("Parser.TOKEN.BASE")
               | Parser.TOKEN_LPAREN_STAR_RPAREN -> getErrorString("Parser.TOKEN.LPAREN.STAR.RPAREN")
               | Parser.TOKEN_DOLLAR -> getErrorString("Parser.TOKEN.DOLLAR")
               | Parser.TOKEN_INFIX_STAR_STAR_OP -> getErrorString("Parser.TOKEN.INFIX.STAR.STAR.OP")
               | Parser.TOKEN_INFIX_COMPARE_OP -> getErrorString("Parser.TOKEN.INFIX.COMPARE.OP")
-              | Parser.TOKEN_COLON_GREATER -> getErrorString("Parser.TOKEN.COLON.GREATER")  
+              | Parser.TOKEN_COLON_GREATER -> getErrorString("Parser.TOKEN.COLON.GREATER")
               | Parser.TOKEN_COLON_COLON ->getErrorString("Parser.TOKEN.COLON.COLON")
               | Parser.TOKEN_PERCENT_OP -> getErrorString("Parser.TOKEN.PERCENT.OP")
               | Parser.TOKEN_INFIX_AT_HAT_OP -> getErrorString("Parser.TOKEN.INFIX.AT.HAT.OP")
@@ -1013,7 +1010,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_GREATER_BAR_RBRACK -> getErrorString("Parser.TOKEN.GREATER.BAR.RBRACK")
               | Parser.TOKEN_MINUS -> getErrorString("Parser.TOKEN.MINUS")
               | Parser.TOKEN_ADJACENT_PREFIX_OP -> getErrorString("Parser.TOKEN.ADJACENT.PREFIX.OP")
-              | Parser.TOKEN_FUNKY_OPERATOR_NAME -> getErrorString("Parser.TOKEN.FUNKY.OPERATOR.NAME") 
+              | Parser.TOKEN_FUNKY_OPERATOR_NAME -> getErrorString("Parser.TOKEN.FUNKY.OPERATOR.NAME")
               | Parser.TOKEN_COMMA-> getErrorString("Parser.TOKEN.COMMA")
               | Parser.TOKEN_DOT -> getErrorString("Parser.TOKEN.DOT")
               | Parser.TOKEN_BAR-> getErrorString("Parser.TOKEN.BAR")
@@ -1032,7 +1029,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_BAR_RBRACK -> getErrorString("Parser.TOKEN.BAR.RBRACK")
               | Parser.TOKEN_BAR_RBRACE -> getErrorString("Parser.TOKEN.BAR.RBRACE")
               | Parser.TOKEN_GREATER_RBRACK -> getErrorString("Parser.TOKEN.GREATER.RBRACK")
-              | Parser.TOKEN_RQUOTE_DOT _ 
+              | Parser.TOKEN_RQUOTE_DOT _
               | Parser.TOKEN_RQUOTE -> getErrorString("Parser.TOKEN.RQUOTE")
               | Parser.TOKEN_RBRACK -> getErrorString("Parser.TOKEN.RBRACK")
               | Parser.TOKEN_RBRACE | Parser.TOKEN_RBRACE_COMING_SOON | Parser.TOKEN_RBRACE_IS_HERE -> getErrorString("Parser.TOKEN.RBRACE")
@@ -1051,17 +1048,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_MEMBER -> getErrorString("Parser.TOKEN.MEMBER")
               | Parser.TOKEN_STATIC -> getErrorString("Parser.TOKEN.STATIC")
               | Parser.TOKEN_NAMESPACE-> getErrorString("Parser.TOKEN.NAMESPACE")
-              | Parser.TOKEN_OBLOCKBEGIN -> getErrorString("Parser.TOKEN.OBLOCKBEGIN") 
-              | EndOfStructuredConstructToken -> getErrorString("Parser.TOKEN.OBLOCKEND") 
-              | Parser.TOKEN_THEN  
+              | Parser.TOKEN_OBLOCKBEGIN -> getErrorString("Parser.TOKEN.OBLOCKBEGIN")
+              | EndOfStructuredConstructToken -> getErrorString("Parser.TOKEN.OBLOCKEND")
+              | Parser.TOKEN_THEN
               | Parser.TOKEN_OTHEN -> getErrorString("Parser.TOKEN.OTHEN")
               | Parser.TOKEN_ELSE
               | Parser.TOKEN_OELSE -> getErrorString("Parser.TOKEN.OELSE")
-              | Parser.TOKEN_LET(_) 
+              | Parser.TOKEN_LET(_)
               | Parser.TOKEN_OLET(_) -> getErrorString("Parser.TOKEN.OLET")
-              | Parser.TOKEN_OBINDER 
+              | Parser.TOKEN_OBINDER
               | Parser.TOKEN_BINDER -> getErrorString("Parser.TOKEN.BINDER")
-              | Parser.TOKEN_OAND_BANG 
+              | Parser.TOKEN_OAND_BANG
               | Parser.TOKEN_AND_BANG -> getErrorString("Parser.TOKEN.AND.BANG")
               | Parser.TOKEN_ODO -> getErrorString("Parser.TOKEN.ODO")
               | Parser.TOKEN_OWITH -> getErrorString("Parser.TOKEN.OWITH")
@@ -1069,7 +1066,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_OFUN -> getErrorString("Parser.TOKEN.OFUN")
               | Parser.TOKEN_ORESET -> getErrorString("Parser.TOKEN.ORESET")
               | Parser.TOKEN_ODUMMY -> getErrorString("Parser.TOKEN.ODUMMY")
-              | Parser.TOKEN_DO_BANG 
+              | Parser.TOKEN_DO_BANG
               | Parser.TOKEN_ODO_BANG -> getErrorString("Parser.TOKEN.ODO.BANG")
               | Parser.TOKEN_YIELD -> getErrorString("Parser.TOKEN.YIELD")
               | Parser.TOKEN_YIELD_BANG -> getErrorString("Parser.TOKEN.YIELD.BANG")
@@ -1127,9 +1124,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_BEGIN -> getErrorString("Parser.TOKEN.BEGIN")
               | Parser.TOKEN_END -> getErrorString("Parser.TOKEN.END")
               | Parser.TOKEN_HASH_LIGHT
-              | Parser.TOKEN_HASH_LINE 
-              | Parser.TOKEN_HASH_IF 
-              | Parser.TOKEN_HASH_ELSE 
+              | Parser.TOKEN_HASH_LINE
+              | Parser.TOKEN_HASH_IF
+              | Parser.TOKEN_HASH_ELSE
               | Parser.TOKEN_HASH_ENDIF -> getErrorString("Parser.TOKEN.HASH.ENDIF")
               | Parser.TOKEN_INACTIVECODE -> getErrorString("Parser.TOKEN.INACTIVECODE")
               | Parser.TOKEN_LEX_FAILURE-> getErrorString("Parser.TOKEN.LEX.FAILURE")
@@ -1147,7 +1144,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
               | Parser.TOKEN_INTERP_STRING_PART -> getErrorString("Parser.TOKEN.INTERP.STRING.PART")
               | Parser.TOKEN_INTERP_STRING_END -> getErrorString("Parser.TOKEN.INTERP.STRING.END")
-              | unknown ->           
+              | unknown ->
                   Debug.Assert(false, "unknown token tag")
                   let result = sprintf "%+A" unknown
                   Debug.Assert(false, result)
@@ -1155,25 +1152,25 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
 #if DEBUG
           if showParserStackOnParseError then
-              printfn "parser stack:" 
-              for rps in ctxt.ReducibleProductions do 
-                  printfn "   ----" 
+              printfn "parser stack:"
+              for rps in ctxt.ReducibleProductions do
+                  printfn "   ----"
                   //printfn "   state %d" state
                   for rp in rps do
                       printfn "       non-terminal %+A: ... " (Parser.prodIdxToNonTerminal rp)
 #endif
 
-          match ctxt.CurrentToken with 
+          match ctxt.CurrentToken with
           | None -> os.Append(UnexpectedEndOfInputE().Format) |> ignore
-          | Some token -> 
-              match (token |> Parser.tagOfToken |> Parser.tokenTagToTokenId), token with 
+          | Some token ->
+              match (token |> Parser.tagOfToken |> Parser.tokenTagToTokenId), token with
               | EndOfStructuredConstructToken, _ -> os.Append(OBlockEndSentenceE().Format) |> ignore
               | Parser.TOKEN_LEX_FAILURE, Parser.LEX_FAILURE str -> Printf.bprintf os "%s" str (* Fix bug://2431 *)
               | token, _ -> os.Append(UnexpectedE().Format (token |> tokenIdToText)) |> ignore
 
               (* Search for a state producing a single recognized non-terminal in the states on the stack *)
               let foundInContext =
-              
+
                   (* Merge a bunch of expression non terminals *)
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
@@ -1181,17 +1178,17 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                         | Parser.NONTERM_typedSeqExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None
-                        
+
                   (* Merge a bunch of pattern non terminals *)
-                  let (|NONTERM_Category_Pattern|_|) = function 
-                        | Parser.NONTERM_constrPattern|Parser.NONTERM_parenPattern|Parser.NONTERM_atomicPattern -> Some() 
+                  let (|NONTERM_Category_Pattern|_|) = function
+                        | Parser.NONTERM_constrPattern|Parser.NONTERM_parenPattern|Parser.NONTERM_atomicPattern -> Some()
                         | _ -> None
-                  
+
                   (* Merge a bunch of if/then/else non terminals *)
                   let (|NONTERM_Category_IfThenElse|_|) = function
                         | Parser.NONTERM_ifExprThen|Parser.NONTERM_ifExprElifs|Parser.NONTERM_ifExprCases -> Some()
                         | _ -> None
-                        
+
                   (* Merge a bunch of non terminals *)
                   let (|NONTERM_Category_SignatureFile|_|) = function
                         | Parser.NONTERM_signatureFile|Parser.NONTERM_moduleSpfn|Parser.NONTERM_moduleSpfns -> Some()
@@ -1203,7 +1200,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                         | Parser.NONTERM_fileModuleImpl|Parser.NONTERM_moduleDefn|Parser.NONTERM_interactiveDefns
                         |Parser.NONTERM_moduleDefns|Parser.NONTERM_moduleDefnsOrExpr -> Some()
                         | _ -> None
-                  
+
                   let (|NONTERM_Category_Type|_|) = function
                         | Parser.NONTERM_typ|Parser.NONTERM_tupleType -> Some()
                         | _ -> None
@@ -1211,24 +1208,24 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   let (|NONTERM_Category_Interaction|_|) = function
                         | Parser.NONTERM_interactiveItemsTerminator|Parser.NONTERM_interaction|Parser.NONTERM__startinteraction -> Some()
                         | _ -> None
-         
-                  
+
+
                   // Canonicalize the categories and check for a unique category
-                  ctxt.ReducibleProductions |> List.exists (fun prods -> 
-                      match prods 
-                            |> List.map Parser.prodIdxToNonTerminal 
-                            |> List.map (function 
+                  ctxt.ReducibleProductions |> List.exists (fun prods ->
+                      match prods
+                            |> List.map Parser.prodIdxToNonTerminal
+                            |> List.map (function
                                          | NONTERM_Category_Type -> Parser.NONTERM_typ
-                                         | NONTERM_Category_Expr -> Parser.NONTERM_declExpr 
-                                         | NONTERM_Category_Pattern -> Parser.NONTERM_atomicPattern 
+                                         | NONTERM_Category_Expr -> Parser.NONTERM_declExpr
+                                         | NONTERM_Category_Pattern -> Parser.NONTERM_atomicPattern
                                          | NONTERM_Category_IfThenElse -> Parser.NONTERM_ifExprThen
                                          | NONTERM_Category_SignatureFile -> Parser.NONTERM_signatureFile
                                          | NONTERM_Category_ImplementationFile -> Parser.NONTERM_implementationFile
                                          | NONTERM_Category_Definition -> Parser.NONTERM_moduleDefn
                                          | NONTERM_Category_Interaction -> Parser.NONTERM_interaction
                                          | nt -> nt)
-                            |> Set.ofList 
-                            |> Set.toList with 
+                            |> Set.ofList
+                            |> Set.toList with
                       | [Parser.NONTERM_interaction] -> os.Append(NONTERM_interactionE().Format) |> ignore; true
                       | [Parser.NONTERM_hashDirective] -> os.Append(NONTERM_hashDirectiveE().Format) |> ignore; true
                       | [Parser.NONTERM_fieldDecl] -> os.Append(NONTERM_fieldDeclE().Format) |> ignore; true
@@ -1263,9 +1260,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                       | [NONTERM_Category_Expr] -> os.Append(NONTERM_Category_ExprE().Format) |> ignore; true
                       | [NONTERM_Category_Type] -> os.Append(NONTERM_Category_TypeE().Format) |> ignore; true
                       | [Parser.NONTERM_typeArgsActual] -> os.Append(NONTERM_typeArgsActualE().Format) |> ignore; true
-                      | _ -> 
+                      | _ ->
                           false)
-                          
+
 #if DEBUG
               if not foundInContext then
                   Printf.bprintf os ". (no 'in' context found: %+A)" (List.map (List.map Parser.prodIdxToNonTerminal) ctxt.ReducibleProductions)
@@ -1273,18 +1270,18 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               foundInContext |> ignore // suppress unused variable warning in RELEASE
 #endif
               let fix (s: string) = s.Replace(SR.GetString("FixKeyword"), "").Replace(SR.GetString("FixSymbol"), "").Replace(SR.GetString("FixReplace"), "")
-              match (ctxt.ShiftTokens 
-                           |> List.map Parser.tokenTagToTokenId 
-                           |> List.filter (function Parser.TOKEN_error | Parser.TOKEN_EOF -> false | _ -> true) 
-                           |> List.map tokenIdToText 
-                           |> Set.ofList 
-                           |> Set.toList) with 
+              match (ctxt.ShiftTokens
+                           |> List.map Parser.tokenTagToTokenId
+                           |> List.filter (function Parser.TOKEN_error | Parser.TOKEN_EOF -> false | _ -> true)
+                           |> List.map tokenIdToText
+                           |> Set.ofList
+                           |> Set.toList) with
               | [tokenName1] -> os.Append(TokenName1E().Format (fix tokenName1)) |> ignore
               | [tokenName1;tokenName2] -> os.Append(TokenName1TokenName2E().Format (fix tokenName1) (fix tokenName2)) |> ignore
               | [tokenName1;tokenName2;tokenName3] -> os.Append(TokenName1TokenName2TokenName3E().Format (fix tokenName1) (fix tokenName2) (fix tokenName3)) |> ignore
               | _ -> ()
         (*
-              Printf.bprintf os ".\n\n    state = %A\n    token = %A\n    expect (shift) %A\n    expect (reduce) %A\n   prods=%A\n     non terminals: %A" 
+              Printf.bprintf os ".\n\n    state = %A\n    token = %A\n    expect (shift) %A\n    expect (reduce) %A\n   prods=%A\n     non terminals: %A"
                   ctxt.StateStack
                   ctxt.CurrentToken
                   (List.map Parser.tokenTagToTokenId ctxt.ShiftTokens)
@@ -1293,39 +1290,39 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   (List.mapSquared Parser.prodIdxToNonTerminal ctxt.ReducibleProductions)
         *)
 
-      | RuntimeCoercionSourceSealed(denv, ty, _) -> 
+      | RuntimeCoercionSourceSealed(denv, ty, _) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-          if isTyparTy denv.g ty 
+          if isTyparTy denv.g ty
           then os.Append(RuntimeCoercionSourceSealed1E().Format (NicePrint.stringOfTy denv ty)) |> ignore
           else os.Append(RuntimeCoercionSourceSealed2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
 
-      | CoercionTargetSealed(denv, ty, _) -> 
+      | CoercionTargetSealed(denv, ty, _) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let ty, _cxs= PrettyTypes.PrettifyType denv.g ty
           os.Append(CoercionTargetSealedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
 
-      | UpcastUnnecessary(_) -> 
+      | UpcastUnnecessary(_) ->
           os.Append(UpcastUnnecessaryE().Format) |> ignore
 
-      | TypeTestUnnecessary(_) -> 
+      | TypeTestUnnecessary(_) ->
           os.Append(TypeTestUnnecessaryE().Format) |> ignore
 
-      | QuotationTranslator.IgnoringPartOfQuotedTermWarning (msg, _) -> 
+      | QuotationTranslator.IgnoringPartOfQuotedTermWarning (msg, _) ->
           Printf.bprintf os "%s" msg
 
       | OverrideDoesntOverride(denv, impl, minfoVirtOpt, g, amap, m) ->
           let sig1 = DispatchSlotChecking.FormatOverride denv impl
-          match minfoVirtOpt with 
-          | None -> 
+          match minfoVirtOpt with
+          | None ->
               os.Append(OverrideDoesntOverride1E().Format sig1) |> ignore
           | Some minfoVirt ->
-              // https://github.com/Microsoft/visualfsharp/issues/35 
+              // https://github.com/Microsoft/visualfsharp/issues/35
               // Improve error message when attempting to override generic return type with unit:
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts -> 
+                  | TType_app (maybeUnit, []) :: ts ->
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1336,42 +1333,44 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
-              | _ -> 
+              | _ ->
                   os.Append(OverrideDoesntOverride2E().Format sig1) |> ignore
                   let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
-                  if sig1 <> sig2 then 
+                  if sig1 <> sig2 then
                       os.Append(OverrideDoesntOverride3E().Format sig2) |> ignore
 
       | UnionCaseWrongArguments (_, n1, n2, _) ->
           os.Append(UnionCaseWrongArgumentsE().Format n2 n1) |> ignore
 
-      | UnionPatternsBindDifferentNames _ -> 
+      | UnionPatternsBindDifferentNames _ ->
           os.Append(UnionPatternsBindDifferentNamesE().Format) |> ignore
 
-      | ValueNotContained (denv, mref, implVal, sigVal, f) ->
-          let text1, text2 = NicePrint.minimalStringsOfTwoValues denv implVal sigVal
+      | ValueNotContained (denv, infoReader, mref, implVal, sigVal, f) ->
+          let text1, text2 = NicePrint.minimalStringsOfTwoValues denv infoReader (mkLocalValRef implVal) (mkLocalValRef sigVal)
           os.Append(f((fullDisplayTextOfModRef mref), text1, text2)) |> ignore
 
-      | ConstrNotContained (denv, v1, v2, f) ->
-          os.Append(f((NicePrint.stringOfUnionCase denv v1), (NicePrint.stringOfUnionCase denv v2))) |> ignore
+      | ConstrNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
+          let enclosingTcref = mkLocalEntityRef enclosingTycon
+          os.Append(f((NicePrint.stringOfUnionCase denv infoReader enclosingTcref v1), (NicePrint.stringOfUnionCase denv infoReader enclosingTcref v2))) |> ignore
 
-      | ExnconstrNotContained (denv, v1, v2, f) ->
-          os.Append(f((NicePrint.stringOfExnDef denv v1), (NicePrint.stringOfExnDef denv v2))) |> ignore
+      | ExnconstrNotContained (denv, infoReader, v1, v2, f) ->
+          os.Append(f((NicePrint.stringOfExnDef denv infoReader (mkLocalEntityRef v1)), (NicePrint.stringOfExnDef denv infoReader (mkLocalEntityRef v2)))) |> ignore
 
-      | FieldNotContained (denv, v1, v2, f) ->
-          os.Append(f((NicePrint.stringOfRecdField denv v1), (NicePrint.stringOfRecdField denv v2))) |> ignore
+      | FieldNotContained (denv, infoReader, enclosingTycon, v1, v2, f) ->
+          let enclosingTcref = mkLocalEntityRef enclosingTycon
+          os.Append(f((NicePrint.stringOfRecdField denv infoReader enclosingTcref v1), (NicePrint.stringOfRecdField denv infoReader enclosingTcref v2))) |> ignore
 
       | RequiredButNotSpecified (_, mref, k, name, _) ->
           let nsb = new System.Text.StringBuilder()
           name nsb;
           os.Append(RequiredButNotSpecifiedE().Format (fullDisplayTextOfModRef mref) k (nsb.ToString())) |> ignore
 
-      | UseOfAddressOfOperator _ -> 
+      | UseOfAddressOfOperator _ ->
           os.Append(UseOfAddressOfOperatorE().Format) |> ignore
 
       | DefensiveCopyWarning(s, _) -> os.Append(DefensiveCopyWarningE().Format s) |> ignore
 
-      | DeprecatedThreadStaticBindingWarning(_) -> 
+      | DeprecatedThreadStaticBindingWarning(_) ->
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
 
       | FunctionValueUnexpected (denv, ty, _) ->
@@ -1396,34 +1395,34 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | UnitTypeExpectedWithPossibleAssignment (denv, ty, isAlreadyMutable, bindingName, _) ->
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-          let warningText = 
+          let warningText =
             if isAlreadyMutable then
                 UnitTypeExpectedWithPossibleAssignmentToMutableE().Format (NicePrint.stringOfTy denv ty) bindingName
             else
                 UnitTypeExpectedWithPossibleAssignmentE().Format (NicePrint.stringOfTy denv ty) bindingName
           os.Append warningText |> ignore
 
-      | RecursiveUseCheckedAtRuntime _ -> 
+      | RecursiveUseCheckedAtRuntime _ ->
           os.Append(RecursiveUseCheckedAtRuntimeE().Format) |> ignore
 
-      | LetRecUnsound (_, [v], _) ->  
+      | LetRecUnsound (_, [v], _) ->
           os.Append(LetRecUnsound1E().Format v.DisplayName) |> ignore
 
-      | LetRecUnsound (_, path, _) -> 
+      | LetRecUnsound (_, path, _) ->
           let bos = new System.Text.StringBuilder()
-          (path.Tail @ [path.Head]) |> List.iter (fun (v: ValRef) -> bos.Append(LetRecUnsoundInnerE().Format v.DisplayName) |> ignore) 
+          (path.Tail @ [path.Head]) |> List.iter (fun (v: ValRef) -> bos.Append(LetRecUnsoundInnerE().Format v.DisplayName) |> ignore)
           os.Append(LetRecUnsound2E().Format (List.head path).DisplayName (bos.ToString())) |> ignore
 
-      | LetRecEvaluatedOutOfOrder (_, _, _, _) -> 
+      | LetRecEvaluatedOutOfOrder (_, _, _, _) ->
           os.Append(LetRecEvaluatedOutOfOrderE().Format) |> ignore
 
-      | LetRecCheckedAtRuntime _ -> 
+      | LetRecCheckedAtRuntime _ ->
           os.Append(LetRecCheckedAtRuntimeE().Format) |> ignore
 
-      | SelfRefObjCtor(false, _) -> 
+      | SelfRefObjCtor(false, _) ->
           os.Append(SelfRefObjCtor1E().Format) |> ignore
 
-      | SelfRefObjCtor(true, _) -> 
+      | SelfRefObjCtor(true, _) ->
           os.Append(SelfRefObjCtor2E().Format) |> ignore
 
       | VirtualAugmentationOnNullValuedType(_) ->
@@ -1439,25 +1438,25 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(NonUniqueInferredAbstractSlot2E().Format) |> ignore
-          if t1 <> t2 then 
+          if t1 <> t2 then
               os.Append(NonUniqueInferredAbstractSlot3E().Format t1 t2) |> ignore
           os.Append(NonUniqueInferredAbstractSlot4E().Format) |> ignore
 
       | Error ((_, s), _) -> os.Append s |> ignore
 
-      | ErrorWithSuggestions ((_, s), _, idText, suggestionF) -> 
+      | ErrorWithSuggestions ((_, s), _, idText, suggestionF) ->
           os.Append(DecompileOpName s) |> ignore
           suggestNames suggestionF idText
 
-      | InternalError (s, _) 
+      | InternalError (s, _)
 
-      | InvalidArgument s 
+      | InvalidArgument s
 
       | Failure s as exn ->
           ignore exn // use the argument, even in non DEBUG
           let f1 = SR.GetString("Failure1")
-          let f2 = SR.GetString("Failure2") 
-          match s with 
+          let f2 = SR.GetString("Failure2")
+          match s with
           | f when f = f1 -> os.Append(Failure3E().Format s) |> ignore
           | f when f = f2 -> os.Append(Failure3E().Format s) |> ignore
           | _ -> os.Append(Failure4E().Format s) |> ignore
@@ -1468,13 +1467,13 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | WrappedError (exn, _) -> OutputExceptionR os exn
 
-      | PatternMatchCompilation.MatchIncomplete (isComp, cexOpt, _) -> 
+      | PatternMatchCompilation.MatchIncomplete (isComp, cexOpt, _) ->
           os.Append(MatchIncomplete1E().Format) |> ignore
-          match cexOpt with 
+          match cexOpt with
           | None -> ()
           | Some (cex, false) -> os.Append(MatchIncomplete2E().Format cex) |> ignore
           | Some (cex, true) -> os.Append(MatchIncomplete3E().Format cex) |> ignore
-          if isComp then 
+          if isComp then
               os.Append(MatchIncomplete4E().Format) |> ignore
 
       | PatternMatchCompilation.EnumMatchIncomplete (isComp, cexOpt, _) ->
@@ -1492,9 +1491,9 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | ValNotLocal _ -> os.Append(ValNotLocalE().Format) |> ignore
 
-      | ObsoleteError (s, _) 
+      | ObsoleteError (s, _)
 
-      | ObsoleteWarning (s, _) -> 
+      | ObsoleteWarning (s, _) ->
             os.Append(Obsolete1E().Format) |> ignore
             if s <> "" then os.Append(Obsolete2E().Format s) |> ignore
 
@@ -1510,42 +1509,42 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | MissingFields(sl, _) -> os.Append(MissingFieldsE().Format (String.concat "," sl + ".")) |> ignore
 
-      | ValueRestriction(denv, hassig, v, _, _) -> 
+      | ValueRestriction(denv, infoReader, hassig, v, _, _) ->
           let denv = { denv with showImperativeTyparAnnotations=true }
           let tau = v.TauType
-          if hassig then 
-              if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then 
+          if hassig then
+              if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
                 os.Append(ValueRestriction1E().Format
-                  v.DisplayName 
-                  (NicePrint.stringOfQualifiedValOrMember denv v)
+                  v.DisplayName
+                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                   v.DisplayName) |> ignore
               else
                 os.Append(ValueRestriction2E().Format
-                  v.DisplayName 
-                  (NicePrint.stringOfQualifiedValOrMember denv v)
+                  v.DisplayName
+                  (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                   v.DisplayName) |> ignore
           else
-              match v.MemberInfo with 
-              | Some membInfo when 
-                  begin match membInfo.MemberFlags.MemberKind with 
-                  | SynMemberKind.PropertyGet 
-                  | SynMemberKind.PropertySet 
+              match v.MemberInfo with
+              | Some membInfo when
+                  begin match membInfo.MemberFlags.MemberKind with
+                  | SynMemberKind.PropertyGet
+                  | SynMemberKind.PropertySet
                   | SynMemberKind.Constructor -> true (* can't infer extra polymorphism *)
                   | _ -> false (* can infer extra polymorphism *)
-                  end -> 
-                      os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv v)) |> ignore
-              | _ -> 
-                if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then 
+                  end ->
+                      os.Append(ValueRestriction3E().Format (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))) |> ignore
+              | _ ->
+                if isFunTy denv.g tau && (arityOfVal v).HasNoArgs then
                     os.Append(ValueRestriction4E().Format
                       v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv v)
+                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                       v.DisplayName) |> ignore
                 else
                     os.Append(ValueRestriction5E().Format
                       v.DisplayName
-                      (NicePrint.stringOfQualifiedValOrMember denv v)
+                      (NicePrint.stringOfQualifiedValOrMember denv infoReader (mkLocalValRef v))
                       v.DisplayName) |> ignore
-                
+
 
       | Parsing.RecoverableParseError -> os.Append(RecoverableParseErrorE().Format) |> ignore
 
@@ -1566,7 +1565,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | UnresolvedReferenceNoRange assemblyName ->
           os.Append(UnresolvedReferenceNoRangeE().Format assemblyName) |> ignore
 
-      | UnresolvedPathReference(assemblyName, pathname, _) 
+      | UnresolvedPathReference(assemblyName, pathname, _)
 
       | UnresolvedPathReferenceNoRange(assemblyName, pathname) ->
           os.Append(UnresolvedPathReferenceNoRangeE().Format pathname assemblyName) |> ignore
@@ -1595,7 +1594,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | HashDirectiveNotAllowedInNonScript(_) ->
           os.Append(HashDirectiveNotAllowedInNonScriptE().Format) |> ignore
 
-      | FileNameNotResolved(filename, locations, _) -> 
+      | FileNameNotResolved(filename, locations, _) ->
           os.Append(FileNameNotResolvedE().Format filename locations) |> ignore
 
       | AssemblyNotResolved(originalName, _) ->
@@ -1604,10 +1603,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | IllegalFileNameChar(fileName, invalidChar) ->
           os.Append(FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar)|>snd) |> ignore
 
-      | HashLoadedSourceHasIssues(warnings, errors, _) -> 
+      | HashLoadedSourceHasIssues(warnings, errors, _) ->
         let Emit(l: exn list) =
             OutputExceptionR os (List.head l)
-        if errors=[] then 
+        if errors=[] then
             os.Append(HashLoadedSourceHasIssues1E().Format) |> ignore
             Emit warnings
         else
@@ -1617,21 +1616,21 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | HashLoadedScriptConsideredSource(_) ->
           os.Append(HashLoadedScriptConsideredSourceE().Format) |> ignore
 
-      | InvalidInternalsVisibleToAssemblyName(badName, fileNameOption) ->      
-          match fileNameOption with      
+      | InvalidInternalsVisibleToAssemblyName(badName, fileNameOption) ->
+          match fileNameOption with
           | Some file -> os.Append(InvalidInternalsVisibleToAssemblyName1E().Format badName file) |> ignore
           | None -> os.Append(InvalidInternalsVisibleToAssemblyName2E().Format badName) |> ignore
 
       | LoadedSourceNotFoundIgnoring(filename, _) ->
           os.Append(LoadedSourceNotFoundIgnoringE().Format filename) |> ignore
 
-      | MSBuildReferenceResolutionWarning(code, message, _) 
+      | MSBuildReferenceResolutionWarning(code, message, _)
 
-      | MSBuildReferenceResolutionError(code, message, _) -> 
+      | MSBuildReferenceResolutionError(code, message, _) ->
           os.Append(MSBuildReferenceResolutionErrorE().Format message code) |> ignore
 
       // Strip TargetInvocationException wrappers
-      | :? System.Reflection.TargetInvocationException as e -> 
+      | :? System.Reflection.TargetInvocationException as e ->
           OutputExceptionR os e.InnerException
 
       | :? FileNotFoundException as e -> Printf.bprintf os "%s" e.Message
@@ -1646,11 +1645,11 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
       | :? System.UnauthorizedAccessException as e -> Printf.bprintf os "%s" e.Message
 
-      | e -> 
+      | e ->
           os.Append(TargetInvocationExceptionWrapperE().Format e.Message) |> ignore
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
-          if !showAssertForUnexpectedException then 
+          if !showAssertForUnexpectedException then
               System.Diagnostics.Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
 
@@ -1663,20 +1662,20 @@ let OutputPhasedDiagnostic (os: System.Text.StringBuilder) (err: PhasedDiagnosti
 
     OutputPhasedErrorR buf err suggestNames
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
-    
+
     os.Append s |> ignore
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy filename
-    //  - if you have a #line directive, e.g. 
+    //  - if you have a #line directive, e.g.
     //        # 1000 "Line01.fs"
     //    then it also asserts. But these are edge cases that can be fixed later, e.g. in bug 4651.
     //System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim fileName, sprintf "filename should be absolute: '%s'" fileName)
     try
         let fullPath = FileSystem.GetFullPathShim fileName
         let currentDir = implicitIncludeDir
-        
+
         // if the file name is not rooted in the current directory, return the full path
         if not(fullPath.StartsWithOrdinal currentDir) then
             fullPath
@@ -1694,19 +1693,19 @@ type DiagnosticLocation =
       IsEmpty: bool }
 
 [<RequireQualifiedAccess>]
-type DiagnosticCanonicalInformation = 
+type DiagnosticCanonicalInformation =
     { ErrorNumber: int
       Subcategory: string
       TextRepresentation: string }
 
 [<RequireQualifiedAccess>]
-type DiagnosticDetailedInfo = 
+type DiagnosticDetailedInfo =
     { Location: DiagnosticLocation option
       Canonical: DiagnosticCanonicalInformation
       Message: string }
 
 [<RequireQualifiedAccess>]
-type Diagnostic = 
+type Diagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * DiagnosticDetailedInfo
 
@@ -1717,35 +1716,35 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             { Range = m; TextRepresentation = ""; IsEmpty = true; File = "" }
         else
             let file = m.FileName
-            let file = if showFullPaths then 
-                            Filename.fullpath implicitIncludeDir file
-                       else 
+            let file = if showFullPaths then
+                            FileSystem.GetFullFilePathInDirectoryShim implicitIncludeDir file
+                       else
                             SanitizeFileName file implicitIncludeDir
-            let text, m, file = 
+            let text, m, file =
                 match errorStyle with
-                  | ErrorStyle.EmacsErrors -> 
+                  | ErrorStyle.EmacsErrors ->
                     let file = file.Replace("\\", "/")
                     (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
 
                   // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
-                  | ErrorStyle.DefaultErrors -> 
+                  | ErrorStyle.DefaultErrors ->
                     let file = file.Replace('/', System.IO.Path.DirectorySeparatorChar)
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
                     (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
                   // We may also want to change TestErrors to be 1-based
-                  | ErrorStyle.TestErrors -> 
+                  | ErrorStyle.TestErrors ->
                     let file = file.Replace("/", "\\")
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                     sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
 
-                  | ErrorStyle.GccErrors -> 
+                  | ErrorStyle.GccErrors ->
                     let file = file.Replace('/', System.IO.Path.DirectorySeparatorChar)
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
                     sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
 
                   // Here, we want the complete range information so Project Systems can generate proper squiggles
-                  | ErrorStyle.VSErrors -> 
+                  | ErrorStyle.VSErrors ->
                         // Show prefix only for real files. Otherwise, we just want a truncated error like:
                         //      parse error FS0031: blah blah
                         if not (Range.equals m range0) && not (Range.equals m rangeStartup) && not (Range.equals m rangeCmdArgs) then
@@ -1756,54 +1755,54 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                             "", m, file
             { Range = m; TextRepresentation = text; IsEmpty = false; File = file }
 
-    match err.Exception with 
-    | ReportedError _ -> 
-        assert ("" = "Unexpected ReportedError") //  this should never happen 
+    match err.Exception with
+    | ReportedError _ ->
+        assert ("" = "Unexpected ReportedError") //  this should never happen
         Seq.empty
-    | StopProcessing -> 
-        assert ("" = "Unexpected StopProcessing") // this should never happen 
+    | StopProcessing ->
+        assert ("" = "Unexpected StopProcessing") // this should never happen
         Seq.empty
-    | _ -> 
+    | _ ->
         let errors = ResizeArray()
         let report err =
-            let OutputWhere err = 
-                match GetRangeOfDiagnostic err with 
+            let OutputWhere err =
+                match GetRangeOfDiagnostic err with
                 | Some m -> Some(outputWhere (showFullPaths, errorStyle) m)
                 | None -> None
 
-            let OutputCanonicalInformation(subcategory, errorNumber) : DiagnosticCanonicalInformation = 
-                let message = 
+            let OutputCanonicalInformation(subcategory, errorNumber) : DiagnosticCanonicalInformation =
+                let message =
                     match severity with
                     | FSharpDiagnosticSeverity.Error -> "error"
                     | FSharpDiagnosticSeverity.Warning -> "warning"
                     | FSharpDiagnosticSeverity.Info
                     | FSharpDiagnosticSeverity.Hidden -> "info"
-                let text = 
+                let text =
                     match errorStyle with
                     // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
                     | ErrorStyle.VSErrors -> sprintf "%s %s FS%04d: " subcategory message errorNumber
                     | _ -> sprintf "%s FS%04d: " message errorNumber
                 { ErrorNumber = errorNumber; Subcategory = subcategory; TextRepresentation = text}
-        
+
             let mainError, relatedErrors = SplitRelatedDiagnostics err
             let where = OutputWhere mainError
             let canonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError)
-            let message = 
+            let message =
                 let os = System.Text.StringBuilder()
                 OutputPhasedDiagnostic os mainError flattenErrors suggestNames
                 os.ToString()
-            
+
             let entry: DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
-            
+
             errors.Add ( Diagnostic.Long(severity, entry ) )
 
             let OutputRelatedError(err: PhasedDiagnostic) =
                 match errorStyle with
                 // Give a canonical string when --vserror.
-                | ErrorStyle.VSErrors -> 
+                | ErrorStyle.VSErrors ->
                     let relWhere = OutputWhere mainError // mainError?
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
-                    let relMessage = 
+                    let relMessage =
                         let os = System.Text.StringBuilder()
                         OutputPhasedDiagnostic os err flattenErrors suggestNames
                         os.ToString()
@@ -1811,7 +1810,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                     let entry: DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
                     errors.Add( Diagnostic.Long (severity, entry) )
 
-                | _ -> 
+                | _ ->
                     let os = System.Text.StringBuilder()
                     OutputPhasedDiagnostic os err flattenErrors suggestNames
                     errors.Add( Diagnostic.Short(severity, os.ToString()) )
@@ -1832,14 +1831,14 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity) os (err: PhasedDiagnostic) = 
-    
+let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity) os (err: PhasedDiagnostic) =
+
     // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
     let errors = CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorStyle, severity, err, true)
     for e in errors do
         Printf.bprintf os "\n"
         match e with
-        | Diagnostic.Short(_, txt) -> 
+        | Diagnostic.Short(_, txt) ->
             os.Append txt |> ignore
         | Diagnostic.Long(_, details) ->
             match details.Location with
@@ -1847,23 +1846,23 @@ let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, erro
             | _ -> ()
             os.Append( details.Canonical.TextRepresentation ) |> ignore
             os.Append( details.Message ) |> ignore
-      
+
 let OutputDiagnosticContext prefix fileLineFunction os err =
     match GetRangeOfDiagnostic err with
-    | None -> ()      
-    | Some m -> 
+    | None -> ()
+    | Some m ->
         let filename = m.FileName
         let lineA = m.StartLine
         let lineB = m.EndLine
         let line = fileLineFunction filename lineA
-        if line<>"" then 
+        if line<>"" then
             let iA = m.StartColumn
             let iB = m.EndColumn
             let iLen = if lineA = lineB then max (iB - iA) 1 else 1
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-let ReportWarning options err = 
+let ReportWarning options err =
     warningOn err (options.WarnLevel) (options.WarnOn) && not (List.contains (GetDiagnosticNumber err) (options.WarnOff))
 
 let ReportWarningAsError options err =
@@ -1878,34 +1877,33 @@ let ReportWarningAsError options err =
 
 /// Build an ErrorLogger that delegates to another ErrorLogger but filters warnings turned off by the given pragma declarations
 //
-// NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of 
+// NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of
 // #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
 // because we install a filtering error handler on a file-by-file basis for parsing and type-checking.
-// However this is indicative of a more systematic problem where source-line 
+// However this is indicative of a more systematic problem where source-line
 // sensitive operations (lexfilter and warning filtering) do not always
 // interact well with #line directives.
 type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger: ErrorLogger) =
     inherit ErrorLogger("ErrorLoggerFilteringByScopedPragmas")
 
-    override x.DiagnosticSink (phasedError, severity) = 
-        if severity = FSharpDiagnosticSeverity.Error then 
+    override x.DiagnosticSink (phasedError, severity) =
+        if severity = FSharpDiagnosticSeverity.Error then
             errorLogger.DiagnosticSink (phasedError, severity)
-        else 
-          let report = 
+        else
+          let report =
             let warningNum = GetDiagnosticNumber phasedError
-            match GetRangeOfDiagnostic phasedError with 
-            | Some m -> 
+            match GetRangeOfDiagnostic phasedError with
+            | Some m ->
                 not (scopedPragmas |> List.exists (fun pragma ->
-                    match pragma with 
-                    | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) -> 
-                        warningNum = warningNumFromPragma && 
+                    match pragma with
+                    | ScopedPragma.WarningOff(pragmaRange, warningNumFromPragma) ->
+                        warningNum = warningNumFromPragma &&
                         (not checkFile || m.FileIndex = pragmaRange.FileIndex) &&
-                        Position.posGeq m.Start pragmaRange.Start))  
+                        Position.posGeq m.Start pragmaRange.Start))
             | None -> true
           if report then errorLogger.DiagnosticSink(phasedError, severity)
 
     override x.ErrorCount = errorLogger.ErrorCount
 
-let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) = 
+let GetErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) =
     (ErrorLoggerFilteringByScopedPragmas(checkFile, scopedPragmas, errorLogger) :> ErrorLogger)
-

@@ -8,10 +8,12 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsc\fsc.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\fsiAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
 
   <!--
@@ -100,6 +102,9 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
   file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.xml"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll" vs.file.ngen=no vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.xml"
+  file source="$(BinariesFolder)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
+  file source="$(BinariesFolder)FSharp.DependencyManager.Nuget\$(Configuration)\netstandard2.0\FSharp.DependencyManager.Nuget.xml"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.Portable.FSharp.Targets"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.props"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\Microsoft.FSharp.NetSdk.targets"

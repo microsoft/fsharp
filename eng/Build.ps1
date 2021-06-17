@@ -14,7 +14,7 @@
 # it's fine to call `build.ps1 -build -testDesktop` followed by repeated calls to
 # `.\build.ps1 -testDesktop`.
 
-[CmdletBinding(PositionalBinding=$false)]
+[CmdletBinding(PositionalBinding = $false)]
 param (
     [string][Alias('c')]$configuration = "Debug",
     [string][Alias('v')]$verbosity = "m",
@@ -61,7 +61,7 @@ param (
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
 
-    [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
+    [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
@@ -120,8 +120,8 @@ function Print-Usage() {
 # specified.
 function Process-Arguments() {
     if ($help -or (($properties -ne $null) -and ($properties.Contains("/help") -or $properties.Contains("/?")))) {
-       Print-Usage
-       exit 0
+        Print-Usage
+        exit 0
     }
 
     $script:nodeReuse = $False;
@@ -185,7 +185,8 @@ function Update-Arguments() {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
-    } else {
+    }
+    else {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe") -or (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -271,6 +272,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
@@ -323,8 +325,7 @@ function TryDownloadDotnetFrameworkSdk() {
     # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
     $isAdmin = Test-IsAdmin
     Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
-    if ($isAdmin -eq $true)
-    {
+    if ($isAdmin -eq $true) {
         # Get program files(x86) location
         if (${env:ProgramFiles(x86)} -eq $null) {
             $programFiles = $env:ProgramFiles
@@ -376,7 +377,7 @@ function TryDownloadDotnetFrameworkSdk() {
                 $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
                 # x86 environment variable
                 Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86", "$newWindowsSDK_ExecutablePath_x86", [System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
             }
         }
@@ -388,7 +389,7 @@ function TryDownloadDotnetFrameworkSdk() {
                 $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
                 # x64 environment variable
                 Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64", "$newWindowsSDK_ExecutablePath_x64", [System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
             }
         }
@@ -396,22 +397,22 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 function EnablePreviewSdks() {
-  if (Test-Path variable:global:_MSBuildExe) {
-    return
-  }
-  $vsInfo = LocateVisualStudio
-  if ($vsInfo -eq $null) {
-    # Preview SDKs are allowed when no Visual Studio instance is installed
-    return
-  }
+    if (Test-Path variable:global:_MSBuildExe) {
+        return
+    }
+    $vsInfo = LocateVisualStudio
+    if ($vsInfo -eq $null) {
+        # Preview SDKs are allowed when no Visual Studio instance is installed
+        return
+    }
 
-  $vsId = $vsInfo.instanceId
-  $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
+    $vsId = $vsInfo.instanceId
+    $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
 
-  $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
-  Create-Directory $instanceDir
-  $sdkFile = Join-Path $instanceDir "sdk.txt"
-  'UsePreviews=True' | Set-Content $sdkFile
+    $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
+    Create-Directory $instanceDir
+    $sdkFile = Join-Path $instanceDir "sdk.txt"
+    'UsePreviews=True' | Set-Content $sdkFile
 }
 
 try {
@@ -439,7 +440,7 @@ try {
     TryDownloadDotnetFrameworkSdk
 
     $dotnetPath = InitializeDotNetCli
-    $env:DOTNET_ROOT="$dotnetPath"
+    $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
 
     if ($bootstrap) {
@@ -451,7 +452,8 @@ try {
     if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln"
-        } else {
+        }
+        else {
             BuildSolution "VisualFSharp.sln"
         }
     }
@@ -528,7 +530,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
     }
 `
-    if ($testScripting) {
+        if ($testScripting) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
     }
@@ -557,11 +559,11 @@ try {
         $nupkgs = @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
         $nupkgs | Foreach {
             Exec-Console """$sourcelink"" test ""$_"""
-            if (-not $?) { $nupkgtestFailed = $true}
+            if (-not $?) { $nupkgtestFailed = $true }
         }
     }
     if ($nupkgtestFailed) {
-            throw "Error Verifying nupkgs have access to the source code"
+        throw "Error Verifying nupkgs have access to the source code"
     }
 
     ExitWithExitCode 0

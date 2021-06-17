@@ -31,7 +31,7 @@ type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpa
 type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager, serviceProvider: IServiceProvider) =
     
     let mutable disposed = false
-    let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
+    let gtd = GoToDefinition(checkerProvider, projectInfoManager)
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
 
     interface INavigableSymbolSource with
@@ -43,7 +43,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     let snapshot = triggerSpan.Snapshot
                     let position = triggerSpan.Start.Position
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
-                    let! sourceText = document.GetTextAsync() |> liftTaskAsync
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> liftTaskAsync
                     
                     statusBar.Message(SR.LocatingSymbol())
                     use _ = statusBar.Animate()
@@ -54,7 +54,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
                     try
                         // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
-                        gtdTask.Wait()
+                        gtdTask.Wait(cancellationToken)
                         statusBar.Clear()
 
                         if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
@@ -67,8 +67,21 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                             match result with
                             | FSharpGoToDefinitionResult.NavigableItem(navItem) ->
                                 return FSharpNavigableSymbol(navItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
-                            | _ ->
-                                return null
+
+                            | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences) ->
+                                let nav =
+                                    { new INavigableSymbol with
+                                        member _.Navigate(_: INavigableRelationship) =
+                                            // Need to new up a CTS here instead of re-using the other one, since VS
+                                            // will navigate disconnected from the outer routine, leading to an
+                                            // OperationCancelledException if you use the one defined outside.
+                                            use ct = new CancellationTokenSource()
+                                            gtd.NavigateToExternalDeclaration(targetSymbolUse, metadataReferences, ct.Token, statusBar)
+
+                                        member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
+
+                                        member _.SymbolSpan = symbolSpan }
+                                return nav
                         else 
                             statusBar.TempMessage(SR.CannotDetermineSymbol())
 

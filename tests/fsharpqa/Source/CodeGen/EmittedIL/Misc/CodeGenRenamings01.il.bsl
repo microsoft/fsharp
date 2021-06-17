@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly CodeGenRenamings01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CodeGenRenamings01
 {
-  // Offset: 0x00000000 Length: 0x000003CC
+  // Offset: 0x00000000 Length: 0x000003C8
 }
 .mresource public FSharpOptimizationData.CodeGenRenamings01
 {
   // Offset: 0x000003D0 Length: 0x0000011B
 }
 .module CodeGenRenamings01.exe
-// MVID: {59B19213-8173-986B-A745-03831392B159}
+// MVID: {60B78A57-8173-986B-A745-0383578AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x010A0000
+// Image base: 0x06CA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,74 +83,68 @@
     .method public strict virtual instance int32 
             GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,int32>>& next) cil managed
     {
-      // Code size       103 (0x67)
+      // Code size       97 (0x61)
       .maxstack  7
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\CodeGenRenamings01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\CodeGenRenamings01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 CodeGenRenamings01/seq1@9::pc
       IL_0006:  ldc.i4.1
       IL_0007:  sub
       IL_0008:  switch     ( 
                             IL_001b,
-                            IL_001d,
-                            IL_001f)
-      IL_0019:  br.s       IL_002a
+                            IL_001e,
+                            IL_0021)
+      IL_0019:  br.s       IL_0024
 
-      IL_001b:  br.s       IL_0021
+      .line 100001,100001 : 0,0 ''
+      IL_001b:  nop
+      IL_001c:  br.s       IL_003b
 
-      IL_001d:  br.s       IL_0024
-
-      IL_001f:  br.s       IL_0027
+      .line 100001,100001 : 0,0 ''
+      IL_001e:  nop
+      IL_001f:  br.s       IL_0051
 
       .line 100001,100001 : 0,0 ''
       IL_0021:  nop
-      IL_0022:  br.s       IL_0041
+      IL_0022:  br.s       IL_0058
 
       .line 100001,100001 : 0,0 ''
       IL_0024:  nop
-      IL_0025:  br.s       IL_0057
-
-      .line 100001,100001 : 0,0 ''
-      IL_0027:  nop
-      IL_0028:  br.s       IL_005e
-
-      .line 100001,100001 : 0,0 ''
-      IL_002a:  nop
-      IL_002b:  ldarg.0
-      IL_002c:  ldc.i4.1
-      IL_002d:  stfld      int32 CodeGenRenamings01/seq1@9::pc
       .line 9,9 : 18,30 ''
-      IL_0032:  ldarg.0
-      IL_0033:  ldc.i4.1
-      IL_0034:  ldc.i4.1
-      IL_0035:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+      IL_0025:  ldarg.0
+      IL_0026:  ldc.i4.1
+      IL_0027:  stfld      int32 CodeGenRenamings01/seq1@9::pc
+      IL_002c:  ldarg.0
+      IL_002d:  ldc.i4.1
+      IL_002e:  ldc.i4.1
+      IL_002f:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
                                                                                             !1)
-      IL_003a:  stfld      class [mscorlib]System.Tuple`2<int32,int32> CodeGenRenamings01/seq1@9::current
-      IL_003f:  ldc.i4.1
-      IL_0040:  ret
+      IL_0034:  stfld      class [mscorlib]System.Tuple`2<int32,int32> CodeGenRenamings01/seq1@9::current
+      IL_0039:  ldc.i4.1
+      IL_003a:  ret
 
-      IL_0041:  ldarg.0
-      IL_0042:  ldc.i4.2
-      IL_0043:  stfld      int32 CodeGenRenamings01/seq1@9::pc
       .line 9,9 : 32,44 ''
-      IL_0048:  ldarg.0
-      IL_0049:  ldc.i4.2
-      IL_004a:  ldc.i4.2
-      IL_004b:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+      IL_003b:  ldarg.0
+      IL_003c:  ldc.i4.2
+      IL_003d:  stfld      int32 CodeGenRenamings01/seq1@9::pc
+      IL_0042:  ldarg.0
+      IL_0043:  ldc.i4.2
+      IL_0044:  ldc.i4.2
+      IL_0045:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
                                                                                             !1)
-      IL_0050:  stfld      class [mscorlib]System.Tuple`2<int32,int32> CodeGenRenamings01/seq1@9::current
-      IL_0055:  ldc.i4.1
-      IL_0056:  ret
+      IL_004a:  stfld      class [mscorlib]System.Tuple`2<int32,int32> CodeGenRenamings01/seq1@9::current
+      IL_004f:  ldc.i4.1
+      IL_0050:  ret
 
-      IL_0057:  ldarg.0
-      IL_0058:  ldc.i4.3
-      IL_0059:  stfld      int32 CodeGenRenamings01/seq1@9::pc
-      IL_005e:  ldarg.0
-      IL_005f:  ldnull
-      IL_0060:  stfld      class [mscorlib]System.Tuple`2<int32,int32> CodeGenRenamings01/seq1@9::current
-      IL_0065:  ldc.i4.0
-      IL_0066:  ret
+      IL_0051:  ldarg.0
+      IL_0052:  ldc.i4.3
+      IL_0053:  stfld      int32 CodeGenRenamings01/seq1@9::pc
+      IL_0058:  ldarg.0
+      IL_0059:  ldnull
+      IL_005a:  stfld      class [mscorlib]System.Tuple`2<int32,int32> CodeGenRenamings01/seq1@9::current
+      IL_005f:  ldc.i4.0
+      IL_0060:  ret
     } // end of method seq1@9::GenerateNext
 
     .method public strict virtual instance void 
@@ -167,52 +161,44 @@
     .method public strict virtual instance bool 
             get_CheckClose() cil managed
     {
-      // Code size       56 (0x38)
+      // Code size       48 (0x30)
       .maxstack  8
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 CodeGenRenamings01/seq1@9::pc
       IL_0006:  switch     ( 
                             IL_001d,
-                            IL_001f,
-                            IL_0021,
-                            IL_0023)
-      IL_001b:  br.s       IL_0031
-
-      IL_001d:  br.s       IL_0025
-
-      IL_001f:  br.s       IL_0028
-
-      IL_0021:  br.s       IL_002b
-
-      IL_0023:  br.s       IL_002e
+                            IL_0020,
+                            IL_0023,
+                            IL_0026)
+      IL_001b:  br.s       IL_0029
 
       .line 100001,100001 : 0,0 ''
-      IL_0025:  nop
-      IL_0026:  br.s       IL_0036
+      IL_001d:  nop
+      IL_001e:  br.s       IL_002e
 
       .line 100001,100001 : 0,0 ''
-      IL_0028:  nop
-      IL_0029:  br.s       IL_0034
+      IL_0020:  nop
+      IL_0021:  br.s       IL_002c
 
       .line 100001,100001 : 0,0 ''
-      IL_002b:  nop
-      IL_002c:  br.s       IL_0032
+      IL_0023:  nop
+      IL_0024:  br.s       IL_002a
 
       .line 100001,100001 : 0,0 ''
-      IL_002e:  nop
-      IL_002f:  br.s       IL_0036
+      IL_0026:  nop
+      IL_0027:  br.s       IL_002e
 
       .line 100001,100001 : 0,0 ''
-      IL_0031:  nop
-      IL_0032:  ldc.i4.0
-      IL_0033:  ret
+      IL_0029:  nop
+      IL_002a:  ldc.i4.0
+      IL_002b:  ret
 
-      IL_0034:  ldc.i4.0
-      IL_0035:  ret
+      IL_002c:  ldc.i4.0
+      IL_002d:  ret
 
-      IL_0036:  ldc.i4.0
-      IL_0037:  ret
+      IL_002e:  ldc.i4.0
+      IL_002f:  ret
     } // end of method seq1@9::get_CheckClose
 
     .method public strict virtual instance class [mscorlib]System.Tuple`2<int32,int32> 

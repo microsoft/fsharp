@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly LetBinding01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.LetBinding01
 {
-  // Offset: 0x00000000 Length: 0x000001B4
+  // Offset: 0x00000000 Length: 0x000001B0
 }
 .mresource public FSharpOptimizationData.LetBinding01
 {
   // Offset: 0x000001B8 Length: 0x00000070
 }
 .module LetBinding01.exe
-// MVID: {59B19250-269D-BEEF-A745-03835092B159}
+// MVID: {60B68B90-269D-BEEF-A745-0383908BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01570000
+// Image base: 0x06AB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -83,7 +83,7 @@
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 1,11 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\LetBinding01.fs'
+    .line 5,5 : 1,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\LetBinding01.fs'
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Core.Unit LetBinding01::get_x()
     IL_0005:  pop
     .line 6,6 : 1,17 ''

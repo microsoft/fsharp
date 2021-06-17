@@ -3,9 +3,11 @@
 namespace FSharp.Compiler.CodeAnalysis
 
 open System
+open System.IO
 open System.Threading
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CheckDeclarations
@@ -23,6 +25,16 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
+
+/// Delays the creation of an ILModuleReader
+[<Sealed>]
+type internal DelayedILModuleReader =
+
+    new : name: string * getStream: (CancellationToken -> Stream option) -> DelayedILModuleReader
+
+    /// Will lazily create the ILModuleReader.
+    /// Is only evaluated once and can be called by multiple threads.
+    member TryGetILModuleReader : unit -> Cancellable<ILModuleReader option>
 
 /// <summary>Unused in this API</summary>
 type public FSharpUnresolvedReferencesSet =
@@ -46,7 +58,7 @@ type public FSharpProjectOptions =
 
       /// The command line arguments for the other projects referenced by this project, indexed by the
       /// exact text used in the "-r:" reference in FSharpProjectOptions.
-      ReferencedProjects: (string * FSharpProjectOptions)[]
+      ReferencedProjects: FSharpReferencedProject[]
 
       /// When true, the typechecking environment is known a priori to be incomplete, for
       /// example when a .fs file is opened outside of a project. In this case, the number of error
@@ -81,6 +93,26 @@ type public FSharpProjectOptions =
 
     /// Compute the project directory.
     member internal ProjectDirectory: string
+
+and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
+    internal
+    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
+    | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
+
+    member FileName : string
+
+    /// Creates a reference for an F# project. The physical data for it is stored/cached inside of the compiler service.
+    static member CreateFSharp : projectFileName: string * options: FSharpProjectOptions -> FSharpReferencedProject
+
+    /// Creates a reference for any portable executable, including F#. The stream is owned by this reference.
+    /// The stream will be automatically disposed when there are no references to FSharpReferencedProject and is GC collected.
+    /// Once the stream is evaluated, the function that constructs the stream will no longer be referenced by anything.
+    /// If the stream evaluation throws an exception, it will be automatically handled.
+    static member CreatePortableExecutable : projectFileName: string * stamp: DateTime * getStream: (CancellationToken -> Stream option) -> FSharpReferencedProject
+
+    /// Creates a reference from an ILModuleReader.
+    static member CreateFromILModuleReader : projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -414,7 +446,7 @@ type public FSharpCheckProjectResults =
                  TcImports *
                  CcuThunk *
                  ModuleOrNamespaceType *
-                 TcSymbolUses list *
+                 Choice<IncrementalBuilder, TcSymbolUses> *
                  TopAttribs option *
                  IRawFSharpAssemblyData option *
                  ILAssemblyRef *
@@ -454,7 +486,6 @@ type internal FsiInteractiveChecker =
           ->  FsiInteractiveChecker 
 
     member internal ParseAndCheckInteraction : 
-        ctok: CompilationThreadToken * 
         sourceText:ISourceText * 
         ?userOpName: string 
           -> Cancellable<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>

@@ -300,6 +300,10 @@ module Layout =
     let (@@-) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 1)) layout1 layout2
 
     let (@@--) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 2)) layout1 layout2
+    
+    let (@@---) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 3)) layout1 layout2
+        
+    let (@@----) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 4)) layout1 layout2
 
     let tagListL tagger els =
         match els with 

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly Testfunction22g
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Testfunction22g
 {
-  // Offset: 0x00000000 Length: 0x0000015D
+  // Offset: 0x00000000 Length: 0x00000159
 }
 .mresource public FSharpOptimizationData.Testfunction22g
 {
-  // Offset: 0x00000168 Length: 0x00000056
+  // Offset: 0x00000160 Length: 0x00000056
 }
 .module Testfunction22g.exe
-// MVID: {59B19208-CA89-74DB-A745-03830892B159}
+// MVID: {60B68B97-CA89-74DB-A745-0383978BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x012F0000
+// Image base: 0x06FA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,28 +63,24 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       22 (0x16)
+    // Code size       18 (0x12)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 1,13 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22g.fs'
+    .line 3,3 : 1,13 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22g.fs'
     IL_0000:  ldc.i4.1
-    IL_0001:  brfalse.s  IL_0005
-
-    IL_0003:  br.s       IL_0007
-
-    IL_0005:  br.s       IL_000f
+    IL_0001:  brfalse.s  IL_000b
 
     .line 3,3 : 14,40 ''
-    IL_0007:  call       void [mscorlib]System.Console::WriteLine()
+    IL_0003:  call       void [mscorlib]System.Console::WriteLine()
     .line 100001,100001 : 0,0 ''
-    IL_000c:  nop
-    IL_000d:  br.s       IL_0015
+    IL_0008:  nop
+    IL_0009:  br.s       IL_0011
 
     .line 3,3 : 46,72 ''
-    IL_000f:  call       void [mscorlib]System.Console::WriteLine()
+    IL_000b:  call       void [mscorlib]System.Console::WriteLine()
     .line 100001,100001 : 0,0 ''
-    IL_0014:  nop
-    IL_0015:  ret
+    IL_0010:  nop
+    IL_0011:  ret
   } // end of method $Testfunction22g::main@
 
 } // end of class '<StartupCode$Testfunction22g>'.$Testfunction22g

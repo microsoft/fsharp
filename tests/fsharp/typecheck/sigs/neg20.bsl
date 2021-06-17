@@ -305,7 +305,7 @@ neg20.fs(195,5,195,10): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(198,5,198,11): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(202,7,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
+neg20.fs(201,3,202,9): typecheck error FS0825: The 'DefaultValue' attribute may only be used on 'val' declarations
 
 neg20.fs(204,5,204,14): typecheck error FS0842: This attribute is not valid for use on this language element
 

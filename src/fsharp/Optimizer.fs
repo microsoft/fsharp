@@ -1252,8 +1252,11 @@ let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
 // Misc helpers
 //------------------------------------------------------------------------- 
 
-// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
+/// Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
 let [<Literal>] suffixForVariablesThatMayNotBeEliminated = "$cont"
+
+/// Indicates a ValRef generated to facilitate tuple eliminations
+let [<Literal>] suffixForTupleElementAssignmentTarget = "tupleElem"
 
 /// Type applications of F# "type functions" may cause side effects, e.g. 
 /// let x<'a> = printfn "hello"; typeof<'a> 
@@ -1274,6 +1277,8 @@ let ValueOfExpr expr =
     if IsSmallConstExpr expr then 
       ConstExprValue(0, expr)
     else UnknownValue
+
+let IsMutableStructuralBindingForTupleElement (vref: ValRef) = vref.IsCompilerGenerated && vref.DisplayName.EndsWith suffixForTupleElementAssignmentTarget
 
 //-------------------------------------------------------------------------
 // Dead binding elimination 
@@ -1576,7 +1581,12 @@ let MakeStructuralBindingTemp (v: Val) i (arg: Expr) argTy =
     let name = v.LogicalName + "_" + string i
     let v, ve = mkCompGenLocal arg.Range name argTy
     ve, mkCompGenBind v arg
-           
+
+let MakeMutableStructuralBindingForTupleElement (v: Val) i (arg: Expr) argTy =
+    let name = sprintf "%s_%d_%s" v.LogicalName i suffixForTupleElementAssignmentTarget
+    let v, ve = mkMutableCompGenLocal arg.Range name argTy
+    ve, mkCompGenBind v arg
+
 let ExpandStructuralBindingRaw cenv expr =
     assert cenv.settings.ExpandStructuralValues()
     match expr with
@@ -1610,6 +1620,86 @@ let rec RearrangeTupleBindings expr fin =
         | Some b -> Some (mkLetBind m bind b)
         | None -> None
     | Expr.Op (TOp.Tuple tupInfo, _, _, _) when not (evalTupInfoIsStruct tupInfo) -> Some (fin expr)
+    | Expr.Sequential (e1, e2, kind, sp, m) ->
+        match RearrangeTupleBindings e2 fin with
+        | Some b -> Some (Expr.Sequential (e1, b, kind, sp, m))
+        | None -> None
+    | _ -> None
+
+// Attempts to rewrite tuple bindings containing ifs/matches by introducing a mutable local for each tuple element.
+// These are assigned to exactly once from each branch in order to eliminate tuple allocations. The tuple binding
+// is also rearranged such that OptimizeTupleFieldGet may kick in (see RearrangeTupleBindings comment above).
+// First class use of a tuple at the end of any branch prevents this rewrite.
+//
+// Roughly speaking, the following expression:
+//
+//    let a, b =
+//        if cond () then
+//            1, 2
+//        elif cond2 () then
+//            3, 4
+//        else
+//            5, 6
+//    in ...
+//
+// becomes
+//
+//    let mutable a = Unchecked.defaultof<_>
+//    let mutable b = Unchecked.defaultof<_>
+//
+//    if cond () then
+//        a <- 1
+//        b <- 2
+//    elif cond2 () then
+//        a <- 3
+//        b <- 4
+//    else
+//        a <- 5
+//        b <- 6
+//    in ...
+let TryRewriteBranchingTupleBinding g (v: Val) rhs tgtSeqPtOpt body m =
+    let rec dive g m (requisites: Lazy<_>) expr =
+        match expr with
+        | Expr.Match (sp, inputRange, decision, targets, fullRange, ty) ->
+            // Recurse down every if/match branch
+            let rewrittenTargets = targets |> Array.choose (fun (TTarget (vals, targetExpr, sp)) ->
+                match dive g m requisites targetExpr with
+                | Some rewritten -> TTarget (vals, rewritten, sp) |> Some
+                | _ -> None)
+
+            // If not all branches can be rewritten, keep the original expression as it is
+            if rewrittenTargets.Length <> targets.Length then
+                None
+            else
+                Expr.Match (sp, inputRange, decision, rewrittenTargets, fullRange, ty) |> Some
+        | Expr.Op (TOp.Tuple tupInfo, _, tupleElements, m) when not (evalTupInfoIsStruct tupInfo) ->
+            // Replace tuple allocation with mutations of locals
+            let _, _, _, vrefs = requisites.Value
+            List.map2 (mkValSet m) vrefs tupleElements
+            |> mkSequentials DebugPointAtSequential.StmtOnly g m
+            |> Some
+        | Expr.Sequential (e1, e2, kind, sp, m) ->
+            match dive g m requisites e2 with
+            | Some rewritten -> Expr.Sequential (e1, rewritten, kind, sp, m) |> Some
+            | _ -> None
+        | Expr.Let (bind, body, m, _) ->
+            match dive g m requisites body with
+            | Some rewritten -> mkLetBind m bind rewritten |> Some
+            | _ -> None
+        | _ -> None
+
+    let requisites = lazy (
+        let argTys = destRefTupleTy g v.Type
+        let inits = argTys |> List.map (mkNull m)
+        let ves, binds = List.mapi2 (MakeMutableStructuralBindingForTupleElement v) inits argTys |> List.unzip
+        let vrefs = binds |> List.map (fun (TBind (v, _, _)) -> mkLocalValRef v)
+        argTys, ves, binds, vrefs)
+
+    match dive g m requisites rhs with
+    | Some rewrittenRhs ->
+        let argTys, ves, binds, _ = requisites.Value
+        let rhsAndTupleBinding = mkCompGenSequential m rewrittenRhs (mkRefTupled g m ves argTys)
+        mkLetsBind m binds (mkLet tgtSeqPtOpt m v rhsAndTupleBinding body) |> Some
     | _ -> None
 
 let ExpandStructuralBinding cenv expr =
@@ -1621,7 +1711,9 @@ let ExpandStructuralBinding cenv expr =
               CanExpandStructuralBinding v) ->
         match RearrangeTupleBindings rhs (fun top -> mkLet tgtSeqPtOpt m v top body) with
         | Some e -> ExpandStructuralBindingRaw cenv e
-        | None -> expr
+        | None ->
+            // RearrangeTupleBindings could have failed because the rhs branches
+            TryRewriteBranchingTupleBinding cenv.g v rhs tgtSeqPtOpt body m |> Option.defaultValue expr
 
     // Expand 'let v = Some arg in ...' to 'let tmp = arg in let v = Some tp in ...'
     // Used to give names to values of optional arguments prior as we inline.
@@ -2268,6 +2360,14 @@ and OptimizeFastIntegerForLoop cenv env (spStart, v, e1, dir, e2, e3, m) =
 
             mkLdlen cenv.g (e2R.Range) arre, CSharpForLoopUp
 
+        | FSharpForLoopUp, Expr.Op (TOp.ILAsm ([ (AI_sub | AI_sub_ovf)], _), _, [Expr.Op (TOp.ILCall(_,_,_,_,_,_,_, mth, _,_,_), _, [arre], _) as lenOp; Expr.Const (Const.Int32 1, _, _)], _) 
+                  when 
+                        mth.Name = "get_Length" && (mth.DeclaringTypeRef.FullName = "System.Span`1" || mth.DeclaringTypeRef.FullName = "System.ReadOnlySpan`1") 
+                        && not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
+
+            lenOp, CSharpForLoopUp
+
+
         // detect upwards for loops with constant bounds, but not MaxValue!
         | FSharpForLoopUp, Expr.Const (Const.Int32 n, _, _) 
                   when n < System.Int32.MaxValue -> 
@@ -2493,11 +2593,13 @@ and AddValEqualityInfo g m (v: ValRef) info =
     // ValValue is information that v = v2, where v2 does not change 
     // So we can't record this information for mutable values. An exception can be made
     // for "outArg" values arising from method calls since they are only temporarily mutable
-    // when their address is passed to the method call.
-    if v.IsMutable && not (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
+    // when their address is passed to the method call. Another exception are mutable variables
+    // created for tuple elimination in branching tuple bindings because they are assigned to
+    // exactly once.
+    if not v.IsMutable || IsMutableStructuralBindingForTupleElement v || (v.IsCompilerGenerated && v.DisplayName.StartsWith(PrettyNaming.outArgCompilerGeneratedName)) then 
+        { info with Info = MakeValueInfoForValue g m v info.Info }
+    else
         info 
-    else 
-        {info with Info= MakeValueInfoForValue g m v info.Info}
 
 /// Optimize/analyze a use of a value
 and OptimizeVal cenv env expr (v: ValRef, m) =
@@ -3143,7 +3245,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | DecisionTreeTest.IsNull, StripConstValue c2 -> Some(c2=Const.Zero)
     | DecisionTreeTest.IsInst (_srcty1, _tgty1), _ -> None
     // These should not occur in optimization
-    | DecisionTreeTest.ActivePatternCase (_, _, _vrefOpt1, _, _), _ -> None
+    | DecisionTreeTest.ActivePatternCase _, _ -> None
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 

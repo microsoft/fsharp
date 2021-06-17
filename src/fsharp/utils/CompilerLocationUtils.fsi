@@ -3,6 +3,7 @@
 namespace Internal.Utilities
 
 open Microsoft.FSharp.Core
+open System.IO
 
 module internal FSharpEnvironment =
 
@@ -49,3 +50,15 @@ module internal FSharpEnvironment =
     val fsiLibraryName: string
 
     val getFSharpCoreLibraryName: string
+
+    val isWindows: bool
+
+    val dotnet: string
+
+    val getDotnetHostPath: unit -> string option
+
+    val getDotnetHostDirectories: unit -> string []
+
+    val getDotnetHostDirectory: unit -> string option
+
+    val getDotnetHostSubDirectories: string -> DirectoryInfo []

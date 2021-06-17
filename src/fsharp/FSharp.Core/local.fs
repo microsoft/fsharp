@@ -194,10 +194,6 @@ module internal List =
                 cons
 
     let groupBy (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (list: 'T list) =
-        match list with
-        | [] -> []
-        | _ ->
-
         let dict = Dictionary<_, _ list []> comparer
 
         // Build the groupings
@@ -1050,7 +1046,7 @@ module internal Array =
             let f = OptimizedClosures.FSharpFunc<_, _, _>.Adapt(f)
             let mutable acc = acc
             let res = zeroCreateUnchecked len
-            for i = 0 to array.Length-1 do
+            for i = 0 to len-1 do
                 let h', s' = f.Invoke(acc, array.[i])
                 res.[i] <- h'
                 acc <- s'
@@ -1081,22 +1077,21 @@ module internal Array =
 
     let unstableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
         let len = array.Length
-        if len < 2 then ()
-        else
-            let keys = zeroCreateUnchecked array.Length
-            for i = 0 to array.Length - 1 do
+        if len > 1 then
+            let keys = zeroCreateUnchecked len
+            for i = 0 to len - 1 do
                 keys.[i] <- projection array.[i]
             Array.Sort<_, _>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array : array<'T>) =
-        let len = array.Length
-        if len < 2 then ()
-        else Array.Sort<_>(array, fastComparerForArraySort())
+        if array.Length > 1 then 
+            Array.Sort<_>(array, fastComparerForArraySort())
 
     let stableSortWithKeysAndComparer (cFast:IComparer<'Key>) (c:IComparer<'Key>) (array:array<'T>) (keys:array<'Key>)  =
-        // 'places' is an array or integers storing the permutation performed by the sort
-        let places = zeroCreateUnchecked array.Length
-        for i = 0 to array.Length - 1 do
+        // 'places' is an array or integers storing the permutation performed by the sort        
+        let len = array.Length
+        let places = zeroCreateUnchecked len
+        for i = 0 to len - 1 do
             places.[i] <- i
         System.Array.Sort<_, _>(keys, places, cFast)
         // 'array2' is a copy of the original values
@@ -1104,7 +1099,6 @@ module internal Array =
 
         // Walk through any chunks where the keys are equal
         let mutable i = 0
-        let len = array.Length
         let intCompare = fastComparerForArraySort<int>()
 
         while i < len do
@@ -1126,18 +1120,16 @@ module internal Array =
 
     let stableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
         let len = array.Length
-        if len < 2 then ()
-        else
+        if len > 1 then
             // 'keys' is an array storing the projected keys
-            let keys = zeroCreateUnchecked array.Length
-            for i = 0 to array.Length - 1 do
+            let keys = zeroCreateUnchecked len
+            for i = 0 to len - 1 do
                 keys.[i] <- projection array.[i]
             stableSortWithKeys array keys
 
     let stableSortInPlace (array : array<'T>) =
         let len = array.Length
-        if len < 2 then ()
-        else
+        if len > 1 then
             let cFast = LanguagePrimitives.FastGenericComparerCanBeNull<'T>
             match cFast with
             | null ->

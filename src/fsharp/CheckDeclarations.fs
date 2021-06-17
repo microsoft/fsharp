@@ -30,6 +30,7 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
@@ -1946,10 +1947,10 @@ module MutRecBindingChecking =
 
                             let envInstance = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envInstance
                             let envStatic = AddDeclaredTypars CheckForDuplicateTypars incrClassCtorLhs.InstanceCtorDeclaredTypars envStatic
-                            let envInstance = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal cenv.tcSink scopem v envInstance | None -> envInstance
-                            let envInstance = List.foldBack AddLocalValPrimitive incrClassCtorLhs.InstanceCtorArgs envInstance 
-                            let envNonRec = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal cenv.tcSink scopem v envNonRec | None -> envNonRec
-                            let envNonRec = List.foldBack AddLocalValPrimitive incrClassCtorLhs.InstanceCtorArgs envNonRec
+                            let envInstance = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal g cenv.tcSink scopem v envInstance | None -> envInstance
+                            let envInstance = List.foldBack (AddLocalValPrimitive cenv.g) incrClassCtorLhs.InstanceCtorArgs envInstance 
+                            let envNonRec = match incrClassCtorLhs.InstanceCtorSafeThisValOpt with Some v -> AddLocalVal g cenv.tcSink scopem v envNonRec | None -> envNonRec
+                            let envNonRec = List.foldBack (AddLocalValPrimitive cenv.g) incrClassCtorLhs.InstanceCtorArgs envNonRec
                             let safeThisValBindOpt = TcLetrecComputeCtorSafeThisValBind cenv incrClassCtorLhs.InstanceCtorSafeThisValOpt
 
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
@@ -1965,8 +1966,8 @@ module MutRecBindingChecking =
                                 with e ->
                                     errorRecovery e m
                                     mkUnit g m, tpenv
-                            let envInstance = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envInstance | None -> envInstance
-                            let envNonRec = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envNonRec | None -> envNonRec
+                            let envInstance = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envInstance | None -> envInstance
+                            let envNonRec = match baseValOpt with Some baseVal -> AddLocalVal g cenv.tcSink scopem baseVal envNonRec | None -> envNonRec
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BInherit (inheritsExpr, baseValOpt), innerState
                             
@@ -1994,7 +1995,7 @@ module MutRecBindingChecking =
                                         |> List.unzip
                                     List.concat binds, bindRs, env, tpenv
 
-                            let envNonRec = (envNonRec, binds) ||> List.fold (fun acc bind -> AddLocalValPrimitive bind.Var acc)
+                            let envNonRec = (envNonRec, binds) ||> List.fold (fun acc bind -> AddLocalValPrimitive g bind.Var acc)
 
                             // Check to see that local bindings and members don't have the same name and check some other adhoc conditions
                             for bind in binds do
@@ -2010,7 +2011,7 @@ module MutRecBindingChecking =
                                 | _ -> errorR (Error(FSComp.SR.tcMemberAndLocalClassBindingHaveSameName nm, bind.Var.Range))
 
                             // Also add static entries to the envInstance if necessary 
-                            let envInstance = (if isStatic then (binds, envInstance) ||> List.foldBack (fun b e -> AddLocalVal cenv.tcSink scopem b.Var e) else env)
+                            let envInstance = (if isStatic then (binds, envInstance) ||> List.foldBack (fun b e -> AddLocalVal cenv.g cenv.tcSink scopem b.Var e) else env)
                             let envStatic = (if isStatic then env else envStatic)
                             let innerState = (tpenv, envInstance, envStatic, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable)
                             Phase2BIncrClassBindings bindRs, innerState
@@ -2344,7 +2345,7 @@ module MutRecBindingChecking =
                 // Add the module abbreviations
                 let envForDecls = (envForDecls, moduleAbbrevs) ||> List.fold (TcModuleAbbrevDecl cenv scopem)
                 // Add the values and members
-                let envForDecls = AddLocalVals cenv.tcSink scopem lets envForDecls
+                let envForDecls = AddLocalVals cenv.g cenv.tcSink scopem lets envForDecls
                 envForDecls)
 
     /// Phase 2: Check the members and 'let' definitions in a mutually recursive group of definitions.
@@ -2388,8 +2389,8 @@ module MutRecBindingChecking =
 
                 let envForDeclsUpdated = 
                     envForDecls
-                    |> AddLocalVals cenv.tcSink scopem prelimRecValues 
-                    |> AddLocalVals cenv.tcSink scopem ctorVals 
+                    |> AddLocalVals cenv.g cenv.tcSink scopem prelimRecValues 
+                    |> AddLocalVals cenv.g cenv.tcSink scopem ctorVals 
 
                 envForDeclsUpdated)
 
@@ -4989,7 +4990,7 @@ module TcDeclarations =
             (fun envForDecls (containerInfo, valSpec) -> 
                 let tpenv = emptyUnscopedTyparEnv
                 let idvs, _ = TcAndPublishValSpec (cenv, envForDecls, containerInfo, ModuleOrMemberBinding, None, tpenv, valSpec)
-                let env = List.foldBack (AddLocalVal cenv.tcSink scopem) idvs envForDecls
+                let env = List.foldBack (AddLocalVal cenv.g cenv.tcSink scopem) idvs envForDecls
                 env)
 
 
@@ -5030,8 +5031,8 @@ module TcDeclarations =
 // Bind module types
 //------------------------------------------------------------------------- 
 
-let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synSigDecl: Eventually<TcEnv> =
-  eventually {
+let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synSigDecl: Cancellable<TcEnv> =
+  cancellable {
     try 
         match synSigDecl with 
         | SynModuleSigDecl.Exception (edef, m) ->
@@ -5058,7 +5059,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let containerInfo = ModuleOrNamespaceContainerInfo parentModule
             let idvs, _ = TcAndPublishValSpec (cenv, env, containerInfo, ModuleOrMemberBinding, None, emptyUnscopedTyparEnv, vspec)
             let scopem = unionRanges m endm
-            let env = List.foldBack (AddLocalVal cenv.tcSink scopem) idvs env
+            let env = List.foldBack (AddLocalVal cenv.g cenv.tcSink scopem) idvs env
             return env
 
         | SynModuleSigDecl.NestedModule(SynComponentInfo(Attributes attribs, _parms, _constraints, longPath, xml, _, vis, im) as compInfo, isRec, mdefs, m) ->
@@ -5182,7 +5183,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
 
 and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs = 
-    eventually {
+    cancellable {
         // Ensure the .Deref call in UpdateAccModuleOrNamespaceType succeeds 
         if cenv.compilingCanonicalFslibModuleType then 
             let doc = xml.ToXmlDoc(true, Some [])
@@ -5197,10 +5198,10 @@ and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs =
     }
 
 and TcSignatureElementsNonMutRec cenv parent typeNames endm env defs = 
-    Eventually.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
+    Cancellable.fold (TcSignatureElementNonMutRec cenv parent typeNames endm) env defs
 
 and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (defs: SynModuleSigDecl list) =
-    eventually {
+    cancellable {
         let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
         let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
 
@@ -5254,7 +5255,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
 
 and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, defs, m: range, xml) =
 
-  eventually {
+  cancellable {
     let endm = m.EndRange // use end of range for errors 
 
     // Create the module type that will hold the results of type checking.... 
@@ -5314,7 +5315,7 @@ let CheckLetOrDoInNamespace binds m =
 
 /// The non-mutually recursive case for a declaration
 let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem env synDecl = 
-  eventually {
+  cancellable {
     cenv.synArgNameGenerator.Reset()
     let tpenv = emptyUnscopedTyparEnv
 
@@ -5495,7 +5496,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
  
 /// The non-mutually recursive case for a sequence of declarations
 and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, env, envAtEnd) (moreDefs: SynModuleDecl list) =
- eventually {
+ cancellable {
     match moreDefs with 
     | (firstDef :: otherDefs) ->
         // Lookahead one to find out the scope of the next declaration.
@@ -5515,7 +5516,7 @@ and TcModuleOrNamespaceElementsNonMutRec cenv parent typeNames endm (defsSoFar, 
 
 /// The mutually recursive case for a sequence of declarations (and nested modules)
 and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial mutRecNSInfo (defs: SynModuleDecl list) =
- eventually {
+ cancellable {
 
     let m = match defs with [] -> m | _ -> defs |> List.map (fun d -> d.Range) |> List.reduce unionRanges
     let scopem = (defs, m) ||> List.foldBack (fun h m -> unionRanges h.Range m) 
@@ -5605,7 +5606,7 @@ and TcMutRecDefsFinish cenv defs m =
     TMDefRec(true, tycons, binds, m)
 
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo defs =
-  eventually {
+  cancellable {
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
     if cenv.compilingCanonicalFslibModuleType then 
         let doc = xml.ToXmlDoc(true, Some [])
@@ -5745,7 +5746,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs =
                     ConstraintSolver.ChooseTyparSolutionAndSolve cenv.css denvAtEnd tp)
     with e -> errorRecovery e m
 
-let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m = 
+let CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m = 
     if Option.isNone rootSigOpt then
       let rec check (mty: ModuleOrNamespaceType) =
           for v in mty.AllValsAndMembers do
@@ -5759,7 +5760,7 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
                   // for example FSharp 1.0 3661.
                   (match v.ValReprInfo with None -> true | Some tvi -> tvi.HasNoArgs)) then 
                 match ftyvs with 
-                | tp :: _ -> errorR (ValueRestriction(denvAtEnd, false, v, tp, v.Range))
+                | tp :: _ -> errorR (ValueRestriction(denvAtEnd, infoReader, false, v, tp, v.Range))
                 | _ -> ()
           mty.ModuleAndNamespaceDefinitions |> List.iter (fun v -> check v.ModuleOrNamespaceType) 
       try check implFileTypePriorToSig with e -> errorRecovery e m
@@ -5790,7 +5791,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
                 // As typechecked the signature and implementation use different tycons etc. 
                 // Here we (a) check there are enough names, (b) match them up to build a renaming and   
                 // (c) check signature conformance up to this renaming. 
-                if not (SignatureConformance.CheckNamesOfModuleOrNamespace denv (mkLocalTyconRef implFileSpecPriorToSig) sigFileType) then 
+                if not (SignatureConformance.CheckNamesOfModuleOrNamespace denv cenv.infoReader (mkLocalTyconRef implFileSpecPriorToSig) sigFileType) then 
                     raise (ReportedError None)
 
                 // Compute the remapping from implementation to signature
@@ -5798,7 +5799,7 @@ let CheckModuleSignature g (cenv: cenv) m denvAtEnd rootSigOpt implFileTypePrior
                      
                 let aenv = { TypeEquivEnv.Empty with EquivTycons = TyconRefMap.OfList remapInfo.RepackagedEntities }
                     
-                if not (SignatureConformance.Checker(cenv.g, cenv.amap, denv, remapInfo, true).CheckSignature aenv (mkLocalModRef implFileSpecPriorToSig) sigFileType) then (
+                if not (SignatureConformance.Checker(cenv.g, cenv.amap, denv, remapInfo, true).CheckSignature aenv cenv.infoReader (mkLocalModRef implFileSpecPriorToSig) sigFileType) then (
                     // We can just raise 'ReportedError' since CheckModuleOrNamespace raises its own error 
                     raise (ReportedError None)
                 )
@@ -5823,7 +5824,9 @@ let TypeCheckOneImplFile
        (rootSigOpt: ModuleOrNamespaceType option)
        (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
 
- eventually {
+ let infoReader = InfoReader(g, amap)
+
+ cancellable {
     let cenv = 
         cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
             conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
@@ -5866,7 +5869,7 @@ let TypeCheckOneImplFile
 
     // Check the value restriction. Only checked if there is no signature.
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
-      CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m)
+      CheckValueRestriction denvAtEnd infoReader rootSigOpt implFileTypePriorToSig m)
 
     // Solve unsolved internal type variables 
     conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
@@ -5929,7 +5932,7 @@ let TypeCheckOneImplFile
 
 /// Check an entire signature file
 let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (_, qualNameOfFile, _, _, sigFileFrags)) = 
- eventually {     
+ cancellable {     
     let cenv = 
         cenv.Create 
             (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink,

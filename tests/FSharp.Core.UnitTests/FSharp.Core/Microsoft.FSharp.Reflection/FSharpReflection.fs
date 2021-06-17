@@ -665,6 +665,9 @@ type FSharpValueTests() =
         // Nested 
         let nestedtuplereader = FSharpValue.PreComputeTupleReader(typeof<Tuple<int, Tuple<int, string>>>)    
         Assert.AreEqual(nestedtuplereader(tuple3).[1], box(2, "tuple"))
+
+        let longTupleReader = FSharpValue.PreComputeTupleReader (longTuple.GetType ())
+        Assert.AreEqual (longTupleReader longTuple, [| box ("yup", 1s); box 2; box 3; box 4; box 5; box 6; box 7; box 8; box 9; box 10; box 11; box (Some 12); box 13; box "nope"; box (struct (15, 16)); box 17; box 18; box (ValueSome 19) |])
         
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeTupleReader(null)|> ignore)
@@ -683,6 +686,9 @@ type FSharpValueTests() =
         let nestedtuplereader = FSharpValue.PreComputeTupleReader(typeof<struct (int * struct (int * string))>)    
         Assert.AreEqual(nestedtuplereader(structTuple3).[1], box (struct (2, "tuple")))
         
+        let longTupleReader = FSharpValue.PreComputeTupleReader (longStructTuple.GetType ())
+        Assert.AreEqual (longTupleReader longStructTuple, [| box ("yup", 1s); box 2; box 3; box 4; box 5; box 6; box 7; box 8; box 9; box 10; box 11; box (Some 12); box 13; box "nope"; box (struct (15, 16)); box 17; box 18; box (ValueSome 19) |])
+
         // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleReader(typeof<StructRecordType>) |> ignore)        
         

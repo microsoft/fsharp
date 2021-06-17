@@ -12,20 +12,21 @@ open NUnit.Framework
 open FsUnit
 open System.IO
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
 
-// Create an interactive checker instance 
+// Create an interactive checker instance
 let internal checker = FSharpChecker.Create()
 
-module internal Project1 = 
+module internal Project1 =
 
     let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSources = [ for (i,f) in fileNamesI -> (f, "module M" + string i) ]
-    for (f,text) in fileSources do File.WriteAllText(f, text)
+    for (f,text) in fileSources do FileSystem.OpenFileForWriteShim(f).Write(text)
     let fileSources2 = [ for (i,f) in fileSources -> SourceText.ofString f ]
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
@@ -36,11 +37,11 @@ module internal Project1 =
 
 [<Test>]
 [<Ignore("https://github.com/dotnet/fsharp/issues/11184")>]
-let ``Test request for parse and check doesn't check whole project`` () = 
+let ``Test request for parse and check doesn't check whole project`` () =
 
     printfn "starting test..."
-    let backgroundParseCount = ref 0 
-    let backgroundCheckCount = ref 0 
+    let backgroundParseCount = ref 0
+    let backgroundCheckCount = ref 0
     checker.FileChecked.Add (fun x -> incr backgroundCheckCount)
     checker.FileParsed.Add (fun x -> incr backgroundParseCount)
 
@@ -101,4 +102,3 @@ let ``Test request for parse and check doesn't check whole project`` () =
     printfn "checking no extra background typechecks...., backgroundCheckCount.Value = %d" backgroundCheckCount.Value
     (backgroundCheckCount.Value <= 10) |> shouldEqual true // only two extra typechecks of files
     ()
-

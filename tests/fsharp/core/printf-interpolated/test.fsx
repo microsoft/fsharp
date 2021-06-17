@@ -41,8 +41,17 @@ let _ = test "cewoui2e" (lazy(sprintf $"%o{System.Int32.MinValue}" )) "200000000
 let _ = test "cewoui2r" (lazy(sprintf $"%o{0xffffffff}" )) "37777777777"
 let _ = test "cewoui2t" (lazy(sprintf $"%o{System.Int32.MinValue+1}")) "20000000001"
 let _ = test "cewoui2y" (lazy(sprintf $"%o{System.Int32.MaxValue}")) "17777777777"
-
 let _ = test "cewoui2u" (lazy(sprintf $"%o{-1}" )) "37777777777"
+let _ = test "cewoui2aB" (lazy(sprintf $"%B{0}")) "0"
+let _ = test "cewoui2bB" (lazy(sprintf $"%B{0}")) "0"
+let _ = test "cewoui2cB" (lazy(sprintf $"%B{5}")) "101"
+let _ = test "cewoui2qB" (lazy(sprintf $"%B{8}")) "1000"
+let _ = test "cewoui2wB" (lazy(sprintf $"%B{15}")) "1111"
+let _ = test "cewoui2eB" (lazy(sprintf $"%B{System.Int32.MinValue}" )) "10000000000000000000000000000000"
+let _ = test "cewoui2rB" (lazy(sprintf $"%B{0xffffffff}" )) "11111111111111111111111111111111"
+let _ = test "cewoui2tB" (lazy(sprintf $"%B{System.Int32.MinValue+1}")) "10000000000000000000000000000001"
+let _ = test "cewoui2yB" (lazy(sprintf $"%B{System.Int32.MaxValue}")) "1111111111111111111111111111111"
+let _ = test "cewoui2uB" (lazy(sprintf $"%B{-1}" )) "11111111111111111111111111111111"
 
 let f z = sprintf $"%o{z}"
 
@@ -55,8 +64,20 @@ let _ = test "cewoui2h" (lazy(f System.Int32.MinValue)) "20000000000"
 let _ = test "cewoui2j" (lazy(f 0xffffffff)) "37777777777"
 let _ = test "cewoui2lk" (lazy(f (System.Int32.MinValue+1))) "20000000001"
 let _ = test "cewoui2l" (lazy(f System.Int32.MaxValue)) "17777777777"
-
 let _ = test "cewoui212" (lazy(f (-1))) "37777777777"
+
+let fB z = sprintf $"%B{z}"
+
+let _ = test "cewoui2aB" (lazy(fB 0)) "0"
+let _ = test "cewoui2sB" (lazy(fB 0)) "0"
+let _ = test "cewoui2dB" (lazy(fB 5)) "101"
+let _ = test "cewoui2fB" (lazy(fB 8)) "1000"
+let _ = test "cewoui2gB" (lazy(fB 15)) "1111"
+let _ = test "cewoui2hB" (lazy(fB System.Int32.MinValue)) "10000000000000000000000000000000"
+let _ = test "cewoui2jB" (lazy(fB 0xffffffff)) "11111111111111111111111111111111"
+let _ = test "cewoui2lkB" (lazy(fB (System.Int32.MinValue+1))) "10000000000000000000000000000001"
+let _ = test "cewoui2lB" (lazy(fB System.Int32.MaxValue)) "1111111111111111111111111111111"
+let _ = test "cewoui212B" (lazy(fB (-1))) "11111111111111111111111111111111"
 
 // check bprintf
 let _ = test "csd3oui2!" (lazy(let buf = new System.Text.StringBuilder() in ignore (bprintf buf $"%x{0}%x{1}"); buf.ToString())) "01"

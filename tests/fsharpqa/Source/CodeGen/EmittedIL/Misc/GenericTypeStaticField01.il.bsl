@@ -36,13 +36,13 @@
   // Offset: 0x00000608 Length: 0x000001E1
 }
 .module GenericTypeStaticField01.exe
-// MVID: {5FCFFD09-1E75-7E6B-A745-038309FDCF5F}
+// MVID: {60B68B7F-1E75-7E6B-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00EB0000
+// Image base: 0x00F10000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

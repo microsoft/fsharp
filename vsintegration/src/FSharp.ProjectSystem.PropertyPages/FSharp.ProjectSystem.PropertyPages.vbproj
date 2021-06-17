@@ -59,7 +59,7 @@
     <PackageReference Include="VSSDK.VSLangProj.11" Version="$(VSSDKVSLangProj11Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj">
+    <ProjectReference Include="..\FSharp.ProjectSystem.Base\FSharp.ProjectSystem.Base.csproj">
       <Project>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</Project>
       <Name>ProjectSystem.Base</Name>
     </ProjectReference>

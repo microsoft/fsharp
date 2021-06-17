@@ -10,6 +10,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open System.Diagnostics
 open FSharp.Test.Utilities
+open TestFramework
+open NUnit.Framework
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
 
@@ -19,6 +21,7 @@ module Utilities =
     type TargetFramework =
         | NetStandard20
         | NetCoreApp31
+        | Current
 
     let private getResourceStream name =
         let assembly = typeof<TargetFramework>.GetTypeInfo().Assembly
@@ -75,7 +78,108 @@ module Utilities =
             let systemConsoleRef = lazy AssemblyMetadata.CreateFromImage(NetCoreApp31Refs.System_Console ()).GetReference(display = "System.Console.dll (netcoreapp 3.1 ref)")
 
     [<RequireQualifiedAccess>]
-    module internal TargetFrameworkUtil =
+    module TargetFrameworkUtil =
+
+        let private config = TestFramework.initializeSuite ()
+
+        // Do a one time dotnet sdk build to compute the proper set of reference assemblies to pass to the compiler
+        let private projectFile = """
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>$TARGETFRAMEWORK</TargetFramework>
+        <UseFSharpPreview>true</UseFSharpPreview>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
+  <ItemGroup><Reference Include="$FSHARPCORELOCATION" /></ItemGroup>
+  <ItemGroup Condition="'$(TARGETFRAMEWORK)'=='net472'">
+        <Reference Include="System" />
+        <Reference Include="System.Runtime" />
+        <Reference Include="System.Core.dll" />
+        <Reference Include="System.Xml.Linq.dll" />
+        <Reference Include="System.Data.DataSetExtensions.dll" />
+        <Reference Include="Microsoft.CSharp.dll" />
+        <Reference Include="System.Data.dll" />
+        <Reference Include="System.Deployment.dll" />
+        <Reference Include="System.Drawing.dll" />
+        <Reference Include="System.Net.Http.dll" />
+        <Reference Include="System.Windows.Forms.dll" />
+        <Reference Include="System.Xml.dll" />
+  </ItemGroup>
+
+  <Target Name="WriteFrameworkReferences" AfterTargets="AfterBuild">
+        <WriteLinesToFile File="FrameworkReferences.txt" Lines="@(ReferencePath)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+
+</Project>"""
+
+        let private directoryBuildProps = """
+<Project>
+</Project>
+"""
+
+        let private directoryBuildTargets = """
+<Project>
+</Project>
+"""
+
+        let private programFs = """
+open System
+
+[<EntryPoint>]
+let main argv = 0"""
+
+        let private getNetCoreAppReferences =
+            let mutable output = ""
+            let mutable errors = ""
+            let mutable cleanUp = true
+            let pathToArtifacts = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "../../../.."))
+            if Path.GetFileName(pathToArtifacts) <> "artifacts" then failwith "CompilerAssert did not find artifacts directory --- has the location changed????"
+            let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
+            let projectDirectory = Path.Combine(pathToTemp, "CompilerAssert", Path.GetRandomFileName())
+            let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
+            try
+                try
+                    Directory.CreateDirectory(projectDirectory) |> ignore
+                    let projectFileName = Path.Combine(projectDirectory, "ProjectFile.fsproj")
+                    let programFsFileName = Path.Combine(projectDirectory, "Program.fs")
+                    let directoryBuildPropsFileName = Path.Combine(projectDirectory, "Directory.Build.props")
+                    let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
+                    let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
+#if NETCOREAPP
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net5.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+#else
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+#endif
+                    File.WriteAllText(programFsFileName, programFs)
+                    File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
+                    File.WriteAllText(directoryBuildTargetsFileName, directoryBuildTargets)
+
+                    let timeout = 30000
+                    let exitCode, output, errors = Commands.executeProcess (Some config.DotNetExe) "build" projectDirectory timeout
+
+                    if exitCode <> 0 || errors.Length > 0 then
+                        printfn "Output:\n=======\n"
+                        output |> Seq.iter(fun line -> printfn "STDOUT:%s\n" line)
+                        printfn "Errors:\n=======\n"
+                        errors  |> Seq.iter(fun line -> printfn "STDERR:%s\n" line)
+                        Assert.True(false, "Errors produced generating References")
+
+                    File.ReadLines(frameworkReferencesFileName) |> Seq.toArray
+                with | e ->
+                    cleanUp <- false
+                    printfn "Project directory: %s" projectDirectory
+                    printfn "STDOUT: %s" output
+                    File.WriteAllText(Path.Combine(projectDirectory, "project.stdout"), output)
+                    printfn "STDERR: %s" errors
+                    File.WriteAllText(Path.Combine(projectDirectory, "project.stderror"), errors)
+                    raise (new Exception (sprintf "An error occurred getting netcoreapp references: %A" e))
+            finally
+                if cleanUp then
+                    try Directory.Delete(projectDirectory, recursive=true) with | _ -> ()
 
         open TestReferences
 
@@ -84,10 +188,21 @@ module Utilities =
         let private netCoreApp31References =
             lazy ImmutableArray.Create(NetCoreApp31.netStandard.Value, NetCoreApp31.mscorlibRef.Value, NetCoreApp31.systemRuntimeRef.Value, NetCoreApp31.systemCoreRef.Value, NetCoreApp31.systemDynamicRuntimeRef.Value, NetCoreApp31.systemConsoleRef.Value)
 
-        let internal getReferences tf =
+        let currentReferences =
+            getNetCoreAppReferences
+
+        let currentReferencesAsPEs =
+            getNetCoreAppReferences
+            |> Seq.map (fun x ->
+                PortableExecutableReference.CreateFromFile(x)
+            )
+            |> ImmutableArray.CreateRange
+
+        let getReferences tf =
             match tf with
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
                 | TargetFramework.NetCoreApp31 -> netCoreApp31References.Value
+                | TargetFramework.Current -> currentReferencesAsPEs
 
     type RoslynLanguageVersion = LanguageVersion
 
@@ -128,6 +243,7 @@ module Utilities =
 
     type CSharpLanguageVersion =
         | CSharp8 = 0
+        | CSharp9 = 1
 
     [<AbstractClass; Sealed>]
     type CompilationUtil private () =
@@ -136,6 +252,7 @@ module Utilities =
             let lv =
                 match lv with
                     | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
+                    | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
                     | _ -> LanguageVersion.Default
 
             let tf = defaultArg tf TargetFramework.NetStandard20

@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <!-- directory locations -->
+
+  <PropertyGroup Condition="'$(OS)' != 'Unix' and '$(DisableAutoSetFscCompilerPath)' != 'true' and '$(Configuration)' != 'Proto' and '$(DOTNET_HOST_PATH)' != ''">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+  </PropertyGroup>
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <FSharpTestsRoot>$(RepoRoot)tests</FSharpTestsRoot>
@@ -16,7 +21,7 @@
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
-</PropertyGroup>
+  </PropertyGroup>
 
   <!-- nuget -->
   <PropertyGroup>

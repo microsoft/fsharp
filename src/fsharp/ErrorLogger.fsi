@@ -222,8 +222,6 @@ val report: f:(unit -> 'a) -> 'a
 
 val deprecatedWithError: s:string -> m:range -> unit
 
-val mutable reportLibraryOnlyFeatures: bool
-
 val libraryOnlyError: m:range -> unit
 
 val libraryOnlyWarning: m:range -> unit

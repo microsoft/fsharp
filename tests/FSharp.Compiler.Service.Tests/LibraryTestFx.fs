@@ -8,6 +8,8 @@ open System.IO
 open System.Reflection
 open System.Text.RegularExpressions
 
+open FSharp.Compiler.IO
+
 open NUnit.Framework
 
 // Verifies two sequences are equal (same length, equiv elements)
@@ -64,7 +66,7 @@ module SurfaceArea =
 
         let asm, actualNotNormalized = getActual ()
         let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
-        
+
         let expected =
             // Split the "expected" string into individual lines, then normalize it.
             (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
@@ -91,7 +93,7 @@ module SurfaceArea =
                 let workDir = TestContext.CurrentContext.WorkDirectory
                 sprintf "%s\\FSharp.CompilerService.SurfaceArea.%s.txt" workDir platform
 
-            System.IO.File.WriteAllText(logFile, String.Join("\r\n", actual))
+            FileSystem.OpenFileForWriteShim(logFile).Write(String.Join("\r\n", actual))
 
             // The surface areas don't match; prepare an easily-readable output message.
             let msg =

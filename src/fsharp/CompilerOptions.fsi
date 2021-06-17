@@ -31,13 +31,12 @@ type OptionSpec =
     | OptionHelp of (CompilerOptionBlock list -> unit)                      // like OptionUnit, but given the "options"
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
-and  CompilerOption      = 
-    /// CompilerOption(name, argumentDescriptionString, actionSpec, exceptionOpt, helpTextOpt
-    | CompilerOption of string * string * OptionSpec * Option<exn> * string option
+and  CompilerOption      =
+    | CompilerOption of name: string * argumentDescriptionString: string * actionSpec: OptionSpec * deprecationError: Option<exn> * helpText: string option
 
-and  CompilerOptionBlock = 
-    | PublicOptions  of string * CompilerOption list 
-    | PrivateOptions of CompilerOption list
+and  CompilerOptionBlock =
+    | PublicOptions  of heading: string * options: CompilerOption list
+    | PrivateOptions of options: CompilerOption list
 
 val PrintCompilerOptionBlocks: CompilerOptionBlock list -> unit  // for printing usage
 

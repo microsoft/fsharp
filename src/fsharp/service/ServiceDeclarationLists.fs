@@ -101,7 +101,7 @@ module DeclarationListHelpers =
         
         let layouts = 
             [ for minfo in minfos -> 
-                let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader.amap m denv item.TyparInst minfo
+                let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInst minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
                 let layout = LayoutRender.toArray layout
@@ -159,7 +159,7 @@ module DeclarationListHelpers =
             FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv item.TyparInst vref.Deref
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
             let remarks = OutputFullName isListItem pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map LayoutRender.toArray tpsL
@@ -178,7 +178,7 @@ module DeclarationListHelpers =
                 sepL (tagPunctuation ".") ^^
                 wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
-                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv recd ^^ WordL.arrow) ^^
+                (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv rty
             let layout = LayoutRender.toArray layout
             ToolTipElement.Single (layout, xml)
@@ -217,7 +217,7 @@ module DeclarationListHelpers =
 
         // F# exception names
         | Item.ExnCase ecref -> 
-            let layout = NicePrint.layoutExnDef denv ecref.Deref
+            let layout = NicePrint.layoutExnDef denv infoReader ecref
             let remarks = OutputFullName isListItem pubpathOfTyconRef fullDisplayTextOfExnRefAsLayout ecref
             let layout = LayoutRender.toArray layout
             let remarks = LayoutRender.toArray remarks

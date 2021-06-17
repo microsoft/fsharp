@@ -8,6 +8,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.Xml
 
 /// Generate implicit argument names in parsing
 type SynArgNameGenerator() =

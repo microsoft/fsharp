@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly SeqExpressionSteppingTest1
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SeqExpressionSteppingTest1
 {
-  // Offset: 0x00000000 Length: 0x00000267
+  // Offset: 0x00000000 Length: 0x00000263
 }
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest1
 {
-  // Offset: 0x00000270 Length: 0x000000AD
+  // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest1.exe
-// MVID: {59B19240-2432-947D-A745-03834092B159}
+// MVID: {60B78A59-2432-947D-A745-0383598AB760}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x06A30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -87,51 +87,47 @@
       .method public strict virtual instance int32 
               GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
       {
-        // Code size       66 (0x42)
-        .maxstack  6
+        // Code size       62 (0x3e)
+        .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest1.fs'
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\SeqExpressionStepping\\SeqExpressionSteppingTest1.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0006:  ldc.i4.1
         IL_0007:  sub
         IL_0008:  switch     ( 
                               IL_0017,
-                              IL_0019)
-        IL_0015:  br.s       IL_0021
-
-        IL_0017:  br.s       IL_001b
-
-        IL_0019:  br.s       IL_001e
+                              IL_001a)
+        IL_0015:  br.s       IL_001d
 
         .line 100001,100001 : 0,0 ''
-        IL_001b:  nop
-        IL_001c:  br.s       IL_0032
+        IL_0017:  nop
+        IL_0018:  br.s       IL_002e
 
         .line 100001,100001 : 0,0 ''
-        IL_001e:  nop
-        IL_001f:  br.s       IL_0039
+        IL_001a:  nop
+        IL_001b:  br.s       IL_0035
 
         .line 100001,100001 : 0,0 ''
-        IL_0021:  nop
-        IL_0022:  ldarg.0
-        IL_0023:  ldc.i4.1
-        IL_0024:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
+        IL_001d:  nop
         .line 6,6 : 15,22 ''
-        IL_0029:  ldarg.0
-        IL_002a:  ldc.i4.1
-        IL_002b:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
-        IL_0030:  ldc.i4.1
-        IL_0031:  ret
+        IL_001e:  ldarg.0
+        IL_001f:  ldc.i4.1
+        IL_0020:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
+        IL_0025:  ldarg.0
+        IL_0026:  ldc.i4.1
+        IL_0027:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
+        IL_002c:  ldc.i4.1
+        IL_002d:  ret
 
-        IL_0032:  ldarg.0
-        IL_0033:  ldc.i4.2
-        IL_0034:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
-        IL_0039:  ldarg.0
-        IL_003a:  ldc.i4.0
-        IL_003b:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
-        IL_0040:  ldc.i4.0
-        IL_0041:  ret
+        IL_002e:  ldarg.0
+        IL_002f:  ldc.i4.2
+        IL_0030:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
+        IL_0035:  ldarg.0
+        IL_0036:  ldc.i4.0
+        IL_0037:  stfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::current
+        IL_003c:  ldc.i4.0
+        IL_003d:  ret
       } // end of method f0@6::GenerateNext
 
       .method public strict virtual instance void 
@@ -148,42 +144,36 @@
       .method public strict virtual instance bool 
               get_CheckClose() cil managed
       {
-        // Code size       45 (0x2d)
+        // Code size       39 (0x27)
         .maxstack  8
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest1/SeqExpressionSteppingTest1/f0@6::pc
         IL_0006:  switch     ( 
                               IL_0019,
-                              IL_001b,
-                              IL_001d)
-        IL_0017:  br.s       IL_0028
+                              IL_001c,
+                              IL_001f)
+        IL_0017:  br.s       IL_0022
 
-        IL_0019:  br.s       IL_001f
+        .line 100001,100001 : 0,0 ''
+        IL_0019:  nop
+        IL_001a:  br.s       IL_0025
 
-        IL_001b:  br.s       IL_0022
-
-        IL_001d:  br.s       IL_0025
+        .line 100001,100001 : 0,0 ''
+        IL_001c:  nop
+        IL_001d:  br.s       IL_0023
 
         .line 100001,100001 : 0,0 ''
         IL_001f:  nop
-        IL_0020:  br.s       IL_002b
+        IL_0020:  br.s       IL_0025
 
         .line 100001,100001 : 0,0 ''
         IL_0022:  nop
-        IL_0023:  br.s       IL_0029
+        IL_0023:  ldc.i4.0
+        IL_0024:  ret
 
-        .line 100001,100001 : 0,0 ''
-        IL_0025:  nop
-        IL_0026:  br.s       IL_002b
-
-        .line 100001,100001 : 0,0 ''
-        IL_0028:  nop
-        IL_0029:  ldc.i4.0
-        IL_002a:  ret
-
-        IL_002b:  ldc.i4.0
-        IL_002c:  ret
+        IL_0025:  ldc.i4.0
+        IL_0026:  ret
       } // end of method f0@6::get_CheckClose
 
       .method public strict virtual instance int32 

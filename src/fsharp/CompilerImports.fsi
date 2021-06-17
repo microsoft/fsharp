@@ -16,6 +16,7 @@ open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
@@ -122,11 +123,18 @@ type TcAssemblyResolutions =
 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
 
-    static member SplitNonFoundationalResolutions: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
+    static member SplitNonFoundationalResolutions: tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
 
-    static member BuildFromPriorResolutions: ctok: CompilationThreadToken * tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
+    static member BuildFromPriorResolutions: tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
 
-    static member GetAssemblyResolutionInformation: ctok: CompilationThreadToken * tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
+    static member GetAssemblyResolutionInformation: tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
+
+[<Sealed>]
+type RawFSharpAssemblyData =
+
+    new : ilModule: ILModuleDef * ilAssemblyRefs: ILAssemblyRef list -> RawFSharpAssemblyData
+
+    interface IRawFSharpAssemblyData
 
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
@@ -166,10 +174,10 @@ type TcImports =
 
     /// Try to find the given assembly reference by simple name.  Used in magic assembly resolution.  Effectively does implicit
     /// unification of assemblies by simple assembly name.
-    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName: CompilationThreadToken * string -> string option
+    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName: string -> string option
 
     /// Try to find the given assembly reference.
-    member TryFindExistingFullyQualifiedPathByExactAssemblyRef: CompilationThreadToken * ILAssemblyRef -> string option
+    member TryFindExistingFullyQualifiedPathByExactAssemblyRef: ILAssemblyRef -> string option
 
 #if !NO_EXTENSIONTYPING
     /// Try to find a provider-generated assembly
@@ -183,27 +191,23 @@ type TcImports =
     member internal Base: TcImports option
 
     static member BuildFrameworkTcImports:
-        CompilationThreadToken *
         TcConfigProvider *
         AssemblyResolution list *
         AssemblyResolution list
-            -> Cancellable<TcGlobals * TcImports>
+            -> NodeCode<TcGlobals * TcImports>
 
     static member BuildNonFrameworkTcImports:
-        CompilationThreadToken * 
         TcConfigProvider * 
-        TcGlobals * 
         TcImports * 
         AssemblyResolution list * 
         UnresolvedAssemblyReference list * 
         DependencyProvider 
-            -> Cancellable<TcImports>
+            -> NodeCode<TcImports>
 
     static member BuildTcImports:
-        ctok: CompilationThreadToken *
         tcConfigP: TcConfigProvider * 
         dependencyProvider: DependencyProvider 
-            -> Cancellable<TcGlobals * TcImports>
+            -> NodeCode<TcGlobals * TcImports>
 
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.

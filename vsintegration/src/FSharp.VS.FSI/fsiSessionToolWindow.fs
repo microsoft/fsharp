@@ -339,7 +339,7 @@ type internal FsiToolWindow() as this =
     let supportWhenAtStartOfInputArea (sender:obj) (e:EventArgs) =
         let command = sender :?> MenuCommand       
         if command <> null then
-            command.Supported <- not source.IsCompletorActive && isCurrentPositionInInputArea()
+            command.Supported <- not source.IsCompletorActive && isCurrentPositionAtStartOfInputArea()
 
     /// Support when at the start of the input area AND no-selection (e.g. to enable NoAction on BACKSPACE).
     let supportWhenAtStartOfInputAreaAndNoSelection (sender:obj) (e:EventArgs) =
@@ -675,7 +675,7 @@ type internal FsiToolWindow() as this =
                     else
                         new OleMenuCommandService(this, originalFilter)
 
-            let addCommand guid cmdId handler guard=
+            let addCommand guid cmdId handler guard =
                 let id  = new CommandID(guid,cmdId)
                 let cmd = new OleMenuCommand(new EventHandler(handler),id)
                 match guard with

@@ -30,20 +30,20 @@
 }
 .mresource public FSharpSignatureData.MethodImplNoInline02
 {
-  // Offset: 0x00000000 Length: 0x000002FF
+  // Offset: 0x00000000 Length: 0x00000301
 }
 .mresource public FSharpOptimizationData.MethodImplNoInline02
 {
   // Offset: 0x00000308 Length: 0x000000F9
 }
 .module MethodImplNoInline02.exe
-// MVID: {5F1F9A50-084F-1A8E-A745-0383509A1F5F}
+// MVID: {60B68B7F-084F-1A8E-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x04E70000
+// Image base: 0x05140000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

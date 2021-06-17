@@ -9,7 +9,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <DefineConstants>$(DefineConstants);ASSUME_PREVIEW_FSHARP_CORE</DefineConstants>
     <UnitTestType>xunit</UnitTestType>
-    <NoWarn>$(NoWarn);3186;1104</NoWarn>
+    <NoWarn>$(NoWarn);57;3186;1104</NoWarn>
   </PropertyGroup>
 
     <ItemGroup>
@@ -24,6 +24,7 @@
     <Compile Include="EditDistance.fs" />
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
+    <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />
     <Compile Include="..\..\tests\service\FsUnit.fs">

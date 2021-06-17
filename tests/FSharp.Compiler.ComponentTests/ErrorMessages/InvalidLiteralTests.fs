@@ -15,4 +15,4 @@ let [<Literal>] (A x) = 1
         """
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Error 3391, Line 3, Col 17, Line 3, Col 22, "A [<Literal>] declaration cannot use an active pattern for its identifier")
+        |> withSingleDiagnostic (Error 3391, Line 3, Col 5, Line 3, Col 22, "A [<Literal>] declaration cannot use an active pattern for its identifier")

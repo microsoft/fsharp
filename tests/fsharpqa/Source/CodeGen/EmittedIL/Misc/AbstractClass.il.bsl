@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly AbstractClass
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.AbstractClass
 {
-  // Offset: 0x00000000 Length: 0x00000306
+  // Offset: 0x00000000 Length: 0x00000302
 }
 .mresource public FSharpOptimizationData.AbstractClass
 {
-  // Offset: 0x00000310 Length: 0x000000B1
+  // Offset: 0x00000308 Length: 0x000000B1
 }
 .module AbstractClass.exe
-// MVID: {59B19213-333C-8BAF-A745-03831392B159}
+// MVID: {60B68B7F-333C-8BAF-A745-03837F8BB660}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x010A0000
+// Image base: 0x07500000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,7 +62,7 @@
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\AbstractClass.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\AbstractClass.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0

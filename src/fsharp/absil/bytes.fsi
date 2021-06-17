@@ -1,18 +1,18 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Blobs of bytes, cross-compiling 
-namespace Internal.Utilities
+/// Blobs of bytes, cross-compiling
+namespace FSharp.Compiler.IO
 
 open System.IO
 open System.IO.MemoryMappedFiles
 
-module internal Bytes = 
+module internal Bytes =
     /// returned int will be 0 <= x <= 255
-    val get: byte[] -> int -> int    
+    val get: byte[] -> int -> int
     val zeroCreate: int -> byte[]
-    /// each int must be 0 <= x <= 255 
-    val ofInt32Array: int[] ->  byte[] 
-    /// each int will be 0 <= x <= 255 
+    /// each int must be 0 <= x <= 255
+    val ofInt32Array: int[] ->  byte[]
+    /// each int will be 0 <= x <= 255
 
     val blit: byte[] -> int -> byte[] -> int -> int -> unit
 
@@ -22,7 +22,7 @@ module internal Bytes =
 /// A view over bytes.
 /// May be backed by managed or unmanaged memory, or memory mapped file.
 [<AbstractClass>]
-type internal ByteMemory =
+type ByteMemory =
 
     abstract Item: int -> byte with get
 
@@ -54,7 +54,7 @@ type internal ByteMemory =
     abstract AsReadOnlyStream: unit -> Stream
 
 [<Struct;NoEquality;NoComparison>]
-type internal ReadOnlyByteMemory =
+type ReadOnlyByteMemory =
 
     new: ByteMemory -> ReadOnlyByteMemory
 
@@ -81,7 +81,7 @@ type internal ReadOnlyByteMemory =
     member AsStream: unit -> Stream
 
 [<AutoOpen>]
-module internal MemoryMappedFileExtensions =
+module MemoryMappedFileExtensions =
 
     type MemoryMappedFile with
 
@@ -89,7 +89,7 @@ module internal MemoryMappedFileExtensions =
         /// If the given ByteMemory's length is zero or a memory mapped file is not supported, the result will be None.
         static member TryFromByteMemory : bytes: ReadOnlyByteMemory -> MemoryMappedFile option
 
-type internal ByteMemory with
+type ByteMemory with
 
     member AsReadOnly: unit -> ReadOnlyByteMemory
 
@@ -114,8 +114,8 @@ type internal ByteMemory with
 
 /// Imperative buffers and streams of byte[]
 [<Sealed>]
-type internal ByteBuffer = 
-    member Close : unit -> byte[] 
+type internal ByteBuffer =
+    member Close : unit -> byte[]
     member EmitIntAsByte : int -> unit
     member EmitIntsAsBytes : int[] -> unit
     member EmitByte : byte -> unit
@@ -136,9 +136,9 @@ type internal ByteStream =
     member ReadByte : unit -> byte
     member ReadBytes : int -> ReadOnlyByteMemory
     member ReadUtf8String : int -> string
-    member Position : int 
+    member Position : int
     static member FromBytes : ReadOnlyByteMemory * start:int * length:int -> ByteStream
-    
+
 #if LAZY_UNPICKLE
     member CloneAndSeek : int -> ByteStream
     member Skip : int -> unit

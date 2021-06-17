@@ -195,15 +195,14 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions) |> Async.RunSynchronously with 
-                            | None -> None,false
-                            | Some FSharpCheckFileAnswer.Aborted -> 
+                            match interactiveChecker.CheckFileInProject(parseResults,req.FileName,req.Timestamp,FSharp.Compiler.Text.SourceText.ofString(req.Text),checkOptions) |> Async.RunSynchronously with 
+                            | FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
                                 None,true
-                            | Some (FSharpCheckFileAnswer.Succeeded results) -> Some results, false
+                            | FSharpCheckFileAnswer.Succeeded results -> Some results, false
 
                         sr := None
-                        parseResults,typedResults,true,aborted,req.Timestamp
+                        parseResults,typedResults,true,aborted,int64 req.Timestamp
                 
                 // Now that we have the parseResults, we can SetDependencyFiles().
                 // 
@@ -219,7 +218,9 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     // Furthermore, if the project is out-of-date behave just as if we were notified dependency files changed.  
                     if outOfDateProjectFileNames.Contains(projectFileName) then
                         interactiveChecker.InvalidateConfiguration(checkOptions)
-                        interactiveChecker.CheckProjectInBackground(checkOptions) 
+                        interactiveChecker.ParseAndCheckProject(checkOptions)
+                        |> Async.RunSynchronously
+                        |> ignore
                         outOfDateProjectFileNames.Remove(projectFileName) |> ignore
 
                 else
@@ -234,7 +235,9 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         req.IsAborted <- aborted
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
-                            interactiveChecker.CheckProjectInBackground(checkOptions) 
+                            interactiveChecker.ParseAndCheckProject(checkOptions)
+                            |> Async.RunSynchronously
+                            |> ignore
 
                     | Some typedResults -> 
                         // Post the parse errors. 
@@ -255,13 +258,15 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         let scope = new FSharpIntellisenseInfo_DEPRECATED(parseResults, req.Line, req.Col, req.Snapshot, typedResults, projectSite, req.View, colorizer, getDocumentationBuilder(), provideMethodList) 
 
                         req.ResultIntellisenseInfo <- scope
-                        req.ResultTimestamp <- resultTimestamp  // This will be different from req.Timestamp when we're using stale results.
+                        req.ResultTimestamp <- int resultTimestamp  // This will be different from req.Timestamp when we're using stale results.
                         req.ResultClearsDirtinessOfFile <- containsFreshFullTypeCheck
 
 
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
-                            interactiveChecker.CheckProjectInBackground(checkOptions) 
+                            interactiveChecker.ParseAndCheckProject(checkOptions)
+                            |> Async.RunSynchronously
+                            |> ignore
                             
                         // On 'QuickInfo', get the text for the quick info while we're off the UI thread, instead of doing it later
                         if req.Reason = BackgroundRequestReason.QuickInfo then 

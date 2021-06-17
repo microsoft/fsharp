@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.CreateILModule 
+module internal FSharp.Compiler.CreateILModule
 
 open System
 open System.IO
@@ -28,36 +28,36 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
 /// Helpers for finding attributes
-module AttributeHelpers = 
+module AttributeHelpers =
 
     /// Try to find an attribute that takes a string argument
     let TryFindStringAttribute (g: TcGlobals) attrib attribs =
-      match g.TryFindSysAttrib attrib with 
+      match g.TryFindSysAttrib attrib with
       | None -> None
-      | Some attribRef -> 
+      | Some attribRef ->
         match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribStringArg s ], _, _, _, _))  -> Some (s)
         | _ -> None
-        
+
     let TryFindIntAttribute (g: TcGlobals) attrib attribs =
-      match g.TryFindSysAttrib attrib with 
+      match g.TryFindSysAttrib attrib with
       | None -> None
-      | Some attribRef -> 
+      | Some attribRef ->
         match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribInt32Arg i ], _, _, _, _)) -> Some (i)
         | _ -> None
-        
+
     let TryFindBoolAttribute (g: TcGlobals) attrib attribs =
-      match g.TryFindSysAttrib attrib with 
+      match g.TryFindSysAttrib attrib with
       | None -> None
-      | Some attribRef -> 
+      | Some attribRef ->
         match TryFindFSharpAttribute g attribRef attribs with
         | Some (Attrib(_, _, [ AttribBoolArg p ], _, _, _, _)) -> Some (p)
         | _ -> None
 
     let (|ILVersion|_|) (versionString: string) =
         try Some (parseILVersion versionString)
-        with e -> 
+        with e ->
             None
 
 //----------------------------------------------------------------------------
@@ -74,22 +74,22 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     let containerAttrib = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyKeyNameAttribute" topAttrs.assemblyAttrs
 
     // if delaySign is set via an attribute, validate that it wasn't set via an option
-    let delaysign = 
-        match delaySignAttrib with 
-        | Some delaysign -> 
+    let delaysign =
+        match delaySignAttrib with
+        | Some delaysign ->
           if tcConfig.delaysign then
-            warning(Error(FSComp.SR.fscDelaySignWarning(), rangeCmdArgs)) 
+            warning(Error(FSComp.SR.fscDelaySignWarning(), rangeCmdArgs))
             tcConfig.delaysign
           else
             delaysign
         | _ -> tcConfig.delaysign
 
     // if signer is set via an attribute, validate that it wasn't set via an option
-    let signer = 
+    let signer =
         match signerAttrib with
-        | Some signer -> 
+        | Some signer ->
             if tcConfig.signer.IsSome && tcConfig.signer <> Some signer then
-                warning(Error(FSComp.SR.fscKeyFileWarning(), rangeCmdArgs)) 
+                warning(Error(FSComp.SR.fscKeyFileWarning(), rangeCmdArgs))
                 tcConfig.signer
             else
                 Some signer
@@ -98,7 +98,7 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     // if container is set via an attribute, validate that it wasn't set via an option, and that they keyfile wasn't set
     // if keyfile was set, use that instead (silently)
     // REVIEW: This is C# behavior, but it seems kind of sketchy that we fail silently
-    let container = 
+    let container =
         match containerAttrib with
         | Some container ->
             if not (FSharpEnvironment.isRunningOnCoreClr) then
@@ -113,22 +113,22 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     StrongNameSigningInfo (delaysign, tcConfig.publicsign, signer, container)
 
 /// Get the object used to perform strong-name signing
-let GetStrongNameSigner signingInfo = 
+let GetStrongNameSigner signingInfo =
     let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
     // REVIEW: favor the container over the key file - C# appears to do this
     match container with
     | Some container ->
         Some (ILStrongNameSigner.OpenKeyContainer container)
     | None ->
-        match signer with 
+        match signer with
         | None -> None
         | Some s ->
-            try 
+            try
                 if publicsign || delaysign then
                     Some (ILStrongNameSigner.OpenPublicKeyOptions s publicsign)
                 else
-                    Some (ILStrongNameSigner.OpenKeyPairFile s) 
-            with _ -> 
+                    Some (ILStrongNameSigner.OpenKeyPairFile s)
+            with _ ->
                 // Note :: don't use errorR here since we really want to fail and not produce a binary
                 error(Error(FSComp.SR.fscKeyFileCouldNotBeOpened s, rangeCmdArgs))
 
@@ -136,12 +136,12 @@ let GetStrongNameSigner signingInfo =
 // Building the contents of the finalized IL module
 //----------------------------------------------------------------------------
 
-module MainModuleBuilder = 
+module MainModuleBuilder =
 
-    let injectedCompatTypes = 
+    let injectedCompatTypes =
       set [ "System.Tuple`1"
-            "System.Tuple`2" 
-            "System.Tuple`3" 
+            "System.Tuple`2"
+            "System.Tuple`3"
             "System.Tuple`4"
             "System.Tuple`5"
             "System.Tuple`6"
@@ -152,7 +152,7 @@ module MainModuleBuilder =
             "System.Collections.IStructuralComparable"
             "System.Collections.IStructuralEquatable" ]
 
-    let typesForwardedToMscorlib = 
+    let typesForwardedToMscorlib =
       set [ "System.AggregateException"
             "System.Threading.CancellationTokenRegistration"
             "System.Threading.CancellationToken"
@@ -168,7 +168,7 @@ module MainModuleBuilder =
       // We want to write forwarders out for all injected types except for System.ITuple, which is internal
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
-          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public ) 
+          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public )
           |> Seq.toList
 
     let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports: TcImports) =
@@ -178,7 +178,7 @@ module MainModuleBuilder =
         let numericsAssemblyRef =
             match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
             | Some asm ->
-                match asm.ILScopeRef with 
+                match asm.ILScopeRef with
                 | ILScopeRef.Assembly aref -> Some aref
                 | _ -> None
             | None -> None
@@ -211,7 +211,7 @@ module MainModuleBuilder =
         match findStringAttr attrName with
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion v) -> v |> toDotted
-        | Some v -> 
+        | Some v ->
             // Warning will be reported by CheckExpressions.fs
             v
 
@@ -240,18 +240,18 @@ module MainModuleBuilder =
         | x -> failwithf "error converting product version '%s' to binary, tried '%A' " version x
 
 
-    let CreateMainModule  
-            (ctok, tcConfig: TcConfig, tcGlobals, tcImports: TcImports, 
-             pdbfile, assemblyName, outfile, topAttrs, 
-             sigDataAttributes: ILAttribute list, sigDataResources: ILResource list, optDataResources: ILResource list, 
+    let CreateMainModule
+            (ctok, tcConfig: TcConfig, tcGlobals, tcImports: TcImports,
+             pdbfile, assemblyName, outfile, topAttrs,
+             sigDataAttributes: ILAttribute list, sigDataResources: ILResource list, optDataResources: ILResource list,
              codegenResults, assemVerFromAttrib, metadataVersion, secDecls) =
 
         RequireCompilationThread ctok
-        let ilTypeDefs = 
+        let ilTypeDefs =
             //let topTypeDef = mkILTypeDefForGlobalFunctions tcGlobals.ilg (mkILMethods [], emptyILFields)
             mkILTypeDefs codegenResults.ilTypeDefs
 
-        let mainModule = 
+        let mainModule =
             let hashAlg = AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyAlgorithmIdAttribute" topAttrs.assemblyAttrs
             let locale = AttributeHelpers.TryFindStringAttribute tcGlobals "System.Reflection.AssemblyCultureAttribute" topAttrs.assemblyAttrs
             let flags =  match AttributeHelpers.TryFindIntAttribute tcGlobals "System.Reflection.AssemblyFlagsAttribute" topAttrs.assemblyAttrs with | Some f -> f | _ -> 0x0
@@ -275,44 +275,44 @@ module MainModuleBuilder =
 
         let tcVersion = tcConfig.version.GetVersionInfo(tcConfig.implicitIncludeDir)
 
-        let reflectedDefinitionAttrs, reflectedDefinitionResources = 
-            codegenResults.quotationResourceInfo 
-            |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) -> 
+        let reflectedDefinitionAttrs, reflectedDefinitionResources =
+            codegenResults.quotationResourceInfo
+            |> List.map (fun (referencedTypeDefs, reflectedDefinitionBytes) ->
                 let reflectedDefinitionResourceName = QuotationPickler.SerializedReflectedDefinitionsResourceNameBase+"-"+assemblyName+"-"+string(newUnique())+"-"+string(hash reflectedDefinitionBytes)
-                let reflectedDefinitionAttrs = 
-                    let qf = QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat tcGlobals 
+                let reflectedDefinitionAttrs =
+                    let qf = QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat tcGlobals
                     if qf.SupportsDeserializeEx then
                         [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
-                    else 
+                    else
                         [  ]
-                let reflectedDefinitionResource = 
+                let reflectedDefinitionResource =
                   { Name=reflectedDefinitionResourceName
                     Location = ILResourceLocation.Local(ByteStorage.FromByteArray(reflectedDefinitionBytes))
                     Access= ILResourceAccess.Public
                     CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
                     MetadataIndex = NoMetadataIdx }
-                reflectedDefinitionAttrs, reflectedDefinitionResource) 
+                reflectedDefinitionAttrs, reflectedDefinitionResource)
             |> List.unzip
             |> (fun (attrs, resource) -> List.concat attrs, resource)
 
-        let manifestAttrs = 
+        let manifestAttrs =
             mkILCustomAttrs
-                 [ if not tcConfig.internConstantStrings then 
-                       yield mkILCustomAttribute tcGlobals.ilg
-                                 (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute", 
-                                  [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], []) 
+                 [ if not tcConfig.internConstantStrings then
+                       yield mkILCustomAttribute
+                                 (tcGlobals.FindSysILTypeRef "System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+                                  [tcGlobals.ilg.typ_Int32], [ILAttribElem.Int32( 8)], [])
                    yield! sigDataAttributes
                    yield! codegenResults.ilAssemAttrs
                    if Option.isSome pdbfile then
-                       yield (tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) )) 
+                       yield (tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, tcConfig.ignoreSymbolStoreSequencePoints, disableJitOptimizations, false (* enableEnC *) ))
                    yield! reflectedDefinitionAttrs ]
 
         // Make the manifest of the assembly
-        let manifest = 
+        let manifest =
              if tcConfig.target = CompilerTarget.Module then None else
              let man = mainModule.ManifestOfAssembly
-             let ver = 
-                 match assemVerFromAttrib with 
+             let ver =
+                 match assemVerFromAttrib with
                  | None -> tcVersion
                  | Some v -> v
              Some { man with Version= Some ver
@@ -320,48 +320,49 @@ module MainModuleBuilder =
                              DisableJitOptimizations=disableJitOptimizations
                              JitTracking= tcConfig.jitTracking
                              IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
-                             SecurityDeclsStored=storeILSecurityDecls secDecls } 
+                             SecurityDeclsStored=storeILSecurityDecls secDecls }
 
-        let resources = 
-          mkILResources 
+        let resources =
+          mkILResources
             [ for file in tcConfig.embedResources do
-                 let name, bytes, pub = 
+                 let name, bytes, pub =
                          let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
                          let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
-                         let bytes = FileSystem.ReadAllBytesShim file
+                         let bytes = FileSystem.OpenFileForReadShim(file).ReadAllBytes()
                          name, bytes, pub
-                 yield { Name=name 
+                 yield { Name=name
+                         // TODO: We probably can directly convert ByteMemory to ByteStorage, without reading all bytes.
                          Location=ILResourceLocation.Local(ByteStorage.FromByteArray(bytes))
-                         Access=pub 
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
+                         Access=pub
+                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
                          MetadataIndex = NoMetadataIdx }
-               
+
               yield! reflectedDefinitionResources
               yield! sigDataResources
               yield! optDataResources
-              for ri in tcConfig.linkResources do 
+              for ri in tcConfig.linkResources do
                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
-                 yield { Name=name 
-                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))), 0)
-                         Access=pub 
+                 yield { Name=name
+                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.OpenFileForReadShim(file).ReadAllBytes()))), 0)
+                         Access=pub
                          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
                          MetadataIndex = NoMetadataIdx } ]
 
-        let assemblyVersion = 
+        let assemblyVersion =
             match tcConfig.version with
             | VersionNone -> assemVerFromAttrib
             | _ -> Some tcVersion
 
         let findAttribute name =
-            AttributeHelpers.TryFindStringAttribute tcGlobals name topAttrs.assemblyAttrs 
+            AttributeHelpers.TryFindStringAttribute tcGlobals name topAttrs.assemblyAttrs
 
         //NOTE: the culture string can be turned into a number using this:
         //    sprintf "%04x" (CultureInfo.GetCultureInfo("en").KeyboardLayoutId )
         let assemblyVersionResources assemblyVersion =
-            match assemblyVersion with 
+            match assemblyVersion with
             | None -> []
             | Some assemblyVersion ->
-                let FindAttribute key attrib = 
+                let FindAttribute key attrib =
                     match findAttribute attrib with
                     | Some text  -> [(key, text)]
                     | _ -> []
@@ -370,13 +371,13 @@ module MainModuleBuilder =
 
                 let productVersionString = productVersion findAttribute fileVersionInfo
 
-                let stringFileInfo = 
+                let stringFileInfo =
                      // 000004b0:
-                     // Specifies an 8-digit hexadecimal number stored as a Unicode string. The 
-                     // four most significant digits represent the language identifier. The four least 
-                     // significant digits represent the code page for which the data is formatted. 
-                     // Each Microsoft Standard Language identifier contains two parts: the low-order 10 bits 
-                     // specify the major language, and the high-order 6 bits specify the sublanguage. 
+                     // Specifies an 8-digit hexadecimal number stored as a Unicode string. The
+                     // four most significant digits represent the language identifier. The four least
+                     // significant digits represent the code page for which the data is formatted.
+                     // Each Microsoft Standard Language identifier contains two parts: the low-order 10 bits
+                     // specify the major language, and the high-order 6 bits specify the sublanguage.
                      // For a table of valid identifiers see Language Identifiers.                                           //
                      // see e.g. http://msdn.microsoft.com/en-us/library/aa912040.aspx 0000 is neutral and 04b0(hex)=1252(dec) is the code page.
                       [ ("000004b0", [ yield ("Assembly Version", (sprintf "%d.%d.%d.%d" assemblyVersion.Major assemblyVersion.Minor assemblyVersion.Build assemblyVersion.Revision))
@@ -385,46 +386,46 @@ module MainModuleBuilder =
                                        match tcConfig.outputFile with
                                        | Some f -> yield ("OriginalFilename", Path.GetFileName f)
                                        | None -> ()
-                                       yield! FindAttribute "Comments" "System.Reflection.AssemblyDescriptionAttribute" 
-                                       yield! FindAttribute "FileDescription" "System.Reflection.AssemblyTitleAttribute" 
-                                       yield! FindAttribute "ProductName" "System.Reflection.AssemblyProductAttribute" 
-                                       yield! FindAttribute "CompanyName" "System.Reflection.AssemblyCompanyAttribute" 
-                                       yield! FindAttribute "LegalCopyright" "System.Reflection.AssemblyCopyrightAttribute" 
+                                       yield! FindAttribute "Comments" "System.Reflection.AssemblyDescriptionAttribute"
+                                       yield! FindAttribute "FileDescription" "System.Reflection.AssemblyTitleAttribute"
+                                       yield! FindAttribute "ProductName" "System.Reflection.AssemblyProductAttribute"
+                                       yield! FindAttribute "CompanyName" "System.Reflection.AssemblyCompanyAttribute"
+                                       yield! FindAttribute "LegalCopyright" "System.Reflection.AssemblyCopyrightAttribute"
                                        yield! FindAttribute "LegalTrademarks" "System.Reflection.AssemblyTrademarkAttribute" ]) ]
 
                 // These entries listed in the MSDN documentation as "standard" string entries are not yet settable
 
-                // InternalName: 
-                //     The Value member identifies the file's internal name, if one exists. For example, this 
-                //     string could contain the module name for Windows dynamic-link libraries (DLLs), a virtual 
-                //     device name for Windows virtual devices, or a device name for MS-DOS device drivers. 
-                // OriginalFilename: 
-                //     The Value member identifies the original name of the file, not including a path. This 
-                //     enables an application to determine whether a file has been renamed by a user. This name 
-                //     may not be MS-DOS 8.3-format if the file is specific to a non-FAT file system. 
-                // PrivateBuild: 
-                //     The Value member describes by whom, where, and why this private version of the 
-                //     file was built. This string should only be present if the VS_FF_PRIVATEBUILD flag 
-                //     is set in the dwFileFlags member of the VS_FIXEDFILEINFO structure. For example, 
-                //     Value could be 'Built by OSCAR on \OSCAR2'. 
-                // SpecialBuild: 
-                //     The Value member describes how this version of the file differs from the normal version. 
-                //     This entry should only be present if the VS_FF_SPECIALBUILD flag is set in the dwFileFlags 
-                //     member of the VS_FIXEDFILEINFO structure. For example, Value could be 'Private build 
-                //     for Olivetti solving mouse problems on M250 and M250E computers'. 
+                // InternalName:
+                //     The Value member identifies the file's internal name, if one exists. For example, this
+                //     string could contain the module name for Windows dynamic-link libraries (DLLs), a virtual
+                //     device name for Windows virtual devices, or a device name for MS-DOS device drivers.
+                // OriginalFilename:
+                //     The Value member identifies the original name of the file, not including a path. This
+                //     enables an application to determine whether a file has been renamed by a user. This name
+                //     may not be MS-DOS 8.3-format if the file is specific to a non-FAT file system.
+                // PrivateBuild:
+                //     The Value member describes by whom, where, and why this private version of the
+                //     file was built. This string should only be present if the VS_FF_PRIVATEBUILD flag
+                //     is set in the dwFileFlags member of the VS_FIXEDFILEINFO structure. For example,
+                //     Value could be 'Built by OSCAR on \OSCAR2'.
+                // SpecialBuild:
+                //     The Value member describes how this version of the file differs from the normal version.
+                //     This entry should only be present if the VS_FF_SPECIALBUILD flag is set in the dwFileFlags
+                //     member of the VS_FIXEDFILEINFO structure. For example, Value could be 'Private build
+                //     for Olivetti solving mouse problems on M250 and M250E computers'.
 
-                // "If you use the Var structure to list the languages your application 
-                // or DLL supports instead of using multiple version resources, 
-                // use the Value member to contain an array of DWORD values indicating the 
-                // language and code page combinations supported by this file. The 
-                // low-order word of each DWORD must contain a Microsoft language identifier, 
-                // and the high-order word must contain the IBM code page number. 
-                // Either high-order or low-order word can be zero, indicating that 
-                // the file is language or code page independent. If the Var structure is 
+                // "If you use the Var structure to list the languages your application
+                // or DLL supports instead of using multiple version resources,
+                // use the Value member to contain an array of DWORD values indicating the
+                // language and code page combinations supported by this file. The
+                // low-order word of each DWORD must contain a Microsoft language identifier,
+                // and the high-order word must contain the IBM code page number.
+                // Either high-order or low-order word can be zero, indicating that
+                // the file is language or code page independent. If the Var structure is
                 // omitted, the file will be interpreted as both language and code page independent. "
                 let varFileInfo = [ (0x0, 0x04b0)  ]
 
-                let fixedFileInfo = 
+                let fixedFileInfo =
                     let dwFileFlagsMask = 0x3f // REVIEW: HARDWIRED
                     let dwFileFlags = 0x00 // REVIEW: HARDWIRED
                     let dwFileOS = 0x04 // REVIEW: HARDWIRED
@@ -433,10 +434,10 @@ module MainModuleBuilder =
                     let lwFileDate = 0x00L // REVIEW: HARDWIRED
                     (fileVersionInfo, productVersionString |> productVersionToILVersionInfo, dwFileFlagsMask, dwFileFlags, dwFileOS, dwFileType, dwFileSubtype, lwFileDate)
 
-                let vsVersionInfoResource = 
+                let vsVersionInfoResource =
                     VersionResourceFormat.VS_VERSION_INFO_RESOURCE(fixedFileInfo, stringFileInfo, varFileInfo)
 
-                let resource = 
+                let resource =
                     [| yield! ResFileFormat.ResFileHeader()
                        yield! vsVersionInfoResource |]
 
@@ -455,40 +456,40 @@ module MainModuleBuilder =
             // otherwise, include the default manifest
             else
                 let path = Path.Combine(System.AppContext.BaseDirectory, @"default.win32manifest")
-                if File.Exists(path) then path
+                if FileSystem.FileExistsShim(path) then path
                 else Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), @"default.win32manifest")
 
-        let nativeResources = 
+        let nativeResources =
             [ for av in assemblyVersionResources assemblyVersion do
                   yield ILNativeResource.Out av
               if not(tcConfig.win32res = "") then
-                  yield ILNativeResource.Out (FileSystem.ReadAllBytesShim tcConfig.win32res) 
+                  yield ILNativeResource.Out (FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
-                  yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader() 
-                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]
+                  yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
+                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.OpenFileForReadShim(win32Manifest).ReadAllBytes()), tcConfig.target = CompilerTarget.Dll)) |]
               if tcConfig.win32res = "" && tcConfig.win32icon <> "" && tcConfig.target <> CompilerTarget.Dll then
                   use ms = new MemoryStream()
-                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.FileStreamReadShim tcConfig.win32icon)
+                  Win32ResourceConversions.AppendIconToResourceStream(ms, FileSystem.OpenFileForWriteShim(tcConfig.win32icon))
                   yield ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader()
                                                 yield! ms.ToArray() |] ]
 
-        // Add attributes, version number, resources etc. 
-        {mainModule with 
+        // Add attributes, version number, resources etc.
+        {mainModule with
               StackReserveSize = tcConfig.stackReserveSize
-              Name = (if tcConfig.target = CompilerTarget.Module then Filename.fileNameOfPath outfile else mainModule.Name)
-              SubSystemFlags = (if tcConfig.target = CompilerTarget.WinExe then 2 else 3) 
+              Name = (if tcConfig.target = CompilerTarget.Module then FileSystemUtils.fileNameOfPath outfile else mainModule.Name)
+              SubSystemFlags = (if tcConfig.target = CompilerTarget.WinExe then 2 else 3)
               Resources= resources
               ImageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b)
               IsDLL=(tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module)
-              Platform = tcConfig.platform 
+              Platform = tcConfig.platform
               Is32Bit=(match tcConfig.platform with Some X86 -> true | _ -> false)
-              Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false)          
+              Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false)
               Is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
-              CustomAttrsStored= 
+              CustomAttrsStored=
                   storeILCustomAttrs
-                    (mkILCustomAttrs 
-                      [ if tcConfig.target = CompilerTarget.Module then 
-                           yield! sigDataAttributes 
+                    (mkILCustomAttrs
+                      [ if tcConfig.target = CompilerTarget.Module then
+                           yield! sigDataAttributes
                         yield! codegenResults.ilNetModuleAttrs ])
               NativeResources=nativeResources
               Manifest = manifest }

@@ -13,7 +13,7 @@ neg03.fs(14,5,14,8): typecheck error FS0025: Incomplete pattern matches on this 
 
 neg03.fs(16,8,16,11): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s).
 
-neg03.fs(22,39,22,42): typecheck error FS0026: This rule will never be matched
+neg03.fs(22,39,22,47): typecheck error FS0026: This rule will never be matched
 
 neg03.fs(25,9,25,13): typecheck error FS0001: The type 'bool' does not support the operator '<<<'
 
@@ -92,9 +92,9 @@ neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this
 
 neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s).
 
-neg03.fs(91,11,91,20): typecheck error FS0026: This rule will never be matched
+neg03.fs(91,11,91,26): typecheck error FS0026: This rule will never be matched
 
-neg03.fs(97,11,97,20): typecheck error FS0026: This rule will never be matched
+neg03.fs(97,11,97,26): typecheck error FS0026: This rule will never be matched
 
 neg03.fs(100,9,100,12): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '[_]' may indicate a case not covered by the pattern(s).
 

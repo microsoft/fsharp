@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// Anything to do with special names of identifiers and other lexical rules 
+/// Anything to do with special names of identifiers and other lexical rules
 namespace FSharp.Compiler.Text
 
 open System
@@ -13,7 +13,7 @@ open Internal.Utilities.Library.Extras.Bits
 open FSharp.Compiler.IO
 open Internal.Utilities.Library.Extras
 
-type FileIndex = int32 
+type FileIndex = int32
 
 [<AutoOpen>]
 module PosImpl =
@@ -33,9 +33,9 @@ module PosImpl =
 [<System.Diagnostics.DebuggerDisplay("{Line},{Column}")>]
 type Position(code:int64) =
 
-    new (l, c) = 
-        let l = max 0 l 
-        let c = max 0 c 
+    new (l, c) =
+        let l = max 0 l
+        let c = max 0 c
         let p = (int64 c &&& posColumnMask)
                 ||| ((int64 l <<< columnBitCount) &&& lineColumnMask)
         pos p
@@ -79,7 +79,7 @@ module RangeImpl =
     let isSyntheticBitCount = 1
 
     [<Literal>]
-    let fileIndexShift   = 0 
+    let fileIndexShift   = 0
 
     [<Literal>]
     let startColumnShift = 24
@@ -133,17 +133,9 @@ module RangeImpl =
     let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
     #endif
 
-    /// Removes relative parts from any full paths
-    let normalizeFilePath (filePath: string) = 
-        try 
-            if FileSystem.IsPathRootedShim filePath then 
-                FileSystem.GetFullPathShim filePath
-            else
-                filePath
-        with _ -> filePath
 
 /// A unique-index table for file names.
-type FileIndexTable() = 
+type FileIndexTable() =
     let indexToFileTable = new ResizeArray<_>(11)
     let fileToIndexTable = new ConcurrentDictionary<string, int>()
 
@@ -153,41 +145,41 @@ type FileIndexTable() =
     // do not.  Also any file names which are not put into ranges at all are non-normalized.
     //
     // TO move forward we should eventually introduce a new type NormalizedFileName that tracks this invariant.
-    member t.FileToIndex normalize filePath = 
-        match fileToIndexTable.TryGetValue filePath with 
+    member t.FileToIndex normalize filePath =
+        match fileToIndexTable.TryGetValue filePath with
         | true, idx -> idx
-        | _ -> 
-        
+        | _ ->
+
         // Try again looking for a normalized entry.
-        let normalizedFilePath = if normalize then normalizeFilePath filePath else filePath
-        match fileToIndexTable.TryGetValue normalizedFilePath with 
+        let normalizedFilePath = if normalize then FileSystem.NormalizePathShim filePath else filePath
+        match fileToIndexTable.TryGetValue normalizedFilePath with
         | true, idx ->
             // Record the non-normalized entry if necessary
-            if filePath <> normalizedFilePath then 
-                lock fileToIndexTable (fun () -> 
+            if filePath <> normalizedFilePath then
+                lock fileToIndexTable (fun () ->
                     fileToIndexTable.[filePath] <- idx)
-                    
+
             // Return the index
             idx
-            
-        | _ -> 
-            lock fileToIndexTable (fun () -> 
+
+        | _ ->
+            lock fileToIndexTable (fun () ->
                 // Get the new index
                 let idx = indexToFileTable.Count
-                
+
                 // Record the normalized entry
                 indexToFileTable.Add normalizedFilePath
                 fileToIndexTable.[normalizedFilePath] <- idx
-                
+
                 // Record the non-normalized entry if necessary
-                if filePath <> normalizedFilePath then 
+                if filePath <> normalizedFilePath then
                     fileToIndexTable.[filePath] <- idx
 
                 // Return the index
                 idx)
 
-    member t.IndexToFile n = 
-        if n < 0 then 
+    member t.IndexToFile n =
+        if n < 0 then
             failwithf "fileOfFileIndex: negative argument: n = %d\n" n
         if n >= indexToFileTable.Count then
             failwithf "fileOfFileIndex: invalid argument: n = %d\n" n
@@ -202,9 +194,9 @@ module FileIndex =
     let fileIndexTable = new FileIndexTable()
 
     // If we exceed the maximum number of files we'll start to report incorrect file names
-    let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex 
+    let fileIndexOfFileAux normalize f = fileIndexTable.FileToIndex normalize f % maxFileIndex
 
-    let fileIndexOfFile filePath = fileIndexOfFileAux false filePath 
+    let fileIndexOfFile filePath = fileIndexOfFileAux false filePath
 
     let fileOfFileIndex idx = fileIndexTable.IndexToFile idx
 
@@ -216,11 +208,11 @@ module FileIndex =
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {ShortFileName} -> {DebugCode}")>]
 type Range(code1:int64, code2: int64) =
     static member Zero = range(0L, 0L)
-    new (fIdx, bl, bc, el, ec) = 
+    new (fIdx, bl, bc, el, ec) =
         let code1 = ((int64 fIdx) &&& fileIndexMask)
                 ||| ((int64 bc        <<< startColumnShift) &&& startColumnMask)
                 ||| ((int64 ec        <<< endColumnShift)  &&& endColumnMask)
-        let code2 = 
+        let code2 =
                     ((int64 bl        <<< startLineShift)  &&& startLineMask)
                 ||| ((int64 (el-bl)   <<< heightShift) &&& heightMask)
         range(code1, code2)
@@ -229,13 +221,13 @@ type Range(code1:int64, code2: int64) =
 
     member r.StartLine   = int32((code2 &&& startLineMask)   >>> startLineShift)
 
-    member r.StartColumn = int32((code1 &&& startColumnMask) >>> startColumnShift) 
+    member r.StartColumn = int32((code1 &&& startColumnMask) >>> startColumnShift)
 
     member r.EndLine     = int32((code2 &&& heightMask)      >>> heightShift) + r.StartLine
 
     member r.EndColumn   = int32((code1 &&& endColumnMask)   >>> endColumnShift)
 
-    member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0 
+    member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
     member r.Start = pos (r.StartLine, r.StartColumn)
 
@@ -265,15 +257,15 @@ type Range(code1:int64, code2: int64) =
             let endCol = r.EndColumn - 1
             let startCol = r.StartColumn - 1
             if FileSystem.IsInvalidPathShim r.FileName then "path invalid: " + r.FileName
-            elif not (FileSystem.SafeExists r.FileName) then "non existing file: " + r.FileName
+            elif not (FileSystem.FileExistsShim r.FileName) then "non existing file: " + r.FileName
             else
-              File.ReadAllLines(r.FileName)
+              FileSystem.OpenFileForReadShim(r.FileName).ReadLines()
               |> Seq.skip (r.StartLine - 1)
               |> Seq.take (r.EndLine - r.StartLine + 1)
               |> String.concat "\n"
               |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n", StringComparison.Ordinal) + 1 - startCol + endCol)
         with e ->
-            e.ToString()        
+            e.ToString()
 
     member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
 
@@ -286,7 +278,7 @@ type Range(code1:int64, code2: int64) =
 and range = Range
 
 #if CHECK_LINE0_TYPES // turn on to check that we correctly transform zero-based line counts to one-based line counts
-// Visual Studio uses line counts starting at 0, F# uses them starting at 1 
+// Visual Studio uses line counts starting at 0, F# uses them starting at 1
 [<Measure>] type ZeroBasedLineAnnotation
 
 type Line0 = int<ZeroBasedLineAnnotation>
@@ -322,7 +314,7 @@ module Position =
 
     let posLt p1 p2 = posGt p2 p1
 
-    let fromZ (line:Line0) column = mkPos (Line.fromZ line) column 
+    let fromZ (line:Line0) column = mkPos (Line.fromZ line) column
 
     let toZ (p:pos) = (Line.toZ p.Line, p.Column)
 
@@ -345,14 +337,14 @@ module Range =
     let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
     let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName Position.outputPos m.Start Position.outputPos m.End
-    
+
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
-    let unionRanges (m1:range) (m2:range) = 
+    let unionRanges (m1:range) (m2:range) =
         if m1.FileIndex <> m2.FileIndex then m2 else
-        let b = 
+        let b =
           if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
           else m1
-        let e = 
+        let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
         range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
@@ -392,22 +384,21 @@ module Range =
 
     let toFileZ (m:range) = m.FileName, toZ m
 
-    let comparer = 
-        { new IEqualityComparer<range> with 
-            member _.Equals(x1, x2) = equals x1 x2 
+    let comparer =
+        { new IEqualityComparer<range> with
+            member _.Equals(x1, x2) = equals x1 x2
             member _.GetHashCode o = o.GetHashCode() }
 
     let mkFirstLineOfFile (file: string) =
         try
-            let lines = File.ReadLines(file) |> Seq.indexed 
+            let lines = FileSystem.OpenFileForReadShim(file).ReadLines() |> Seq.indexed
             let nonWhiteLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrWhiteSpace s))
-            match nonWhiteLine with 
+            match nonWhiteLine with
             | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
-            | None -> 
+            | None ->
             let nonEmptyLine = lines |> Seq.tryFind (fun (_,s) -> not (String.IsNullOrEmpty s))
-            match nonEmptyLine with 
+            match nonEmptyLine with
             | Some (i,s) -> mkRange file (mkPos (i+1) 0) (mkPos (i+1) s.Length)
             | None -> mkRange file (mkPos 1 0) (mkPos 1 80)
-        with _ -> 
+        with _ ->
             mkRange file (mkPos 1 0) (mkPos 1 80)
-

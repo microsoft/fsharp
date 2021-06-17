@@ -923,16 +923,13 @@ namespace Microsoft.FSharp.Control
 
         // Helper to attach continuation to the given task.
         [<DebuggerHidden>]
-        let taskContinueWith (task: Task<'T>) (ctxt: AsyncActivation<'T>) useCcontForTaskCancellation =
+        let taskContinueWith (task: Task<'T>) (ctxt: AsyncActivation<'T>)  =
 
             let continuation (completedTask: Task<_>) : unit =
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then
-                            ctxt.OnCancellation ()
-                        else
-                            let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
-                            ctxt.econt edi
+                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException completedTask)
+                        ctxt.econt edi
                     elif completedTask.IsFaulted then
                         let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
                         ctxt.econt edi
@@ -946,16 +943,13 @@ namespace Microsoft.FSharp.Control
                 |> ignore |> fake
 
         [<DebuggerHidden>]
-        let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) useCcontForTaskCancellation =
+        let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) =
 
             let continuation (completedTask: Task) : unit =
                 ctxt.trampolineHolder.ExecuteWithTrampoline (fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then
-                            ctxt.OnCancellation ()
-                        else
-                            let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
-                            ctxt.econt edi
+                        let edi = ExceptionDispatchInfo.Capture(TaskCanceledException(completedTask))
+                        ctxt.econt edi
                     elif completedTask.IsFaulted then
                         let edi = ExceptionDispatchInfo.RestoreOrCapture completedTask.Exception
                         ctxt.econt edi
@@ -1699,15 +1693,15 @@ namespace Microsoft.FSharp.Control
 
         static member AwaitTask (task:Task<'T>) : Async<'T> =
             if task.IsCompleted then
-                CreateProtectedAsync (fun ctxt -> taskContinueWith task ctxt false)
+                CreateProtectedAsync (fun ctxt -> taskContinueWith task ctxt)
             else
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt)
 
         static member AwaitTask (task:Task) : Async<unit> =
             if task.IsCompleted then
-                CreateProtectedAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
+                CreateProtectedAsync (fun ctxt -> taskContinueWithUnit task ctxt)
             else
-                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt)
 
     module CommonExtensions =
 

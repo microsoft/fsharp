@@ -2,9 +2,12 @@
 open System.IO
 open System.Text
 open FSharp.Compiler.ErrorLogger
-open FSharp.Compiler.SourceCodeServices
+open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Syntax
+open FSharp.Compiler.Symbols
+open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
-open FSharp.Compiler.Range
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
@@ -95,14 +98,13 @@ module Helpers =
                 Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
             ReferencedProjects =
                 referencedProjects
-                |> List.map (fun x -> (x.ProjectFileName, x))
+                |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
                 |> Array.ofList
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
             LoadTime = DateTime()
             UnresolvedReferences = None
             OriginalLoadReferences = []
-            ExtraProjectInfo = None
             Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
         }
 
@@ -137,7 +139,7 @@ type CompilerService() =
         {
             SourceFiles = [|"CheckExpressions.fs"|]
             ConditionalCompilationDefines = []
-            ErrorSeverityOptions = FSharpDiagnosticSeverityOptions.Default
+            ErrorSeverityOptions = FSharpDiagnosticOptions.Default
             IsInteractive = false
             LightSyntax = None
             CompilingFsLib = false
@@ -190,7 +192,7 @@ type CompilerService() =
         | _, None -> failwith "no source"
         | Some(checker), Some(source) ->
             let results = checker.ParseFile("CheckExpressions.fs", source.ToFSharpSourceText(), parsingOptions) |> Async.RunSynchronously
-            if results.ParseHadErrors then failwithf "parse had errors: %A" results.Errors
+            if results.ParseHadErrors then failwithf "parse had errors: %A" results.Diagnostics
 
     [<IterationCleanup(Target = "ParsingTypeCheckerFs")>]
     member __.ParsingTypeCheckerFsSetup() =
@@ -272,15 +274,15 @@ type CompilerService() =
                 checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString (File.ReadAllText(file)), options)
                 |> Async.RunSynchronously
 
-            if parseResult.Errors.Length > 0 then
-                failwithf "%A" parseResult.Errors
+            if parseResult.Diagnostics.Length > 0 then
+                failwithf "%A" parseResult.Diagnostics
 
             match checkResult with
             | FSharpCheckFileAnswer.Aborted -> failwith "aborted"
             | FSharpCheckFileAnswer.Succeeded checkFileResult ->
 
-                if checkFileResult.Errors.Length > 0 then
-                    failwithf "%A" checkFileResult.Errors
+                if checkFileResult.Diagnostics.Length > 0 then
+                    failwithf "%A" checkFileResult.Diagnostics
 
     [<IterationSetup(Target = "TypeCheckFileWith100ReferencedProjects")>]
     member this.TypeCheckFileWith100ReferencedProjectsSetup() =
@@ -290,11 +292,13 @@ type CompilerService() =
         )
 
         this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
-        |> Seq.iter (fun (_, referencedProjectOptions) ->
-            referencedProjectOptions.SourceFiles
-            |> Seq.iter (fun file ->
-                File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
-            )
+        |> Seq.iter (function
+            | FSharpReferencedProject.FSharpReference(_, referencedProjectOptions) ->
+                referencedProjectOptions.SourceFiles
+                |> Seq.iter (fun file ->
+                    File.WriteAllText(file, generateSourceCode (Path.GetFileNameWithoutExtension(file)))
+                )
+            | _ -> ()
         )
 
         this.TypeCheckFileWith100ReferencedProjectsRun()
@@ -315,11 +319,13 @@ type CompilerService() =
         )
 
         this.TypeCheckFileWith100ReferencedProjectsOptions.ReferencedProjects
-        |> Seq.iter (fun (_, referencedProjectOptions) ->
-            referencedProjectOptions.SourceFiles
-            |> Seq.iter (fun file ->
-                try File.Delete(file) with | _ -> ()
-            )
+        |> Seq.iter (function
+            | FSharpReferencedProject.FSharpReference(_, referencedProjectOptions) ->
+                referencedProjectOptions.SourceFiles
+                |> Seq.iter (fun file ->
+                    try File.Delete(file) with | _ -> ()
+                )
+            | _ -> ()
         )
 
         match checkerOpt with
