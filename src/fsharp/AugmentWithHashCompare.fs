@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// TODO: Rename this file/module to something like `TypeAugmentations` because it now deals with more than HashCompare.
 
 ///  Generate the hash/compare functions we add to user-defined types by default.
 module internal FSharp.Compiler.AugmentWithHashCompare
