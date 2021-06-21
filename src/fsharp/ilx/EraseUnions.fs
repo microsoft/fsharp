@@ -683,6 +683,32 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
         | SpecialFSharpOptionHelpers  
         | SpecialFSharpListHelpers  -> 
 
+            let baseTesterMeths, baseTesterProps =
+                if cenv.g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible then [], []
+                elif cud.cudAlternatives.Length <= 1 then [], []
+                elif repr.RepresentOneAlternativeAsNull info then [], []
+                else
+                    [ mkILNonGenericInstanceMethod
+                         ("get_" + mkTesterName altName,
+                          cud.cudHelpersAccess,[],
+                          mkILReturn ilg.typ_Bool,
+                          mkMethodBody(true,[],2,nonBranchingInstrsToCode 
+                                    ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
+                      |> addMethodGeneratedAttrs ],
+                    [ ILPropertyDef(name = mkTesterName altName,
+                                    attributes = PropertyAttributes.None,
+                                    setMethod = None,
+                                    getMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool)),
+                                    callingConv = ILThisConvention.Instance,
+                                    propertyType = ilg.typ_Bool,
+                                    init = None,
+                                    args = [],
+                                    customAttrs = emptyILCustomAttrs)
+                      |> addPropertyGeneratedAttrs
+                      |> addPropertyNeverAttrs ]
+
+          
+
             let baseMakerMeths, baseMakerProps = 
 
                 if alt.IsNullary then 
@@ -727,7 +753,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
 
                     [mdef],[]
 
-            baseMakerMeths, baseMakerProps
+            (baseMakerMeths@baseTesterMeths), (baseMakerProps@baseTesterProps)
 
         | NoHelpers ->
             [], []

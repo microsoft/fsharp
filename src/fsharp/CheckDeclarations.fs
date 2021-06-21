@@ -2587,6 +2587,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                     let envForDecls = MakeInnerEnvForTyconRef envForDecls tcref false
                     if tycon.IsUnionTycon then
                         let shouldAugment =
+                            cenv.g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
                             match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
                             | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
                             | Some (Attrib(_, _, _, _, _, _, m)) ->

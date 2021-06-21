@@ -39,6 +39,7 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -83,6 +84,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
+            LanguageFeature.UnionIsPropertiesVisible, previewVersion
         ]
 
     let specified =
@@ -159,6 +161,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
+        | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =
