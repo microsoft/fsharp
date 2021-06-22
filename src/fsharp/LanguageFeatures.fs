@@ -99,7 +99,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | "5.0" -> languageVersion50
         | _ -> 0m
 
-    let versionToString v =
+    static let versionToString v =
         if v = previewVersion then "'preview'"
         else string v
 
@@ -164,7 +164,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible()
 
     /// Get a version string associated with the given feature.
-    member _.GetFeatureVersionString feature =
+    static member GetFeatureVersionString feature =
         match features.TryGetValue feature with
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."
