@@ -19,6 +19,7 @@ open System.Text
 open System.Threading
 
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Features
 open Internal.Utilities.Library
 open Internal.Utilities
 
@@ -2631,7 +2632,7 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef) =
+type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef, langVersion: LanguageVersion) =
 
     let assembliesThatForwardToPrimaryAssembly = Array.ofList assembliesThatForwardToPrimaryAssembly
 
@@ -2671,13 +2672,15 @@ type ILGlobals(primaryScopeRef: ILScopeRef, assembliesThatForwardToPrimaryAssemb
         assembliesThatForwardToPrimaryAssembly
         |> Array.exists aref.EqualsIgnoringVersion
 
+    member _.langVersion = langVersion
+
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef) = ILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef, langVersion) = ILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef, langVersion)
 
 let mkNormalCall mspec = I_call (Normalcall, mspec, None)
 
@@ -3707,7 +3710,7 @@ let DummyFSharpCoreScopeRef =
                 Some (parseILVersion "0.0.0.0"), None)
     ILScopeRef.Assembly asmRef
 
-let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
+let PrimaryAssemblyILGlobals = mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef, LanguageVersion("default"))
 
 let rec decodeCustomAttrElemType bytes sigptr x =
     match x with

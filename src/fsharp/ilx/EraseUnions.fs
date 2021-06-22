@@ -5,7 +5,8 @@ module internal FSharp.Compiler.AbstractIL.ILX.EraseUnions
 
 open System.Collections.Generic
 open System.Reflection
-open Internal.Utilities.Library 
+open Internal.Utilities.Library
+open FSharp.Compiler.Features
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.AbstractIL.ILX.Types
 
@@ -684,7 +685,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
         | SpecialFSharpListHelpers  -> 
 
             let baseTesterMeths, baseTesterProps =
-                if cenv.g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible then [], []
+                if ilg.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible then [], []
                 elif cud.cudAlternatives.Length <= 1 then [], []
                 elif repr.RepresentOneAlternativeAsNull info then [], []
                 else
