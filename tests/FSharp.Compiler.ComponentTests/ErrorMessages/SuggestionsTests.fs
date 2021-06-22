@@ -76,7 +76,7 @@ let x = N.MyUnion.``My Case2``
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 9, Col 19, Line 9,Col 31,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + System.Environment.NewLine + "   My Case1" + System.Environment.NewLine + "   Case2" + System.Environment.NewLine + "   IsMy Case1"))
+                                 ("The type 'MyUnion' does not define the field, constructor or member 'My Case2'. Maybe you want one of the following:" + System.Environment.NewLine + "   My Case1" + System.Environment.NewLine + "   Case2"))
 
 
     [<Fact>]
@@ -240,7 +240,7 @@ let u = MyUnion.AntherCase
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 39, Line 6, Col 17, Line 6, Col 27,
-                                 ("The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + System.Environment.NewLine + "   AnotherCase" + System.Environment.NewLine + "   IsAnotherCase"))
+                                 ("The type 'MyUnion' does not define the field, constructor or member 'AntherCase'. Maybe you want one of the following:" + System.Environment.NewLine + "   AnotherCase"))
 
     [<Fact>]
     let ``Suggest Union Type for RequireQualifiedAccess Unions`` () =

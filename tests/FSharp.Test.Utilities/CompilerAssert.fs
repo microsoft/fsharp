@@ -87,12 +87,7 @@ type CompilerAssert private () =
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            let args =
-                if entryPoint.GetParameters().Length = 1 then
-                    [| box(Array.empty<string>) |]
-                else
-                    [||]
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
         finally
             ctxt.Unload()
 #else
