@@ -26,6 +26,7 @@ module Main =
         printfn "IsFoo: %b / IsBar: %b" foo.IsFoo foo.IsBar
         0
         """
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "IsFoo: true / IsBar: false"
