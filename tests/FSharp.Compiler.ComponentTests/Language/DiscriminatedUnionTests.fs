@@ -3,8 +3,6 @@
 namespace FSharp.Compiler.ComponentTests.Language
 
 open Xunit
-
-open FSharp.Compiler.Features
 open FSharp.Test.Utilities.Compiler
 open FSharp.Quotations.Patterns
 
@@ -28,7 +26,6 @@ module Main =
         printfn "IsFoo: %b / IsBar: %b" foo.IsFoo foo.IsBar
         0
         """
-        |> withLangVersionOf LanguageFeature.UnionIsPropertiesVisible
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "IsFoo: true / IsBar: false"

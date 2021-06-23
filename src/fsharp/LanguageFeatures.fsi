@@ -60,4 +60,4 @@ type LanguageVersion =
     member GetFeatureString: feature: LanguageFeature -> string
 
     /// Get a version string associated with the given feature.
-    static member GetFeatureVersionString: feature: LanguageFeature -> string
+    member GetFeatureVersionString: feature: LanguageFeature -> string

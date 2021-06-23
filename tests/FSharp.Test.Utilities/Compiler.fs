@@ -4,7 +4,6 @@ namespace FSharp.Test.Utilities
 
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
-open FSharp.Compiler.Features
 open FSharp.Compiler.Diagnostics
 open FSharp.Test.Utilities
 open FSharp.Test.Utilities.Assert
@@ -216,10 +215,6 @@ module rec Compiler =
 
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
-
-    let withLangVersionOf (feature: LanguageFeature) (cUnit: CompilationUnit) : CompilationUnit =
-        let versionString = LanguageVersion.GetFeatureVersionString feature
-        withOptionsHelper [ "--langversion:" + versionString ] "withLangVersionPreview is only supported on F#" cUnit
 
     /// Turns on checks that check integrity of XML doc comments
     let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
