@@ -3913,7 +3913,6 @@ let createByteFileChunk opts fileName chunk =
 
 let getBinaryFile fileName useMemoryMappedFile =
     let stream = FileSystem.OpenFileForReadShim(fileName, useMemoryMappedFile = useMemoryMappedFile)
-    let byteMem = stream.AsByteMemory()
 
     let safeHolder =
         { new obj() with
@@ -3927,7 +3926,7 @@ let getBinaryFile fileName useMemoryMappedFile =
 
     stats.memoryMapFileOpenedCount <- stats.memoryMapFileOpenedCount + 1
 
-    safeHolder, RawMemoryFile(fileName, safeHolder, byteMem) :> BinaryFile
+    safeHolder, RawMemoryFile(fileName, safeHolder, stream.AsByteMemory()) :> BinaryFile
 
 let OpenILModuleReaderFromBytes fileName assemblyContents options =
     let pefile = ByteFile(fileName, assemblyContents) :> BinaryFile

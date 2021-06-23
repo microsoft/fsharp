@@ -640,7 +640,7 @@ module public StreamExtensions =
         member s.Write (data: 'a) : unit =
             use sw = s.GetWriter()
             sw.Write(data)
-
+        
         member s.GetReader(codePage: int option, ?retryLocked: bool) =
             let retryLocked = defaultArg retryLocked false
             let retryDelayMilliseconds = 50

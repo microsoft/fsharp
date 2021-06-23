@@ -25,9 +25,9 @@ type internal FSharpHelpContextService
     ) =
 
     static let userOpName = "ImplementInterfaceCodeFix"
-    static member GetHelpTerm(checker: FSharpChecker, document: Document, options, span: TextSpan, tokens: List<ClassifiedSpan>, perfOptions) : Async<string option> = 
+    static member GetHelpTerm(checker: FSharpChecker, document: Document, options, span: TextSpan, tokens: List<ClassifiedSpan>, _perfOptions) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(document, options, perfOptions, userOpName)
+            let! _, check = checker.CheckDocumentInProject(document, options) |> liftAsync
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)

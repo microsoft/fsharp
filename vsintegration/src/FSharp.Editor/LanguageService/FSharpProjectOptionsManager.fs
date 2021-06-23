@@ -75,12 +75,9 @@ module private FSharpProjectOptionsHelpers =
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || 
             (
-                if p1.Language = LanguageNames.FSharp then
-                    p1.Version <> p2.Version
-                else
-                    let v1 = p1.GetDependentVersionAsync(ct).Result
-                    let v2 = p2.GetDependentVersionAsync(ct).Result
-                    v1 <> v2
+                let v1 = p1.GetDependentVersionAsync(ct).Result
+                let v2 = p2.GetDependentVersionAsync(ct).Result
+                v1 <> v2
             )
         )
 
@@ -326,6 +323,21 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                     checkerProvider.Checker.InvalidateConfiguration(projectOptions, userOpName = "tryComputeOptions")
 
+                    let docsToUpdate =
+                        project.DocumentIds
+                        |> Seq.filter (fun x -> workspace.IsDocumentOpen(x))
+                        |> Array.ofSeq
+
+                    if docsToUpdate.Length > 0 then
+                        let fsharpDocs =
+                            docsToUpdate
+                            |> Array.map (fun docId ->
+                                let doc = project.GetDocument(docId)
+                                doc.ToFSharpDocument()
+                            )
+                        
+                        do! checkerProvider.Checker.UpdateBackgroundDocuments(projectOptions, fsharpDocs)
+
                     let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
                     cache.[projectId] <- (project, parsingOptions, projectOptions)
@@ -337,6 +349,20 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
+                    let projectChanges = project.GetChanges(oldProject)
+                    let changedDocs = projectChanges.GetChangedDocuments() |> Array.ofSeq
+
+                    if changedDocs.Length > 0 then
+                        let fsharpDocs =
+                            changedDocs
+                            |> Array.map (fun docId -> 
+                                let doc = project.GetDocument(docId)
+                                doc.ToFSharpDocument())
+
+                        do! checkerProvider.Checker.UpdateBackgroundDocuments(projectOptions, fsharpDocs)
+
+                        cache.[projectId] <- (project, parsingOptions, projectOptions)
+                        
                     return Some(parsingOptions, projectOptions)
         }
 

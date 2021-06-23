@@ -70,7 +70,7 @@ type internal XmlDocCommandFilter
                                 let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
+                                let! parseResults = checker.ParseDocument(document, parsingOptions) |> liftAsync
                                 let xmlDocables = XmlDocParser.GetXmlDocables (sourceText.ToFSharpSourceText(), parseResults.ParseTree) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'

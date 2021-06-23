@@ -24,7 +24,7 @@ type internal FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(context.Document, parsingOptions, userOpName)
+            let! parseResults = checkerProvider.Checker.ParseDocument(context.Document, parsingOptions) |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

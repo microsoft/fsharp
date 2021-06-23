@@ -826,6 +826,12 @@
 	<Compile Include="..\service\SemanticClassificationKey.fs">
 		<Link>Service/SemanticClassificationKey.fs</Link>
 	</Compile>
+	<Compile Include="..\service\FSharpDocument.fsi">
+		<Link>Service/FSharpDocument.fsi</Link>
+	</Compile>
+	<Compile Include="..\service\FSharpDocument.fs">
+		<Link>Service/FSharpDocument.fs</Link>
+	</Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>

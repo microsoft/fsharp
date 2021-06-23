@@ -32,7 +32,7 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions) |> liftAsync
 
             let diagnostics =
                 context.Diagnostics

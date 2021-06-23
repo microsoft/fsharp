@@ -52,7 +52,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         |> Seq.toArray
 
     static member GetDocumentHighlights(checker: FSharpChecker, document: Document, position: int, 
-                                        defines: string list, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions) : Async<FSharpHighlightSpan[] option> =
+                                        defines: string list, options: FSharpProjectOptions, _languageServicePerformanceOptions: LanguageServicePerformanceOptions) : Async<FSharpHighlightSpan[] option> =
         asyncMaybe {
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
             let filePath = document.FilePath
@@ -60,7 +60,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions,  userOpName = userOpName)
+            let! _, checkFileResults = checker.CheckDocumentInProject(document, options) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 

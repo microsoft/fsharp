@@ -362,7 +362,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
             let co, _ = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
                   ProjectId = None
-                  SourceFiles = [| fileName |]
+                  SourceFiles = [|fileName|]
                   OtherOptions = flags
                   ReferencedProjects = [| |]
                   IsIncompleteTypeCheckEnvironment = true

@@ -40,8 +40,7 @@ type internal MyFileSystem() =
             let shouldShadowCopy = defaultArg shouldShadowCopy false
             let useMemoryMappedFile = defaultArg useMemoryMappedFile false
             match MyFileSystem.FilesCache.TryGetValue filePath with
-            | true, text ->
-                new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
+            | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> base.OpenFileForReadShim(filePath, useMemoryMappedFile, shouldShadowCopy)
         override _.FileExistsShim(fileName) = MyFileSystem.FilesCache.ContainsKey(fileName) || base.FileExistsShim(fileName)
 

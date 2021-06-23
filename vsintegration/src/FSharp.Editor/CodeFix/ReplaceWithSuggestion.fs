@@ -35,7 +35,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
 
             let document = context.Document
             let! _, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
+            let! parseFileResults, checkFileResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
 
             // This is all needed to get a declaration list
             let! sourceText = document.GetTextAsync(context.CancellationToken)

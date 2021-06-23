@@ -158,7 +158,7 @@ type internal FSharpCodeLensService
 #endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token, userOpName)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
+            let! parseResults, checkFileResults = checker.CheckDocumentInProject(document, options) |> liftAsync
 #if DEBUG
             logInfof "Getting uses of all symbols!"
 #endif
@@ -236,7 +236,7 @@ type internal FSharpCodeLensService
                                 oldResults.Remove funcID |> ignore
                             else
                                 let declarationLine, range = 
-                                    match visit func.DeclarationLocation.Start parsedInput with
+                                    match visit func.DeclarationLocation.Start parseResults.ParseTree with
                                     | Some range -> range.StartLine - 1, range
                                     | _ -> func.DeclarationLocation.StartLine - 1, func.DeclarationLocation
                                 // Track the old element for removal
@@ -267,7 +267,7 @@ type internal FSharpCodeLensService
             for unattachedSymbol in unattachedSymbols do
                 let symbolUse, func, funcID, fullTypeSignature = unattachedSymbol
                 let declarationLine, range = 
-                    match visit func.DeclarationLocation.Start parsedInput with
+                    match visit func.DeclarationLocation.Start parseResults.ParseTree with
                     | Some range -> range.StartLine - 1, range
                     | _ -> func.DeclarationLocation.StartLine - 1, func.DeclarationLocation
                     

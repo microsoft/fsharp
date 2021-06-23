@@ -1206,7 +1206,7 @@ let _ = RegexTypedStatic.IsMatch<"ABC" >(  (*$*) ) // TEST: no assert on Ctrl-sp
     """
 
     FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-    let fileLines1 = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadLines()
+    let fileLines1 = FileSystem.OpenFileForReadShim(fileName1).ReadLines()
 
     let fileNames = [fileName1]
     let args = Array.append (mkProjectCommandLineArgs (dllName, fileNames)) [| "-r:" + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll") |]

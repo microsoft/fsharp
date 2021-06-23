@@ -60,7 +60,7 @@ module internal FSharpQuickInfo =
             let! extParsingOptions, extProjectOptions = projectInfoManager.TryGetOptionsByProject(extDocument.Project, cancellationToken)
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing extParsingOptions
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true, true)
-            let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, userOpName = userOpName)
+            let! _, extCheckFileResults = checker.CheckDocumentInProject(extDocument, extProjectOptions) |> liftAsync
 
             let extQuickInfoText = 
                 extCheckFileResults.GetToolTip
@@ -97,7 +97,7 @@ module internal FSharpQuickInfo =
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true, true)
             let idRange = lexerSymbol.Ident.idRange  
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, userOpName = userOpName)
+            let! _, checkFileResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
@@ -177,9 +177,9 @@ type internal FSharpAsyncQuickInfoSource
     ) =
 
     // test helper
-    static member ProvideQuickInfo(checker:FSharpChecker, document: Document, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
+    static member ProvideQuickInfo(checker:FSharpChecker, document: Document, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, _languageServicePerformanceOptions: LanguageServicePerformanceOptions) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions, userOpName=FSharpQuickInfo.userOpName)
+            let! _, checkFileResults = checker.CheckDocumentInProject(document, options) |> liftAsync
             let! sourceText = document.GetTextAsync()
             let filePath = document.FilePath
             let textLine = sourceText.Lines.GetLineFromPosition position

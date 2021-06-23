@@ -56,8 +56,9 @@ type SemanticClassificationKeyStoreBuilder() =
     let b = BlobBuilder()
 
     member _.WriteAll (semanticClassification: SemanticClassificationItem[]) =
-        use ptr = fixed semanticClassification
-        b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<SemanticClassificationItem>)
+        if semanticClassification.Length > 0 then
+            use ptr = fixed semanticClassification
+            b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<SemanticClassificationItem>)
 
     member _.TryBuildAndReset() =
         if b.Count > 0 then

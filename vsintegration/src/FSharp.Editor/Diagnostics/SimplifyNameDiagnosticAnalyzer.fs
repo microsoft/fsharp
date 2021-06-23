@@ -51,7 +51,7 @@ type internal SimplifyNameDiagnosticAnalyzer
                     | _ ->
                         let! sourceText = document.GetTextAsync()
                         let checker = checkerProvider.Checker
-                        let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
+                        let! _, checkResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
                         let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
                         for r in result do

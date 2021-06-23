@@ -56,7 +56,7 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
             let textLine = sourceText.Lines.GetLineFromPosition adjustedPosition
             let textLinePos = sourceText.Lines.GetLinePosition adjustedPosition
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, userOpName=userOpName)
+            let! _, checkFileResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 

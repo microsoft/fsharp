@@ -58,31 +58,23 @@ type internal FSharpDocumentDiagnosticAnalyzer
 
     static member GetDiagnostics(checker: FSharpChecker, document: Document, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
-            let! ct = Async.CancellationToken
-
-            let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
-            match parseResults with
-            | None -> return ImmutableArray.Empty
-            | Some parseResults ->
-
-            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
-            let filePath = document.FilePath
-
             let! errors = 
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckDocument(document, parseResults, options, userOpName)
-                        match checkResultsAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> return [||]
-                        | FSharpCheckFileAnswer.Succeeded results ->
-                            // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                            let allErrors = HashSet(results.Diagnostics, errorInfoEqualityComparer)
-                            allErrors.ExceptWith(parseResults.Diagnostics)
-                            return Seq.toArray allErrors
+                        let! parseResults, checkResults = checker.CheckDocumentInProject(document, options)
+                        // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
+                        let allErrors = HashSet(checkResults.Diagnostics, errorInfoEqualityComparer)
+                        allErrors.ExceptWith(parseResults.Diagnostics)
+                        return Seq.toArray allErrors
                     | DiagnosticsType.Syntax ->
+                        let! parseResults = checker.ParseDocument(document, parsingOptions)
                         return parseResults.Diagnostics
                 }
+
+            let! ct = Async.CancellationToken
+            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
+            let filePath = document.FilePath
             
             let results = 
                 HashSet(errors, errorInfoEqualityComparer)

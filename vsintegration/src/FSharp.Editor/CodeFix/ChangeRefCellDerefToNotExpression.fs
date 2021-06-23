@@ -27,7 +27,7 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
             let document = context.Document
             let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions) |> liftAsync
 
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start

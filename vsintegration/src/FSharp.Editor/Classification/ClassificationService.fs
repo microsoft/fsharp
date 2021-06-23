@@ -167,7 +167,7 @@ type internal FSharpClassificationService
                 let! sourceText = document.GetTextAsync(cancellationToken)
 
                 // If we are trying to get semantic classification for a document that is not open, get the results from the background and cache it.
-                // We do this for find all references when it is populating results. 
+                // We do this for find all references when it is populating results.
                 // We cache it temporarily so we do not have to continously call into the checker and perform a background operation.
                 if not (document.Project.Solution.Workspace.IsDocumentOpen document.Id) then
                     match! semanticClassificationCache.TryGetValueAsync document |> liftAsync with
@@ -179,10 +179,10 @@ type internal FSharpClassificationService
                         do! semanticClassificationCache.SetAsync(document, classificationDataLookup) |> liftAsync
                         addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
                 else
-                    let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = false, userOpName=userOpName) 
-                    let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
-                    let classificationData = checkResults.GetSemanticClassification (Some targetRange)
-                    addSemanticClassification sourceText textSpan classificationData result
+                    let! _ = checkerProvider.Checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
+                    let! classificationData = checkerProvider.Checker.GetBackgroundSemanticClassificationForFile(document.FilePath, projectOptions, userOpName=userOpName) |> liftAsync
+                    let classificationDataLookup = toSemanticClassificationLookup classificationData
+                    addSemanticClassificationByLookup sourceText textSpan classificationDataLookup result
             } 
             |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 

@@ -181,34 +181,31 @@ type internal FSharpNavigateToSearchService
 
     let GetNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
         async {
+            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions)
             let! cancellationToken = Async.CancellationToken
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName)
-            match parseResults with
-            | None -> return [||]
-            | Some parseResults ->
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let navItems parsedInput =
-                    NavigateTo.GetNavigableItems parsedInput
-                    |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let navItems parsedInput =
+                NavigateTo.GetNavigableItems parsedInput
+                |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
-                let items = parseResults.ParseTree |> navItems
-                let navigableItems =
-                    [|
-                        for item in items do
-                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
-                            | None -> ()
-                            | Some sourceSpan ->
-                                let glyph = navigateToItemKindToGlyph item.Kind
-                                let kind = navigateToItemKindToRoslynKind item.Kind
-                                let additionalInfo = containerToString item.Container document
-                                let _name =
-                                    if isSignatureFile document.FilePath then
-                                        item.Name + " (signature)"
-                                    else
-                                        item.Name
-                                yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo)
-                    |]
-                return navigableItems
+            let items = parseResults.ParseTree |> navItems
+            let navigableItems =
+                [|
+                    for item in items do
+                        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
+                        | None -> ()
+                        | Some sourceSpan ->
+                            let glyph = navigateToItemKindToGlyph item.Kind
+                            let kind = navigateToItemKindToRoslynKind item.Kind
+                            let additionalInfo = containerToString item.Container document
+                            let _name =
+                                if isSignatureFile document.FilePath then
+                                    item.Name + " (signature)"
+                                else
+                                    item.Name
+                            yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo)
+                |]
+            return navigableItems
         }
 
     let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =

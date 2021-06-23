@@ -46,7 +46,7 @@ type internal FSharpMakeDeclarationMutableFixProvider
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, userOpName=userOpName)
+            let! parseFileResults, checkFileResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
             let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 

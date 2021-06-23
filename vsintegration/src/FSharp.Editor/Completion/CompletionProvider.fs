@@ -108,10 +108,10 @@ type internal FSharpCompletionProvider
                 
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, document: Document, caretPosition: int, options: FSharpProjectOptions, 
-                                             getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, languageServicePerformanceOptions: LanguageServicePerformanceOptions, intellisenseOptions: IntelliSenseOptions) = 
+                                             getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, _languageServicePerformanceOptions: LanguageServicePerformanceOptions, intellisenseOptions: IntelliSenseOptions) = 
 
         asyncMaybe {
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions, userOpName = userOpName)
+            let! parseResults, checkFileResults = checker.CheckDocumentInProject(document, options) |> liftAsync
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -292,7 +292,7 @@ type internal FSharpCompletionProvider
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
                     let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                    let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
+                    let! parseResults = checker.ParseDocument(document, parsingOptions) |> liftAsync
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 

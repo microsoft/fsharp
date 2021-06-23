@@ -29,8 +29,9 @@ type internal UnusedOpensDiagnosticAnalyzer
     static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) : Async<Option<range list>> =
         asyncMaybe {
             do! Option.guard document.FSharpOptions.CodeFixes.UnusedOpens
-            let! sourceText = document.GetTextAsync()
-            let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, userOpName = userOpName)
+            let! _, checkResults = checker.CheckDocumentInProject(document, options) |> liftAsync
+            let! ct = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask |> liftAsync
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
             return unusedOpens
         } 

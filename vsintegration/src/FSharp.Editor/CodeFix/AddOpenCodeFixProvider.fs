@@ -90,7 +90,7 @@ type internal FSharpAddOpenCodeFixProvider
             let document = context.Document
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
+            let! parseResults, checkResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
@@ -110,7 +110,7 @@ type internal FSharpAddOpenCodeFixProvider
                 let endPos = Position.fromZ endLinePos.Line endLinePos.Character
                 Range.mkRange context.Document.FilePath startPos endPos
             
-            let isAttribute = ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parsedInput) = Some EntityKind.Attribute
+            let isAttribute = ParsedInput.GetEntityKind(unresolvedIdentRange.Start, parseResults.ParseTree) = Some EntityKind.Attribute
             
             let entities =
                 assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies checkResults
@@ -126,7 +126,7 @@ type internal FSharpAddOpenCodeFixProvider
                                   s.CleanedIdents 
                                   |> Array.replace (s.CleanedIdents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 9)) ])
 
-            let longIdent = ParsedInput.GetLongIdentAt parsedInput unresolvedIdentRange.End
+            let longIdent = ParsedInput.GetLongIdentAt parseResults.ParseTree unresolvedIdentRange.End
 
             let! maybeUnresolvedIdents =
                 longIdent 
@@ -141,7 +141,7 @@ type internal FSharpAddOpenCodeFixProvider
                 if document.FSharpOptions.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
                 else OpenStatementInsertionPoint.Nearest
 
-            let createEntity = ParsedInput.TryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents insertionPoint
+            let createEntity = ParsedInput.TryFindInsertionContext unresolvedIdentRange.StartLine parseResults.ParseTree maybeUnresolvedIdents insertionPoint
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> addSuggestionsAsCodeFixes context
         } 
         |> Async.Ignore 

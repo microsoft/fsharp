@@ -508,14 +508,13 @@ type internal FSharpSignatureHelpProvider
             possibleCurrentSignatureHelpSessionKind: CurrentSignatureHelpSessionKind option
         ) =
         asyncMaybe {
+            let! parseResults, checkFileResults = checker.CheckDocumentInProject(document, options) |> liftAsync
+
             let! sourceText = document.GetTextAsync() |> liftTaskAsync
 
             let textLines = sourceText.Lines
-            let perfOptions = document.FSharpOptions.LanguageServicePerformance
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLineColumn = caretLinePos.Character
-
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(document, options, perfOptions, userOpName = userOpName)
 
             let adjustedColumnInSource =
                 let rec loop ch pos =

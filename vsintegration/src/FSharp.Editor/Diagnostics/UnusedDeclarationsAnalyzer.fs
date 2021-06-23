@@ -35,7 +35,7 @@ type internal UnusedDeclarationsAnalyzer
                 | (_parsingOptions, projectOptions) ->
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
+                    let! _, checkResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
                     let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
                     return
                         unusedRanges

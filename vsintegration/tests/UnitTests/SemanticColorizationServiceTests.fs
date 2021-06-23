@@ -29,13 +29,13 @@ type SemanticClassificationServiceTests() =
     }
 
     let checker = FSharpChecker.Create()
-    let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
+    let _perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
     let getRanges (source: string) : SemanticClassificationItem list =
         let projectOptions = { projectOptions with ProjectId = Some(Guid.NewGuid().ToString()) }
         asyncMaybe {
             let document, _ = RoslynTestHelpers.CreateDocument(filePath, source)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "")
+            let! _, checkFileResults = checker.CheckDocumentInProject(document, projectOptions) |> liftAsync
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously
