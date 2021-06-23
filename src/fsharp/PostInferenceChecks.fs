@@ -1397,7 +1397,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprPermitByRefLike cenv env arg1
 
-    | TOp.UnionCaseTest _, _, [arg1]
     | TOp.UnionCaseTagGet _, _, [arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprPermitByRefLike cenv env arg1  // allow byref - it may be address-of-struct

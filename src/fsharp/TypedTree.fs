@@ -4672,9 +4672,6 @@ type TOp =
     /// An operation representing getting an integer tag for a union value representing the union case number
     | UnionCaseTagGet of TyconRef
 
-    /// An operation representing a test that a union value is of a particular union case.
-    | UnionCaseTest of UnionCaseRef
-
     /// An operation representing a coercion that proves a union value is of a particular union case. This is not a test, its
     /// simply added proof to enable us to generate verifiable code for field access on union types
     | UnionCaseProof of UnionCaseRef
@@ -4765,7 +4762,6 @@ type TOp =
         | ValFieldGet rfref -> "ValFieldGet(" + rfref.FieldName + ")"
         | ValFieldGetAddr (rfref, _) -> "ValFieldGetAddr(" + rfref.FieldName + ",..)"
         | UnionCaseTagGet tcref -> "UnionCaseTagGet(" + tcref.LogicalName + ")"
-        | UnionCaseTest ucref -> "UnionCaseTest(" + ucref.CaseName + ")"
         | UnionCaseProof ucref -> "UnionCaseProof(" + ucref.CaseName + ")"
         | UnionCaseFieldGet (ucref, _) -> "UnionCaseFieldGet(" + ucref.CaseName + ",..)"
         | UnionCaseFieldGetAddr (ucref, _, _) -> "UnionCaseFieldGetAddr(" + ucref.CaseName + ",..)"

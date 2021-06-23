@@ -2512,7 +2512,6 @@ and p_op x st =
     (* 30: TOp.TupleFieldGet  when evalTupInfoIsStruct tupInfo = true *)
     | TOp.AnonRecd info   -> p_byte 31 st; p_anonInfo info st
     | TOp.AnonRecdGet (info, n)   -> p_byte 32 st; p_anonInfo info st; p_int n st
-    | TOp.UnionCaseTest a         -> p_byte 33 st; p_ucref a st
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
 
 and u_op st =
@@ -2584,8 +2583,6 @@ and u_op st =
     | 32 -> let info = u_anonInfo st
             let n = u_int st
             TOp.AnonRecdGet (info, n)
-    | 33 -> let a = u_ucref st
-            TOp.UnionCaseTest a
     | _ -> ufailwith st "u_op"
 
 and p_expr expr st =

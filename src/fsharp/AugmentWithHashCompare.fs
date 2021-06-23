@@ -1129,7 +1129,7 @@ let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
 
     (tcref.UnionCasesAsRefList, vals)
     ||> List.map2 (fun ucr v ->
-        let isdata = mkUnionCaseTest (thise, ucr, tinst, m)
+        let isdata = mkUnionCaseTest g (thise, ucr, tinst, m)
         let expr = mkLambdas m tps [thisv;unitv] (isdata, g.bool_ty)
         mkCompGenBind v.Deref expr
     )

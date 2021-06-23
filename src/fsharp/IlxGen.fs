@@ -2437,8 +2437,6 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv sp expr sequel =
             GenGetUnionCaseFieldAddr cenv cgbuf eenv (e, ucref, tyargs, n, m) sequel
         | TOp.UnionCaseTagGet ucref, [e], _ ->
             GenGetUnionCaseTag cenv cgbuf eenv (e, ucref, tyargs, m) sequel
-        | TOp.UnionCaseTest ucref, [e], _ -> 
-            GenUnionCaseTest cenv cgbuf eenv (e, ucref, tyargs, m) sequel
         | TOp.UnionCaseProof ucref, [e], _ ->
             GenUnionCaseProof cenv cgbuf eenv (e, ucref, tyargs, m) sequel
         | TOp.ExnFieldSet (ecref, n), [e;e2], _ ->
@@ -3089,14 +3087,6 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e, tcref, tyargs, m) sequel =
     let avoidHelpers = entityRefInThisAssembly g.compilingFslib tcref
     EraseUnions.emitLdDataTag g.ilg (UnionCodeGen cgbuf) (avoidHelpers, cuspec)
     CG.EmitInstrs cgbuf (pop 1) (Push [g.ilg.typ_Int32]) [ ] // push/pop to match the line above
-    GenSequel cenv eenv.cloc cgbuf sequel
-
-and GenUnionCaseTest cenv cgbuf eenv (e, ucref, tyargs, m) sequel =
-    let g = cenv.g
-    GenExpr cenv cgbuf eenv SPSuppress e Continue
-    let cuspec, idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
-    let avoidHelpers = entityRefInThisAssembly g.compilingFslib ucref.TyconRef
-    CG.EmitInstrs cgbuf (pop 1) (Push [g.ilg.typ_Bool]) (EraseUnions.mkIsData g.ilg (avoidHelpers, cuspec, idx))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenSetUnionCaseField cenv cgbuf eenv (e, ucref, tyargs, n, e2, m) sequel =
