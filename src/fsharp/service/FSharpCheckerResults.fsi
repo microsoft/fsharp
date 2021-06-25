@@ -191,8 +191,20 @@ type public FSharpParsingOptions =
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type public FSharpCheckFileResults =
+
+    /// The syntax tree for the source file
+    member ParseTree: ParsedInput
+
+    /// The source (if the file wasn't read from disk)
+    member SourceText: ISourceText option
+
     /// The errors returned by parsing a source file.
     member Diagnostics: FSharpDiagnostic[]
+
+    /// Get a view of the overall contents of the assembly up to and including the file just checked.
+    /// Only available if keepAssemblyContents is true or an analyzer has requested assembly contents
+    /// be kept
+    member PartialAssemblyContents: FSharpAssemblyContents
 
     /// Get a view of the contents of the assembly up to and including the file just checked
     member PartialAssemblySignature : FSharpAssemblySignature
@@ -351,7 +363,9 @@ type public FSharpCheckFileResults =
         tcConfig: TcConfig *
         tcGlobals: TcGlobals *
         isIncompleteTypeCheckEnvironment: bool *
-        builder: IncrementalBuilder * 
+        builder: obj option * 
+        parseTree: ParsedInput *
+        sourceText: ISourceText option *
         projectOptions: FSharpProjectOptions *
         dependencyFiles: string[] * 
         creationErrors: FSharpDiagnostic[] *
@@ -366,7 +380,7 @@ type public FSharpCheckFileResults =
         sSymbolUses: TcSymbolUses *
         sFallback: NameResolutionEnv *
         loadClosure : LoadClosure option *
-        implFileOpt: TypedImplFile option *
+        implFiles: TypedImplFile list *
         openDeclarations: OpenDeclaration[]
           -> FSharpCheckFileResults
 
@@ -380,12 +394,13 @@ type public FSharpCheckFileResults =
          tcGlobals: TcGlobals *
          tcImports: TcImports *
          tcState: TcState *
+         tcPriorImplFiles: TypedImplFile list *
          moduleNamesDict: ModuleNamesDict *
          loadClosure: LoadClosure option *
          backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[] *    
          isIncompleteTypeCheckEnvironment: bool * 
          projectOptions: FSharpProjectOptions *
-         builder: IncrementalBuilder * 
+         builder: obj * 
          dependencyFiles: string[] * 
          creationErrors:FSharpDiagnostic[] * 
          parseErrors:FSharpDiagnostic[] * 
@@ -446,7 +461,7 @@ type public FSharpCheckProjectResults =
                  TcImports *
                  CcuThunk *
                  ModuleOrNamespaceType *
-                 Choice<IncrementalBuilder, TcSymbolUses> *
+                 Choice<(unit -> TcSymbolUses[]), TcSymbolUses> *
                  TopAttribs option *
                  IRawFSharpAssemblyData option *
                  ILAssemblyRef *

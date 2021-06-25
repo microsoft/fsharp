@@ -371,3 +371,10 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract GetStaticParametersForMethod : methodWithoutArguments:MethodBase -> ParameterInfo[] 
         abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 
+    [<AttributeUsage(AttributeTargets.Class, AllowMultiple = false)>]
+    type AnalyzerAttribute() =
+        inherit System.Attribute()
+
+    [<AttributeUsage(AttributeTargets.Assembly, AllowMultiple = false)>]
+    type AnalyzerAssemblyAttribute() = 
+        inherit System.Attribute()

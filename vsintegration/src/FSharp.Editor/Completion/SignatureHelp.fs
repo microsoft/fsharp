@@ -331,8 +331,8 @@ type internal FSharpSignatureHelpProvider
                                 else
                                     None
 
-                    let mainDescription, documentation, typeParameterMap, usage, exceptions =
-                        ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                    let mainDescription, documentation, typeParameterMap, usage, exceptions, analyzerExtras =
+                        ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
 
                     XmlDocumentation.BuildDataTipText(
                         documentationBuilder,
@@ -341,9 +341,11 @@ type internal FSharpSignatureHelpProvider
                         typeParameterMap.Add,
                         usage.Add,
                         exceptions.Add,
-                        tooltip)
+                        analyzerExtras.Add,
+                        tooltip,
+                        [| |])
 
-                    let fsharpDocs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                    let fsharpDocs = RoslynHelpers.joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions; analyzerExtras]
                                        
                     let docs = ResizeArray()
                     fsharpDocs |> Seq.iter (RoslynHelpers.CollectTaggedText docs)

@@ -16,6 +16,10 @@ type NavigableTaggedText(taggedText: TaggedText, range: range) =
     inherit TaggedText(taggedText.Tag, taggedText.Text)
     member val Range = range
 
+type WebLinkTaggedText(taggedText: TaggedText, uri: System.Uri) =
+    inherit TaggedText(taggedText.Tag, taggedText.Text)
+    member val Uri = uri
+
 module SepL =
     let dot = sepL TaggedText.dot
     let star = sepL TaggedText.star

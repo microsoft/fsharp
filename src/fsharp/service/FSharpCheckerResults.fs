@@ -205,7 +205,7 @@ module internal FSharpCheckerResultsSettings =
     let maxTypeCheckErrorsOutOfProjectContext = GetEnvInteger "FCS_MaxErrorsOutOfProjectContext" 3
 
     // Look for DLLs in the location of the service DLL first.
-    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<IncrementalBuilder>.Assembly.Location))).Value
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(Path.GetDirectoryName(typeof<FSharpDiagnostic>.Assembly.Location))).Value
 
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) =
@@ -305,13 +305,15 @@ type internal TypeCheckInfo
            tcAccessRights: AccessorDomain,
            projectFileName: string,
            mainInputFileName: string,
+           parseTree: ParsedInput,
+           sourceText: ISourceText option,
            projectOptions: FSharpProjectOptions,
            sResolutions: TcResolutions,
            sSymbolUses: TcSymbolUses,
            // This is a name resolution environment to use if no better match can be found.
            sFallback: NameResolutionEnv,
            loadClosure : LoadClosure option,
-           implFileOpt: TypedImplFile option,
+           implFiles: TypedImplFile list,
            openDeclarations: OpenDeclaration[]) =
 
     // These strings are potentially large and the editor may choose to hold them for a while.
@@ -1082,6 +1084,10 @@ type internal TypeCheckInfo
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
 
+    member _.ParseTree = parseTree
+
+    member _.SourceText = sourceText
+
     /// Get the auto-complete items at a location
     member _.GetDeclarations (parseResultsOpt, line, lineStr, partialName, getAllEntities) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
@@ -1511,7 +1517,7 @@ type internal TypeCheckInfo
     /// The assembly being analyzed
     member _.ThisCcu = thisCcu
 
-    member _.ImplementationFile = implFileOpt
+    member _.ImplementationFiles = implFiles
 
     /// All open declarations in the file, including auto open modules
     member _.OpenDeclarations = openDeclarations
@@ -1822,6 +1828,7 @@ module internal ParseAndCheckFile =
            tcGlobals: TcGlobals,
            tcImports: TcImports,
            tcState: TcState,
+           tcPriorImplFiles: TypedImplFile list,
            moduleNamesDict: ModuleNamesDict,
            loadClosure: LoadClosure option,
            // These are the errors and warnings seen by the background compiler for the entire antecedent
@@ -1878,27 +1885,29 @@ module internal ParseAndCheckFile =
                 with e ->
                     errorR e
                     let mty = Construct.NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace
-                    return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [], [ mty ]), tcState)
+                    return ((tcState.TcEnvFromSignatures, EmptyTopAttrs, [(parsedMainInput, None, mty) ]), tcState)
            }
 
         let errors = errHandler.CollectedDiagnostics
 
         let res =
             match resOpt with
-            | ((tcEnvAtEnd, _, implFiles, ccuSigsForFiles), tcState) ->
+            | ((tcEnvAtEnd, _, implFiles), tcState) ->
                 TypeCheckInfo(tcConfig, tcGlobals,
-                              List.head ccuSigsForFiles,
+                              (List.head implFiles |> p33),
                               tcState.Ccu,
                               tcImports,
                               tcEnvAtEnd.AccessRights,
                               projectFileName,
                               mainInputFileName,
+                              parseResults.ParseTree,
+                              parseResults.SourceText,
                               projectOptions,
                               sink.GetResolutions(),
                               sink.GetSymbolUses(),
                               tcEnvAtEnd.NameEnv,
                               loadClosure,
-                              List.tryHead implFiles,
+                              (tcPriorImplFiles @ (implFiles |> List.choose p23)),
                               sink.GetOpenDeclarations())
         return errors, res
       }
@@ -1906,7 +1915,7 @@ module internal ParseAndCheckFile =
 [<Sealed>]
 type FSharpProjectContext(thisCcu: CcuThunk, assemblies: FSharpAssembly list, ad: AccessorDomain, projectOptions: FSharpProjectOptions) =
 
-    member _.ProjectOptions =  projectOptions
+    member _.ProjectOptions = projectOptions
 
     member _.GetReferencedAssemblies() = assemblies
 
@@ -1922,7 +1931,7 @@ type FSharpCheckFileResults
          errors: FSharpDiagnostic[],
          scopeOptX: TypeCheckInfo option,
          dependencyFiles: string[],
-         builderX: IncrementalBuilder option,
+         builderX: obj option,
          keepAssemblyContents: bool) =
 
     // Here 'details' keeps 'builder' alive
@@ -1942,6 +1951,14 @@ type FSharpCheckFileResults
         match details with
         | None -> None
         | Some (scope, _builderOpt) -> Some scope.TcImports
+
+    /// Intellisense autocompletions
+    member _.ParseTree =
+        threadSafeOp (fun () -> EmptyParsedInput(filename, (false, false))) (fun scope -> scope.ParseTree)
+
+    /// Intellisense autocompletions
+    member _.SourceText =
+        threadSafeOp (fun () -> None) (fun scope -> scope.SourceText)
 
     /// Intellisense autocompletions
     member _.GetDeclarationListInfo(parsedFileResults, line, lineText, partialName, ?getAllEntities) =
@@ -2019,6 +2036,14 @@ type FSharpCheckFileResults
             (fun scope ->
                 scope.PartialAssemblySignatureForFile)
 
+    member _.PartialAssemblyContents =
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access PartialAssemblyContents, or an analyzer must request RequiresAssemblyContents"
+        threadSafeOp
+            (fun () -> failwith "not available")
+            (fun scope ->
+                let mimpls = scope.ImplementationFiles
+                FSharpAssemblyContents(scope.TcGlobals, scope.ThisCcu, Some scope.CcuSigForFile, scope.TcImports, mimpls))
+
     member _.ProjectContext =
         threadSafeOp
             (fun () -> failwith "not available")
@@ -2070,7 +2095,8 @@ type FSharpCheckFileResults
 
     member _.GenerateSignature () =
         threadSafeOp (fun () -> None) (fun scope ->
-            scope.ImplementationFile
+            scope.ImplementationFiles
+            |> List.tryLast 
             |> Option.map (fun implFile ->
                 let denv = DisplayEnv.InitialForSigFileGeneration scope.TcGlobals
                 let infoReader = InfoReader(scope.TcGlobals, scope.TcImports.GetImportMap())
@@ -2085,7 +2111,7 @@ type FSharpCheckFileResults
         scopeOptX
         |> Option.map (fun scope ->
             let cenv = SymbolEnv(scope.TcGlobals, scope.ThisCcu, Some scope.CcuSigForFile, scope.TcImports)
-            scope.ImplementationFile |> Option.map (fun implFile -> FSharpImplementationFileContents(cenv, implFile)))
+            scope.ImplementationFiles |> List.tryLast |> Option.map (fun implFile -> FSharpImplementationFileContents(cenv, implFile)))
         |> Option.defaultValue None
 
     member _.OpenDeclarations =
@@ -2119,7 +2145,9 @@ type FSharpCheckFileResults
          projectFileName,
          tcConfig, tcGlobals,
          isIncompleteTypeCheckEnvironment: bool,
-         builder: IncrementalBuilder,
+         builder: obj option,
+         parseTree,
+         sourceText,
          projectOptions,
          dependencyFiles,
          creationErrors: FSharpDiagnostic[],
@@ -2130,19 +2158,19 @@ type FSharpCheckFileResults
          thisCcu, tcImports, tcAccessRights,
          sResolutions, sSymbolUses,
          sFallback, loadClosure,
-         implFileOpt,
+         implFiles,
          openDeclarations) =
 
         let tcFileInfo =
             TypeCheckInfo(tcConfig, tcGlobals, ccuSigForFile, thisCcu, tcImports, tcAccessRights,
                           projectFileName, mainInputFileName,
-                          projectOptions,
+                          parseTree, sourceText, projectOptions,
                           sResolutions, sSymbolUses,
                           sFallback, loadClosure,
-                          implFileOpt, openDeclarations)
+                          implFiles, openDeclarations)
 
         let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
-        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
+        FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, builder, keepAssemblyContents)
 
     static member CheckOneFile
         (parseResults: FSharpParseFileResults,
@@ -2153,12 +2181,13 @@ type FSharpCheckFileResults
          tcGlobals: TcGlobals,
          tcImports: TcImports,
          tcState: TcState,
+         tcPriorImplFiles: TypedImplFile list,
          moduleNamesDict: ModuleNamesDict,
          loadClosure: LoadClosure option,
          backgroundDiagnostics: (PhasedDiagnostic * FSharpDiagnosticSeverity)[],
          isIncompleteTypeCheckEnvironment: bool,
          projectOptions: FSharpProjectOptions,
-         builder: IncrementalBuilder,
+         builder: obj,
          dependencyFiles: string[],
          creationErrors: FSharpDiagnostic[],
          parseErrors: FSharpDiagnostic[],
@@ -2169,7 +2198,7 @@ type FSharpCheckFileResults
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, mainInputFileName, projectOptions,
                      projectFileName, tcConfig, tcGlobals, tcImports,
-                     tcState, moduleNamesDict, loadClosure, backgroundDiagnostics, suggestNamesForErrors)
+                     tcState, tcPriorImplFiles, moduleNamesDict, loadClosure, backgroundDiagnostics, suggestNamesForErrors)
             let errors = FSharpCheckFileResults.JoinErrors(isIncompleteTypeCheckEnvironment, creationErrors, parseErrors, tcErrors)
             let results = FSharpCheckFileResults (mainInputFileName, errors, Some tcFileInfo, dependencyFiles, Some builder, keepAssemblyContents)
             return results
@@ -2182,7 +2211,7 @@ type FSharpCheckProjectResults
           tcConfigOption: TcConfig option,
           keepAssemblyContents: bool,
           diagnostics: FSharpDiagnostic[],
-          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<IncrementalBuilder, TcSymbolUses> *
+          details:(TcGlobals * TcImports * CcuThunk * ModuleOrNamespaceType * Choice<(unit -> TcSymbolUses[]), TcSymbolUses> *
                    TopAttribs option * IRawFSharpAssemblyData option * ILAssemblyRef *
                    AccessorDomain * TypedImplFile list option * string[] * FSharpProjectOptions) option) =
 
@@ -2201,12 +2230,12 @@ type FSharpCheckProjectResults
     member _.HasCriticalErrors = details.IsNone
 
     member _.AssemblySignature =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _symbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, ccuSig, tcImports, topAttribs, ccuSig)
 
     member _.TypedImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, _ccuSig, _symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2215,7 +2244,7 @@ type FSharpCheckProjectResults
 
     member info.AssemblyContents =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2224,7 +2253,7 @@ type FSharpCheckProjectResults
 
     member _.GetOptimizedAssemblyContents() =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, ccuSig, _builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, _symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let mimpls =
             match tcAssemblyExpr with
             | None -> []
@@ -2243,24 +2272,13 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetUsesOfSymbol(symbol:FSharpSymbol, ?cancellationToken: CancellationToken) =
-        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, _tcImports, _thisCcu, _ccuSig, symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
 
         let results =
-            match builderOrSymbolUses with
-            | Choice1Of2 builder ->
-                builder.SourceFiles
-                |> Array.ofList
-                |> Array.collect (fun x ->
-                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
-                    | Some partialCheckResults ->
-                        match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some(_, tcInfoExtras) ->
-                            tcInfoExtras.TcSymbolUses.GetUsesOfSymbol symbol.Item
-                        | _ ->
-                            [||]
-                    | _ ->
-                        [||]
-                )
+            match symbolUses with
+            | Choice1Of2 getSymbolUses ->
+                getSymbolUses()
+                |> Array.collect (fun uses -> uses.GetUsesOfSymbol symbol.Item)
             | Choice2Of2 tcSymbolUses ->
                 tcSymbolUses.GetUsesOfSymbol symbol.Item
 
@@ -2274,25 +2292,13 @@ type FSharpCheckProjectResults
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member _.GetAllUsesOfAllSymbols(?cancellationToken: CancellationToken) =
-        let (tcGlobals, tcImports, thisCcu, ccuSig, builderOrSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
+        let (tcGlobals, tcImports, thisCcu, ccuSig, symbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles, _projectOptions) = getDetails()
         let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
         let tcSymbolUses =
-            match builderOrSymbolUses with
-            | Choice1Of2 builder ->
-                builder.SourceFiles
-                |> Array.ofList
-                |> Array.map (fun x ->
-                    match builder.GetCheckResultsForFileInProjectEvenIfStale x with
-                    | Some partialCheckResults ->
-                        match partialCheckResults.TryPeekTcInfoWithExtras() with
-                        | Some(_, tcInfoExtras) ->
-                            tcInfoExtras.TcSymbolUses
-                        | _ ->
-                            TcSymbolUses.Empty
-                    | _ ->
-                        TcSymbolUses.Empty
-                )
+            match symbolUses with
+            | Choice1Of2 getSymbolUses ->
+                getSymbolUses()
             | Choice2Of2 tcSymbolUses ->
                 [|tcSymbolUses|]
 
@@ -2342,7 +2348,7 @@ type FsiInteractiveChecker(legacyReferenceResolver,
             let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
             let parseErrors, parsedInput, anyErrors = ParseAndCheckFile.parseFile (sourceText, filename, parsingOptions, userOpName, suggestNamesForErrors)
             let dependencyFiles = [| |] // interactions have no dependencies
-            let parseResults = FSharpParseFileResults(parseErrors, parsedInput, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
+            let parseResults = FSharpParseFileResults(parseErrors, parsedInput, Some sourceText, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
 
             let backgroundDiagnostics = [| |]
             let reduceMemoryUsage = ReduceMemoryFlag.Yes
@@ -2376,11 +2382,11 @@ type FsiInteractiveChecker(legacyReferenceResolver,
                   OriginalLoadReferences = []
                   Stamp = None
                 }
-
+            let tcPriorImplFiles = []
             let! tcErrors, tcFileInfo =
                 ParseAndCheckFile.CheckOneFile
                     (parseResults, sourceText, filename, projectOptions, projectOptions.ProjectFileName,
-                     tcConfig, tcGlobals, tcImports,  tcState,
+                     tcConfig, tcGlobals, tcImports, tcState, tcPriorImplFiles,
                      Map.empty, Some loadClosure, backgroundDiagnostics,
                      suggestNamesForErrors)
 

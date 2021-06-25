@@ -77,6 +77,10 @@ module internal QuickInfoViewProvider =
                     flushRuns()
                     let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo nav.Range)
                     currentContainerItems.Add(navigableTextRun :> obj)
+                | :? WebLinkTaggedText as nav  ->
+                    flushRuns()
+                    let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateToUri nav.Uri)
+                    currentContainerItems.Add(navigableTextRun :> obj)
                 | _ when item.Tag = TextTag.LineBreak ->
                     flushRuns()
                     // preserve succesive linebreaks

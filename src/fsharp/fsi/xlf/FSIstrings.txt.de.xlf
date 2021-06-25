@@ -17,6 +17,11 @@
         <target state="translated">Fehler beim Vorgang. Der Fehlertext wurde im Fehlerstream ausgegeben. Verwenden Sie "EvalInteractionNonThrowing", "EvalScriptNonThrowing" oder "EvalExpressionNonThrowing", um die entsprechende FSharpDiagnostic zurückzugeben.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Aufgrund eines Fehlers beendet\n</target>

@@ -238,7 +238,7 @@ type internal FSharpCompletionProvider
                     let documentation = List()
                     let collector = RoslynHelpers.CollectTaggedText documentation
                     // mix main description and xmldoc by using one collector
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description) 
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, collector, description, [| |]) 
                     return CompletionDescription.Create(documentation.ToImmutableArray())
                 else
                     return CompletionDescription.Empty

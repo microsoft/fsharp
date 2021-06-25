@@ -879,6 +879,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     // These are for script (.fsx and .fsscript) files.
                     | true, "r"
                     | true, "reference"
+                    | true, "compilertool"
                     | true, "I"
                     | true, "load"
                     | true, "time"

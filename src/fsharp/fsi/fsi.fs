@@ -619,6 +619,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT)
 
     let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
+    let mutable runAnalyzers = false
 #if DEBUG
     let mutable showILCode = false // show modul il code
 #endif
@@ -747,6 +748,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()));
          CompilerOption("gui",                  tagNone, OptionSwitch(fun flag -> gui <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiGui()));
+         CompilerOption("runanalyzers",         tagNone, OptionSwitch(fun flag -> runAnalyzers <- (flag = OptionSwitch.On)),None,Some (FSIstrings.SR.fsiRunAnalyzers()));
          CompilerOption("quiet",                "", OptionUnit (fun () -> tcConfigB.noFeedback <- true), None,Some (FSIstrings.SR.fsiQuiet()));
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()));
@@ -814,7 +816,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         fsiConsoleOutput.uprintfn  """    #help;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashhelpInfo())
 
         if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-            for msg in dependencyProvider.GetRegisteredDependencyManagerHelpText(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
+            for msg in dependencyProvider.GetRegisteredDependencyManagerHelpText(List.map snd tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m) do
                 fsiConsoleOutput.uprintfn "%s" msg
 
         fsiConsoleOutput.uprintfn  """    #quit;;                                       // %s""" (FSIstrings.SR.fsiIntroTextHashquitInfo())   (* last thing you want to do, last thing in the list - stands out more *)
@@ -841,6 +843,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     member _.PeekAheadOnConsoleToPermitTyping = peekAheadOnConsoleToPermitTyping
     member _.SourceFiles = sourceFiles
     member _.Gui = gui
+    member _.RunAnalyzers = runAnalyzers
 
     member _.WriteReferencesAndExit = writeReferencesAndExit
 
@@ -986,6 +989,7 @@ type internal FsiDynamicCompilerState =
       tcGlobals : TcGlobals
       tcState   : TcState
       tcImports   : TcImports
+      tcAnalyzers: FSharpAnalyzer list
       ilxGenerator : IlxGen.IlxAssemblyGenerator
       boundValues : NameMap<Val>
       // Why is this not in FsiOptions?
@@ -1173,9 +1177,9 @@ type internal FsiDynamicCompiler
                       yield ILRuntimeWriter.LookupTypeRef cenv emEnv tref  |]
             Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes, referencedTypes);
 
-
-        ReportTime tcConfig "Run Bindings";
-        timeReporter.TimeOpIf istate.timing (fun () ->
+        if not tcConfig.typeCheckOnly then
+         ReportTime tcConfig "Run Bindings";
+         timeReporter.TimeOpIf istate.timing (fun () ->
           execs |> List.iter (fun exec ->
             match exec() with
             | Some err ->
@@ -1194,7 +1198,7 @@ type internal FsiDynamicCompiler
         // Echo the decls (reach inside wrapping)
         // This code occurs AFTER the execution of the declarations.
         // So stored values will have been initialised, modified etc.
-        if showTypes && not tcConfig.noFeedback then
+        if showTypes && not tcConfig.noFeedback && not tcConfig.typeCheckOnly then
             let denv = tcState.TcEnvFromImpls.DisplayEnv
             let denv =
                 if isIncrementalFragment then
@@ -1256,6 +1260,11 @@ type internal FsiDynamicCompiler
         let (tcState:TcState), topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
             lock tcLockObject (fun _ -> TypeCheckClosedInputSet(ctok, errorLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
 
+        if fsiOptions.RunAnalyzers then
+            FSharpAnalyzers.RunAnalyzers(istate.tcAnalyzers, tcConfig, tcImports, tcGlobals, tcState.Ccu, [], declaredImpls, tcEnvAtEndOfLastInput)
+
+        // TODO: run analyzers here
+        let declaredImpls = List.map p23 declaredImpls |> List.choose id
         let codegenResults, optEnv, fragName = ProcessTypedImpl(errorLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
         let newState, declaredImpls = ProcessCodegenResults(ctok, errorLogger, istate, optEnv, tcState, tcConfig, prefixPath, showTypes, isIncrementalFragment, fragName, declaredImpls, ilxGenerator, codegenResults)
         (newState, tcEnvAtEndOfLastInput, declaredImpls)
@@ -1486,9 +1495,9 @@ type internal FsiDynamicCompiler
             | { Directive=_; LineStatus=_; Line=_; Range=m } :: _ ->
                 let outputDir =  tcConfigB.outputDir |> Option.defaultValue ""
 
-                match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
+                match fsiOptions.DependencyProvider.TryFindDependencyManagerByKey(List.map snd tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, packageManagerKey) with
                 | null ->
-                    errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
+                    errorR(Error(fsiOptions.DependencyProvider.CreatePackageManagerUnknownError(List.map snd tcConfigB.compilerToolPaths, outputDir, packageManagerKey, reportError m), m))
                     istate
                 | dependencyManager ->
                     let directive d =
@@ -1538,7 +1547,7 @@ type internal FsiDynamicCompiler
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m, path, directive) ->
 
-                        let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+                        let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(List.map snd tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
 
                         match dm with
                         | _, dependencyManager when not(isNull dependencyManager) ->
@@ -1557,6 +1566,7 @@ type internal FsiDynamicCompiler
                         | path, _ ->
                             snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
                     ),
+                    (fun st (m,nm) -> tcConfigB.AddCompilerToolsByPath(m, nm); st),
                     (fun _ _ -> ()))
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
 
@@ -1697,6 +1707,7 @@ type internal FsiDynamicCompiler
          tcGlobals = tcGlobals
          tcState   = tcState
          tcImports = tcImports
+         tcAnalyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, tcConfig.compilerToolPaths)
          ilxGenerator = ilxGenerator
          boundValues = NameMap.empty
          timing    = false
@@ -2168,7 +2179,7 @@ type internal FsiInteractionProcessor
     /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedScriptInteraction, errorLogger: ErrorLogger) =
         let packageManagerDirective directive path m =
-            let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+            let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(List.map snd tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
             match dm with
             | null, null ->
                 // error already reported
@@ -2229,6 +2240,20 @@ type internal FsiInteractionProcessor
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
+
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("compilertool", [path], m), _) ->
+                if FileSystem.IsInvalidPathShim path then
+                    warning(Error(FSComp.SR.etCompilerToolPathDidntExist(path), m))
+                    istate, Completed None
+                // TODO: check this is the right place to resolve paths
+                else
+                    let rootedPath = if Path.IsPathRooted(path) then path else Path.Combine(tcConfigB.implicitIncludeDir, path)
+                    if not (Directory.Exists rootedPath) then
+                        warning(Error(FSComp.SR.etCompilerToolPathDidntExist(rootedPath), m))
+                        istate, Completed None
+                    else
+                        let istate = { istate with tcAnalyzers = istate.tcAnalyzers @ FSharpAnalyzers.ImportAnalyzers(tcConfig, [(m, rootedPath)]) }
+                        istate, Completed None
 
             | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) ->
                 packageManagerDirective Directive.Include path m

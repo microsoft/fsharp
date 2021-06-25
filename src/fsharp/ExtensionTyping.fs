@@ -171,7 +171,7 @@ module internal ExtensionTyping =
                           () ]
 
                 with :? TypeProviderError as tpe ->
-                    tpe.Iter(fun e -> errorR(Error((e.Number, e.ContextualErrorMessage), m)) )
+                    tpe.Iter(fun e -> errorR(CompilerToolDiagnostic((e.Number, e.ContextualErrorMessage), m)) )
                     []
 
         let providers = Tainted<_>.CreateAll(providerSpecs)

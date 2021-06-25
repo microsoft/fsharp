@@ -373,3 +373,19 @@ namespace Microsoft.FSharp.Core.CompilerServices
         /// <returns>The provided method definition corresponding to the given static parameter values</returns>
         abstract ApplyStaticArgumentsForMethod : methodWithoutArguments:MethodBase * methodNameWithArguments:string * staticArguments:obj[] -> MethodBase
 
+    /// <summary>Place attribute on an assembly to indicate this is an F# analyzer assembly. </summary>
+    [<AttributeUsageAttribute(AttributeTargets.Assembly, AllowMultiple = false)>]
+    type AnalyzerAssemblyAttribute = 
+        inherit System.Attribute
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>AnalyzerAssemblyAttribute</returns>
+        new : unit -> AnalyzerAssemblyAttribute
+
+    /// <summary>Place attribute on a type to indicate this is an F# analyzer. </summary>
+    [<AttributeUsageAttribute(AttributeTargets.Class, AllowMultiple = false)>]
+    type AnalyzerAttribute = 
+        inherit System.Attribute
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>AnalyzerAttribute</returns>
+        new : unit -> AnalyzerAttribute
+

@@ -12,7 +12,7 @@ type FSharpDiagnosticSeverity =
     | Warning 
     | Error
 
-type FSharpDiagnosticOptions =
+type public FSharpDiagnosticOptions =
     {
       WarnLevel: int
       GlobalWarnAsError: bool

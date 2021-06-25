@@ -97,6 +97,7 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          command line
 --gui[+|-]                               Execute interactions on a Windows
                                          Forms event loop (on by default)
+--runanalyzers[+|-]                      Execute analyzers (off by default)
 --quiet                                  Suppress fsi writing to stdout
 --readline[+|-]                          Support TAB completion in console
                                          (on by default)

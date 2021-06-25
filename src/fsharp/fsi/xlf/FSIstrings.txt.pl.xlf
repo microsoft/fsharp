@@ -17,6 +17,11 @@
         <target state="translated">Operacja nie powiodła się. Tekst błędu został umieszczony w strumieniu błędów. Aby zwrócić odpowiedni element FSharpDiagnostic, użyj elementu EvalInteractionNonThrowing, eEvalScriptNonThrowing lub EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Zatrzymano ze względu na błąd\n</target>

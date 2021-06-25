@@ -774,12 +774,6 @@
     <Compile Include="..\CreateILModule.fs">
       <Link>Driver\CreateILModule.fs</Link>
     </Compile>
-    <Compile Include="..\fsc.fsi">
-      <Link>Driver\fsc.fsi</Link>
-    </Compile>
-    <Compile Include="..\fsc.fs">
-      <Link>Driver\fsc.fs</Link>
-    </Compile>
 
     <!-- the symbol API. -->
     <Compile Include="..\symbols\SymbolHelpers.fsi">
@@ -809,109 +803,109 @@
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\service\SemanticClassification.fsi">
-      <Link>Service/SemanticClassification.fsi</Link>
+      <Link>CodeAnalysis/SemanticClassification.fsi</Link>
     </Compile>
     <Compile Include="..\service\SemanticClassification.fs">
-      <Link>Service/SemanticClassification.fs</Link>
+      <Link>CodeAnalysis/SemanticClassification.fs</Link>
     </Compile>
     <Compile Include="..\service\ItemKey.fsi">
-      <Link>Service/ItemKey.fsi</Link>
+      <Link>CodeAnalysis/ItemKey.fsi</Link>
     </Compile>
     <Compile Include="..\service\ItemKey.fs">
-      <Link>Service/ItemKey.fs</Link>
+      <Link>CodeAnalysis/ItemKey.fs</Link>
     </Compile>
 	<Compile Include="..\service\SemanticClassificationKey.fsi">
-		<Link>Service/SemanticClassificationKey.fsi</Link>
+		<Link>CodeAnalysis/SemanticClassificationKey.fsi</Link>
 	</Compile>
 	<Compile Include="..\service\SemanticClassificationKey.fs">
-		<Link>Service/SemanticClassificationKey.fs</Link>
+		<Link>CodeAnalysis/SemanticClassificationKey.fs</Link>
 	</Compile>
+    <Compile Include="..\service\ServiceConstants.fs">
+      <Link>CodeAnalysis/ServiceConstants.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceDeclarationLists.fsi">
+      <Link>CodeAnalysis/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceDeclarationLists.fs">
+      <Link>CodeAnalysis/ServiceDeclarationLists.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceLexing.fsi">
+      <Link>CodeAnalysis/ServiceLexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceLexing.fs">
+      <Link>CodeAnalysis/ServiceLexing.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParseTreeWalk.fsi">
+      <Link>CodeAnalysis/ServiceParseTreeWalk.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParseTreeWalk.fs">
+      <Link>CodeAnalysis/ServiceParseTreeWalk.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceNavigation.fsi">
+      <Link>CodeAnalysis/ServiceNavigation.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceNavigation.fs">
+      <Link>CodeAnalysis/ServiceNavigation.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParamInfoLocations.fsi">
+      <Link>CodeAnalysis/ServiceParamInfoLocations.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParamInfoLocations.fs">
+      <Link>CodeAnalysis/ServiceParamInfoLocations.fs</Link>
+    </Compile>
+    <Compile Include="..\service\FSharpParseFileResults.fsi">
+      <Link>CodeAnalysis/FSharpParseFileResults.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\FSharpParseFileResults.fs">
+      <Link>CodeAnalysis/FSharpParseFileResults.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fsi">
+      <Link>CodeAnalysis/ServiceParsedInputOps.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceParsedInputOps.fs">
+      <Link>CodeAnalysis/ServiceParsedInputOps.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceAssemblyContent.fsi">
+      <Link>CodeAnalysis/ServiceAssemblyContent.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceAssemblyContent.fs">
+      <Link>CodeAnalysis/ServiceAssemblyContent.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ExternalSymbol.fsi">
+      <Link>CodeAnalysis/ExternalSymbol.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ExternalSymbol.fs">
+      <Link>CodeAnalysis/ExternalSymbol.fs</Link>
+    </Compile>
+    <Compile Include="..\service\QuickParse.fsi">
+      <Link>CodeAnalysis/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\QuickParse.fs">
+      <Link>CodeAnalysis/QuickParse.fs</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fsi">
+      <Link>CodeAnalysis/FSharpCheckerResults.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fs">
+      <Link>CodeAnalysis/FSharpCheckerResults.fs</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpAnalyzer.fsi">
+      <Link>CodeAnalysis/FSharpAnalyzer.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\service\FSharpAnalyzer.fs">
+      <Link>CodeAnalysis/FSharpAnalyzer.fs</Link>
+    </Compile>
+    <Compile Include="..\fsc.fsi">
+      <Link>Service/fsc.fsi</Link>
+    </Compile>
+    <Compile Include="..\fsc.fs">
+      <Link>Service/fsc.fs</Link>
+    </Compile>
     <Compile Include="..\service\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
     <Compile Include="..\service\IncrementalBuild.fs">
       <Link>Service/IncrementalBuild.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
-      <Link>Service/ServiceCompilerDiagnostics.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceCompilerDiagnostics.fs">
-      <Link>Service/ServiceCompilerDiagnostics.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceConstants.fs">
-      <Link>Service/ServiceConstants.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceDeclarationLists.fsi">
-      <Link>Service/ServiceDeclarationLists.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceDeclarationLists.fs">
-      <Link>Service/ServiceDeclarationLists.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceLexing.fsi">
-      <Link>Service/ServiceLexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceLexing.fs">
-      <Link>Service/ServiceLexing.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceParseTreeWalk.fsi">
-      <Link>Service/ServiceParseTreeWalk.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceParseTreeWalk.fs">
-      <Link>Service/ServiceParseTreeWalk.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceNavigation.fsi">
-      <Link>Service/ServiceNavigation.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceNavigation.fs">
-      <Link>Service/ServiceNavigation.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceParamInfoLocations.fsi">
-      <Link>Service/ServiceParamInfoLocations.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceParamInfoLocations.fs">
-      <Link>Service/ServiceParamInfoLocations.fs</Link>
-    </Compile>
-    <Compile Include="..\service\FSharpParseFileResults.fsi">
-      <Link>Service/FSharpParseFileResults.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\FSharpParseFileResults.fs">
-      <Link>Service/FSharpParseFileResults.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceParsedInputOps.fsi">
-      <Link>Service/ServiceParsedInputOps.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceParsedInputOps.fs">
-      <Link>Service/ServiceParsedInputOps.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceAssemblyContent.fsi">
-      <Link>Service/ServiceAssemblyContent.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceAssemblyContent.fs">
-      <Link>Service/ServiceAssemblyContent.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceXmlDocParser.fsi">
-      <Link>Service/ServiceXmlDocParser.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ServiceXmlDocParser.fs">
-      <Link>Service/ServiceXmlDocParser.fs</Link>
-    </Compile>
-    <Compile Include="..\service\ExternalSymbol.fsi">
-      <Link>Service/ExternalSymbol.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\ExternalSymbol.fs">
-      <Link>Service/ExternalSymbol.fs</Link>
-    </Compile>
-    <Compile Include="..\service\QuickParse.fsi">
-      <Link>Service/QuickParse.fsi</Link>
-    </Compile>
-    <Compile Include="..\service\QuickParse.fs">
-      <Link>Service/QuickParse.fs</Link>
-    </Compile>
-    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fsi">
-      <Link>Service/FSharpCheckerResults.fsi</Link>
-    </Compile>
-    <Compile Include="..\..\fsharp\service\FSharpCheckerResults.fs">
-      <Link>Service/FSharpCheckerResults.fs</Link>
     </Compile>
     <Compile Include="..\service\service.fsi">
       <Link>Service/service.fsi</Link>
@@ -919,23 +913,35 @@
     <Compile Include="..\service\service.fs">
       <Link>Service/service.fs</Link>
     </Compile>
+    <Compile Include="..\service\ServiceXmlDocParser.fsi">
+      <Link>EditorServices/ServiceXmlDocParser.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceXmlDocParser.fs">
+      <Link>EditorServices/ServiceXmlDocParser.fs</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fsi">
+      <Link>EditorServices/ServiceCompilerDiagnostics.fsi</Link>
+    </Compile>
+    <Compile Include="..\service\ServiceCompilerDiagnostics.fs">
+      <Link>EditorServices/ServiceCompilerDiagnostics.fs</Link>
+    </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fsi">
-      <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
+      <Link>EditorServices/ServiceInterfaceStubGenerator.fsi</Link>
     </Compile>
     <Compile Include="..\service\ServiceInterfaceStubGenerator.fs">
-      <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
+      <Link>EditorServices/ServiceInterfaceStubGenerator.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceStructure.fsi">
-      <Link>Service/ServiceStructure.fsi</Link>
+      <Link>EditorServices/ServiceStructure.fsi</Link>
     </Compile>
     <Compile Include="..\service\ServiceStructure.fs">
-      <Link>Service/ServiceStructure.fs</Link>
+      <Link>EditorServices/ServiceStructure.fs</Link>
     </Compile>
     <Compile Include="..\service\ServiceAnalysis.fsi">
-      <Link>Service/ServiceAnalysis.fsi</Link>
+      <Link>EditorServices/ServiceAnalysis.fsi</Link>
     </Compile>
     <Compile Include="..\service\ServiceAnalysis.fs">
-      <Link>Service/ServiceAnalysis.fs</Link>
+      <Link>EditorServices/ServiceAnalysis.fs</Link>
     </Compile>
     <Compile Include="..\fsi\fsi.fsi">
       <Link>InteractiveSession/fsi.fsi</Link>

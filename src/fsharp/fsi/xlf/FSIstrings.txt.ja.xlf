@@ -17,6 +17,11 @@
         <target state="translated">操作に失敗しました。エラー テキストがエラー ストリームに出力されました。対応する FSharpDiagnostic を戻すには、EvalInteractionNonThrowing、EvalScriptNonThrowing、または EvalExpressionNonThrowing を使用します</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">エラーのため停止しました\n</target>

@@ -17,6 +17,11 @@
         <target state="translated">Falha na operação. O texto do erro foi impresso no fluxo de erros. Para retornar o FSharpDiagnostic correspondente, use EvalInteractionNonThrowing, EvalScriptNonThrowing ou EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Interrompido devido a erro\n</target>

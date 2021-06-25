@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
+    <PackageVersion>$(FSCoreUnitTestsPackageVersion)</PackageVersion>
+    <PreRelease>true</PreRelease>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- lay down the analyzer DLL in the tools/fsharp41 directory of the package, i.e. a compiler tool -->
+    <TfmSpecificPackageFile Include="$(OutputPath)\Test.Analyzer.dll">
+      <PackagePath>tools/fsharp41/$(TargetFramework)/Test.Analyzer.dll</PackagePath>
+    </TfmSpecificPackageFile>
+    <Compile Include="Analyzer.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
+</Project>

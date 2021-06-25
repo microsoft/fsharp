@@ -17,6 +17,11 @@
         <target state="translated">L'operazione non è riuscita. Il testo dell'errore è stato stampato nel flusso degli errori. Per restituire l'elemento FSharpDiagnostic corrispondente, usare EvalInteractionNonThrowing, EvalScriptNonThrowing o EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Interruzione a causa di un errore\n</target>

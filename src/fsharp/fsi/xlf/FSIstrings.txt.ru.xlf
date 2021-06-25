@@ -17,6 +17,11 @@
         <target state="translated">Не удалось выполнить операцию. Текст ошибки был выведен в потоке ошибок. Чтобы вернуть соответствующие сведения FSharpDiagnostic, используйте EvalInteractionNonThrowing, EvalScriptNonThrowing или EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Остановлено из-за ошибки\n</target>

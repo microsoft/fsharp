@@ -5,9 +5,11 @@ open System.IO
 open System.IO.MemoryMappedFiles
 open System.Buffers
 open System.Reflection
+open System.Text
 open System.Threading
 open System.Runtime.InteropServices
 open FSharp.NativeInterop
+open FSharp.Compiler.Text
 open Internal.Utilities.Library
 
 open System.Text
@@ -947,3 +949,15 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
 
     static member FromByteArrayAndCopy(bytes: byte [], useBackingMemoryMappedFile: bool) =
         ByteStorage.FromByteMemoryAndCopy(ByteMemory.FromArray(bytes).AsReadOnly(), useBackingMemoryMappedFile)
+
+module internal SourceText =
+    let readFile fileName inputCodePage = 
+        let fileName = FileSystem.GetFullPathShim fileName
+        use stream = FileSystem.OpenFileForReadShim(fileName)
+        use reader = 
+            match inputCodePage with 
+            | None -> new StreamReader(stream, true)
+            | Some (n: int) -> new StreamReader(stream, Encoding.GetEncoding n) 
+        let source = reader.ReadToEnd()
+        SourceText.ofString source
+

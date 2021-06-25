@@ -165,6 +165,20 @@ type Document with
                 return raise(System.OperationCanceledException("Unable to get FSharp parse and check results."))
         }
 
+    /// Parses and checks the given F# document.
+    member this.FSharpAnalyzeFileInProject(parseResults, checkResults, userOpName) =
+        async {
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
+            return! checker.AnalyzeFileInProject(parseResults, checkResults, projectOptions, userOpName=userOpName)
+        }
+
+    /// Parses and checks the given F# document.
+    member this.GetFSharpAdditionalAnalyzerToolTips(userOpName, parseResults, checkFileResults, fcsPos) =
+        async {
+            let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
+            return! checker.GetAdditionalAnalyzerToolTips(parseResults, checkFileResults, options=projectOptions, pos=fcsPos, userOpName=userOpName)
+        }
+
     /// Get the semantic classifications of the given F# document.
     member this.GetFSharpSemanticClassificationAsync(userOpName) =
         async {

@@ -27,6 +27,11 @@
         <target state="translated">Podpisywanie kontenerów kluczy nie jest obsługiwane na tej platformie.</target>
         <note />
       </trans-unit>
+      <trans-unit id="couldNotLoadAnalyzerExtension">
+        <source>The analyzer extension {0} could not be loaded. Message: {1}</source>
+        <target state="new">The analyzer extension {0} could not be loaded. Message: {1}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csAvailableOverloads">
         <source>Available overloads:\n{0}</source>
         <target state="translated">Dostępne przeciążenia:\n{0}</target>
@@ -70,6 +75,36 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">Argument „{0}” nie jest zgodny</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerConstructionException">
+        <source>The analyzer '{0}' raised an exception during analyzer construction: '{1}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analyzer construction: '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerDoesNotHaveValidConstructor">
+        <source>The analyzer '{0}' doesn't have a valid constructor.</source>
+        <target state="new">The analyzer '{0}' doesn't have a valid constructor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerException">
+        <source>The analyzer '{0}' raised an exception during analysis of file '{1}': '{2}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analysis of file '{1}': '{2}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerLoadFailure">
+        <source>The analyzer '{0}' failed to load: '{1}'</source>
+        <target state="new">The analyzer '{0}' failed to load: '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etAnalyzerTypeInitializationException">
+        <source>The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</source>
+        <target state="new">The analyzer '{0}' raised an exception during analyzer type initialization: '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="etCompilerToolPathDidntExist">
+        <source>The compiler tool path '{0}' did not exist.</source>
+        <target state="new">The compiler tool path '{0}' did not exist.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">

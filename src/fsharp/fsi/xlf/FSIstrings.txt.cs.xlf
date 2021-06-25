@@ -17,6 +17,11 @@
         <target state="translated">Operace nebyla úspěšná. Text chyby se vytiskl do streamu chyb. Pokud chcete vrátit odpovídající FSharpDiagnostic, použijte EvalInteractionNonThrowing, EvalScriptNonThrowing nebo EvalExpressionNonThrowing.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Zastavilo se kvůli chybě.\n</target>

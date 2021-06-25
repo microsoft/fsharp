@@ -63,6 +63,12 @@ let (|StopProcessing|_|) exn = match exn with StopProcessingExn _ -> Some () | _
 
 let StopProcessing<'T> = StopProcessingExn None
 
+exception CompilerToolDiagnostic of (int * string) * range with   // int is e.g. 191 in FS0191
+    override this.Message =
+        match this :> exn with
+        | CompilerToolDiagnostic((_, msg), _) -> msg
+        | _ -> "impossible"
+
 exception Error of (int * string) * range with   // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
@@ -186,6 +192,8 @@ module BuildPhaseSubcategory =
     [<Literal>] 
     let Interactive = "interactive"        
     [<Literal>] 
+    let Analysis = "analysis"        
+    [<Literal>] 
     let Internal = "internal"          // Compiler ICE
 
 [<DebuggerDisplay("{DebugDisplay()}")>]
@@ -288,15 +296,15 @@ type CapturingErrorLogger(nm) =
     let mutable errorCount = 0 
     let diagnostics = ResizeArray()
 
-    override _.DiagnosticSink(phasedError, severity) = 
+    override x.DiagnosticSink(phasedError, severity) = 
         if severity = FSharpDiagnosticSeverity.Error then errorCount <- errorCount + 1
         diagnostics.Add (phasedError, severity) 
 
-    override _.ErrorCount = errorCount
+    override x.ErrorCount = errorCount
 
-    member _.Diagnostics = diagnostics |> Seq.toList
+    member x.Diagnostics = diagnostics |> Seq.toList
 
-    member _.CommitDelayedDiagnostics(errorLogger:ErrorLogger) = 
+    member x.CommitDelayedDiagnostics(errorLogger:ErrorLogger) = 
         // Eagerly grab all the errors and warnings from the mutable collection
         let errors = diagnostics.ToArray()
         errors |> Array.iter errorLogger.DiagnosticSink
@@ -385,11 +393,11 @@ module ErrorLoggerExtensions =
         member x.Warning exn = 
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Warning)
 
-        member x.Error   exn = 
-            x.ErrorR exn
+        member x.Error exn = 
+            x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Error)
             raise (ReportedError (Some exn))
 
-        member x.SimulateError  (ph: PhasedDiagnostic) =
+        member x.SimulateError (ph: PhasedDiagnostic) = 
             x.DiagnosticSink (ph, FSharpDiagnosticSeverity.Error)
             raise (ReportedError (Some ph.Exception))
 
@@ -464,6 +472,9 @@ let errorR exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
+
+/// Raises a warning with error recovery and returns unit.
+let diagnostic (exn, severity) = CompileThreadStatic.ErrorLogger.EmitDiagnostic (exn, severity)
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error exn = CompileThreadStatic.ErrorLogger.Error exn

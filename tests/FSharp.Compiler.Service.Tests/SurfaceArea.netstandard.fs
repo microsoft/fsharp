@@ -1901,6 +1901,31 @@ FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryRe
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+MetadataOnlyFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+ReduceMemoryFlag
 FSharp.Compiler.AbstractIL.ILBinaryReader: FSharp.Compiler.AbstractIL.ILBinaryReader+Shim
+FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext: Boolean EditorServicesRequested
+FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext: Boolean get_EditorServicesRequested()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Boolean RequiresAssemblyContents
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Boolean get_RequiresAssemblyContents()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext Context
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext get_Context()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckFiles(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: FSharp.Compiler.Diagnostics.FSharpDiagnostic[] OnCheckProject(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]] TryAdditionalToolTip(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext, FSharp.Compiler.Text.Position)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`2[FSharp.Compiler.Text.Range,System.String][]] TryCodeFix(FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext, FSharp.Compiler.Diagnostics.FSharpDiagnostic[])
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: System.String[] FixableDiagnosticIds
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: System.String[] get_FixableDiagnosticIds()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzer: Void .ctor(FSharp.Compiler.CodeAnalysis.FSharpAnalysisContext)
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults[] CheckerModel
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults[] get_CheckerModel()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: System.Threading.CancellationToken CancellationToken
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckFilesContext: System.Threading.CancellationToken get_CancellationToken()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults CheckerModel
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: FSharp.Compiler.CodeAnalysis.FSharpCheckProjectResults get_CheckerModel()
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: System.Threading.CancellationToken CancellationToken
+FSharp.Compiler.CodeAnalysis.FSharpAnalyzerCheckProjectContext: System.Threading.CancellationToken get_CancellationToken()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults Item
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer+Succeeded: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults get_Item()
@@ -1937,6 +1962,8 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServi
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.MethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblyContents PartialAssemblyContents
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblyContents get_PartialAssemblyContents()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature PartialAssemblySignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_PartialAssemblySignature()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpOpenDeclaration[] OpenDeclarations
@@ -1947,6 +1974,10 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FShar
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpDisplayContext] GetDisplayContextForPos(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpImplementationFileContents] ImplementationFile
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Symbols.FSharpImplementationFileContents] get_ImplementationFile()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Syntax.ParsedInput ParseTree
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Syntax.ParsedInput get_ParseTree()
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] SourceText
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] get_SourceText()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] GenerateSignature()
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.CodeAnalysis.FSharpSymbolUse]] GetMethodsAsSymbols(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: Microsoft.FSharp.Core.FSharpOption`1[System.String] GetF1Keyword(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String])
@@ -1989,6 +2020,8 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] GetBackgroundParseResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] ParseFile(System.String, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpParsingOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults] ParseFileInProject(System.String, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic[]] AnalyzeFileInProject(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[FSharp.Compiler.Text.TaggedText[][]] GetAdditionalAnalyzerToolTips(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, FSharp.Compiler.Text.Position, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2023,6 +2056,8 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateAll()
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void InvalidateConfiguration(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Void set_MaxMemory(Int32)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] SourceText
+FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.ISourceText] get_SourceText()
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsBindingALambdaAtPosition(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPosContainedInApplication(FSharp.Compiler.Text.Position)
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: Boolean IsPositionContainedInACurriedParameter(FSharp.Compiler.Text.Position)
@@ -8892,6 +8927,7 @@ FSharp.Compiler.Text.Line: Int32 toZ(Int32)
 FSharp.Compiler.Text.NavigableTaggedText
 FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Text.NavigableTaggedText: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Text.NavigableTaggedText: Void .ctor(FSharp.Compiler.Text.TaggedText, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Text.Position
 FSharp.Compiler.Text.Position: Boolean Equals(System.Object)
 FSharp.Compiler.Text.Position: Int32 Column
@@ -9172,6 +9208,10 @@ FSharp.Compiler.Text.TextTag: Int32 GetHashCode(System.Collections.IEqualityComp
 FSharp.Compiler.Text.TextTag: Int32 Tag
 FSharp.Compiler.Text.TextTag: Int32 get_Tag()
 FSharp.Compiler.Text.TextTag: System.String ToString()
+FSharp.Compiler.Text.WebLinkTaggedText
+FSharp.Compiler.Text.WebLinkTaggedText: System.Uri Uri
+FSharp.Compiler.Text.WebLinkTaggedText: System.Uri get_Uri()
+FSharp.Compiler.Text.WebLinkTaggedText: Void .ctor(FSharp.Compiler.Text.TaggedText, System.Uri)
 FSharp.Compiler.Tokenization.FSharpKeywords
 FSharp.Compiler.Tokenization.FSharpKeywords: Boolean DoesIdentifierNeedQuotation(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] KeywordNames

@@ -31,6 +31,7 @@ open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
@@ -43,6 +44,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
@@ -583,13 +585,30 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     // Type check the inputs
     let inputs = inputs |> List.map fst
 
-    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
+    let tcState, topAttrs, tcFileResults, tcEnvAtEnd =
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
+    ReportTime tcConfig "Run Analyzers"
     AbortOnError(errorLogger, exiter)
-    ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
+    let analyzers = FSharpAnalyzers.ImportAnalyzers(tcConfig, tcConfig.compilerToolPaths)
+
+    FSharpAnalyzers.RunAnalyzers(analyzers, tcConfig, tcImports, tcGlobals, tcState.Ccu, sourceFiles, tcFileResults, tcEnvAtEnd)
+
+    AbortOnError(errorLogger, exiter)
+
+    let typedImplFiles = tcFileResults |> List.collect (fun (_a,b,_c) -> Option.toList b)
+
+    // TODO: run project analysis
+    //let ctxt = 
+    //    FSharpAnalyzerCheckProjectContext(sourceTexts, 
+    //        inp.FileName,
+    //        projectOptions,
+    //        parseResults,
+    //        checkResults)
+    if tcConfig.typeCheckOnly then exiter.Exit 0
+
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedImplFiles, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 
 /// Alternative first phase of compilation.  This is for the compile-from-AST feature of FCS.
 ///   - Import assemblies
@@ -702,13 +721,16 @@ let main1OfAst
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
-    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
+    let tcState, topAttrs, tcFileResults, _tcEnvAtEnd =
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbFile, assemblyName, errorLogger, exiter)
+    if tcConfig.typeCheckOnly then exiter.Exit 0
+    let typedImplFiles = List.choose p23 tcFileResults
+    
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedImplFiles, topAttrs, tcConfig, outfile, pdbFile, assemblyName, errorLogger, exiter)
 
 /// Second phase of compilation.
 ///   - Write the signature file, check some attributes

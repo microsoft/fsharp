@@ -75,13 +75,15 @@ type CompletionContext =
 //----------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput, parseHadErrors: bool, dependencyFiles: string[]) = 
+type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput, sourceText: ISourceText option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
     member _.Diagnostics = diagnostics
 
     member _.ParseHadErrors = parseHadErrors
 
     member _.ParseTree = input
+
+    member _.SourceText = sourceText
 
     member _.TryRangeOfNameOfNearestOuterBindingContainingPos pos =
         let tryGetIdentRangeFromBinding binding =

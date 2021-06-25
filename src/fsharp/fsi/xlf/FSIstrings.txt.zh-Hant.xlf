@@ -17,6 +17,11 @@
         <target state="translated">作業失敗。錯誤文字已列印在錯誤串流中。若要傳回相對應的 FSharpDiagnostic，請使用 EvalInteractionNonThrowing、EvalScriptNonThrowing 或 EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">已因錯誤而停止\n</target>

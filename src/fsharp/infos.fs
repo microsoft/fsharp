@@ -1139,8 +1139,9 @@ type MethInfo =
         match x with
         | ILMeth(_g, ilmeth, _) -> ilmeth.IsVirtual
         | FSMeth(g, _, vref, _) as x ->
-            isInterfaceTy g x.ApparentEnclosingType  ||
-            vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
+            not x.IsExtensionMember &&
+            (isInterfaceTy g x.ApparentEnclosingType  ||
+             vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
         | DefaultStructCtor _ -> false
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> x.IsVirtual // Note: follow same implementation as ILMeth
@@ -2056,7 +2057,8 @@ type PropInfo =
         | ILProp ilpinfo -> ilpinfo.IsVirtual
         | FSProp(g, ty, Some vref, _)
         | FSProp(g, ty, _, Some vref) ->
-            isInterfaceTy g ty  || (vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
+            not x.IsExtensionMember &&
+            (isInterfaceTy g ty  || vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
         | FSProp _ -> failwith "unreachable"
 #if !NO_EXTENSIONTYPING
         | ProvidedProp(_, pi, m) ->

@@ -782,6 +782,8 @@ Microsoft.FSharp.Core.CompilerServices.TypeProviderTypeAttributes: Microsoft.FSh
 Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute: System.String CommentText
 Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute: System.String get_CommentText()
 Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute: Void .ctor(System.String)
+Microsoft.FSharp.Core.CompilerServices.AnalyzerAssemblyAttribute: Void .ctor()
+Microsoft.FSharp.Core.CompilerServices.AnalyzerAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomComparisonAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomEqualityAttribute: Void .ctor()
 Microsoft.FSharp.Core.CustomOperationAttribute: Boolean AllowIntoPattern

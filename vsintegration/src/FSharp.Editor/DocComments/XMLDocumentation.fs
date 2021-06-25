@@ -64,9 +64,15 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                 addTaggedTextEntry TaggedText.lineBreak
                 addTaggedTextEntry TaggedText.lineBreak)
 
+    // TODO: bail out early if line limit is already hit
     interface ITaggedTextCollector with
         member this.Add taggedText = 
-            // TODO: bail out early if line limit is already hit
+            // Don't apply this cleanup code to navigation elements
+            match taggedText with
+            | :? NavigableTaggedText 
+            | :? WebLinkTaggedText -> addTaggedTextEntry taggedText
+            |  _ -> 
+            // Don't apply this cleanup code to non-text elements
             match taggedText.Tag with
             | TextTag.Text -> reportTextLines taggedText.Text
             | _ -> addTaggedTextEntry taggedText
@@ -300,19 +306,29 @@ module internal XmlDocumentation =
     let private AddSeparator (collector: ITaggedTextCollector) =
         if not collector.IsEmpty then
             EnsureHardLine collector
-            collector.Add (tagText "-------------")
+            collector.Add (tagText "—————————————————")
             AppendHardLine collector
 
     /// Build a data tip text string with xml comments injected.
     let BuildTipText(documentationProvider:IDocumentationBuilder, 
                      dataTipText: ToolTipElement list,
-                     textCollector, xmlCollector,  typeParameterMapCollector, usageCollector, exnCollector,
-                     showText, showExceptions, showParameters) = 
+                     analyzerExtras: FSharp.Compiler.Text.TaggedText[][],
+                     textCollector,
+                     xmlCollector, 
+                     typeParameterMapCollector,
+                     usageCollector,
+                     exnCollector,
+                     analyzerExtrasCollector,
+                     showText,
+                     showExceptions,
+                     showParameters,
+                     showAnalyzerExtras) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
         let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
         let typeParameterMapCollector: ITaggedTextCollector = TextSanitizingCollector(typeParameterMapCollector, lineLimit = 6) :> _
         let exnCollector: ITaggedTextCollector = TextSanitizingCollector(exnCollector, lineLimit = 45) :> _
         let usageCollector: ITaggedTextCollector = TextSanitizingCollector(usageCollector, lineLimit = 45) :> _
+        let analyzerExtrasCollector: ITaggedTextCollector = TextSanitizingCollector(analyzerExtrasCollector, lineLimit = 45) :> _
 
         let addSeparatorIfNecessary add =
             if add then
@@ -376,16 +392,21 @@ module internal XmlDocumentation =
                 true
 
         List.fold Process false dataTipText |> ignore
+        if showAnalyzerExtras then
+            for extra in analyzerExtras do
+                AppendHardLine analyzerExtrasCollector
+                extra |> Seq.iter analyzerExtrasCollector.Add
 
-    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, ToolTipText(dataTipText)) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, true, true, false) 
+    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, analyzerExtrasCollector, ToolTipText(dataTipText), analyzerExtras: TaggedText[][]) = 
+        BuildTipText(documentationProvider, dataTipText, analyzerExtras, textCollector, xmlCollector, typeParameterMapCollector, usageCollector, exnCollector, analyzerExtrasCollector, true, true, false, true) 
 
     let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, ToolTipText(dataTipText), showParams) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, xmlCollector, ignore, ignore, false, false, showParams) 
+        BuildTipText(documentationProvider, dataTipText, [| |], textCollector, xmlCollector, xmlCollector, ignore, ignore, ignore, false, false, false, showParams) 
 
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
         AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)
 
     let documentationBuilderCache = ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
+
     let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService) = 
         documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService) :> IDocumentationBuilder))

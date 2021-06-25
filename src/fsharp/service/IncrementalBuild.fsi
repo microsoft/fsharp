@@ -77,8 +77,8 @@ type internal TcInfoExtras =
       tcSymbolUses: TcSymbolUses
       tcOpenDeclarations: OpenDeclaration[]
 
-      /// Result of checking most recent file, if any
-      latestImplFile: TypedImplFile option
+      /// Contents of checking file
+      tcImplFile: TypedImplFile option
       
       /// If enabled, stores a linear list of ranges and strings that identify an Item(symbol) in a file. Used for background find all references.
       itemKeyStore: ItemKeyStore option
@@ -88,6 +88,8 @@ type internal TcInfoExtras =
     }
 
     member TcSymbolUses: TcSymbolUses
+
+    member TcImplFile: TypedImplFile option
 
 /// Represents the state in the incremental graph associated with checking a file
 [<Sealed>]
@@ -101,18 +103,29 @@ type internal PartialCheckResults =
 
     member TimeStamp: DateTime 
 
+    /// Peek to see the results.
+    /// For thread-safe access to pre-computed results
+    /// If `enablePartialTypeChecking` is false then extras will be available
     member TryPeekTcInfo: unit -> TcInfo option
 
-    member TryPeekTcInfoWithExtras: unit -> (TcInfo * TcInfoExtras) option
+    /// Peek to see the results.
+    /// For thread-safe access to pre-computed results
+    /// If `enablePartialTypeChecking` is false then extras will be available
+    member TryPeekTcInfoExtras: unit -> TcInfoExtras option
+
+    /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
+    /// extras will also be available, otherwise they will be empty
+    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
+    /// Only use when it's absolutely necessary to get rich information on a file.
+    member GetOrComputeTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
 
     /// Compute the "TcInfo" part of the results.  If `enablePartialTypeChecking` is false then
     /// extras will also be available.
     member GetOrComputeTcInfo: unit -> NodeCode<TcInfo>
 
-    /// Compute both the "TcInfo" and "TcInfoExtras" parts of the results.
-    /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
-    /// Only use when it's absolutely necessary to get rich information on a file.
-    member GetOrComputeTcInfoWithExtras: unit -> NodeCode<TcInfo * TcInfoExtras>
+    /// Compute the "TcImplFiles" part of the results, which include the TcImplFiles from all previous
+    /// files in the compilation order.  Will be empty if `enablePartialTypeChecking` is true
+    member GetOrComputeTcImplFiles: unit -> NodeCode<TypedImplFile list>
 
     /// Compute the "ItemKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
@@ -121,6 +134,7 @@ type internal PartialCheckResults =
     /// Will return 'None' for enableBackgroundItemKeyStoreAndSemanticClassification=false.
     member GetOrComputeItemKeyStoreIfEnabled: unit -> NodeCode<ItemKeyStore option>
 
+    /// Compute the "SemanticClassificationKeyStore" parts of the results.
     /// Can cause a second type-check if `enablePartialTypeChecking` is true in the checker.
     /// Only use when it's absolutely necessary to get rich information on a file.
     ///
@@ -189,12 +203,6 @@ type internal IncrementalBuilder =
       /// This is safe for use from non-compiler threads
       member AreCheckResultsBeforeFileInProjectReady: filename:string -> bool
 
-      /// Get the preceding typecheck state of a slot, WITH checking if it is up-to-date w.r.t. However, files will not be parsed or checked.
-      /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available or if it is not up-to-date.
-      ///
-      /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member TryGetCheckResultsBeforeFileInProject: filename: string -> PartialCheckResults option
-
       /// Get the preceding typecheck state of a slot. Compute the entire type check of the project up
       /// to the necessary point if the result is not available. This may be a long-running operation.
       member GetCheckResultsBeforeFileInProject : filename:string -> NodeCode<PartialCheckResults>
@@ -237,6 +245,13 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
+      /// Get the active analyzers for the project
+      member Analyzers: FSharpAnalyzer list
+
+      /// True if keeping assembly contents, either for entire checker of because an analyzer in this builder
+      /// requires it.
+      member KeepAssemblyContents: bool
+      
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
           LegacyReferenceResolver *
@@ -248,13 +263,13 @@ type internal IncrementalBuilder =
           projectReferences: IProjectReference list *
           projectDirectory:string *
           useScriptResolutionRules:bool *
-          keepAssemblyContents: bool *
+          keepAssemblyContentsRequestForChecker: bool *
           keepAllBackgroundResolutions: bool *
           tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot *
           suggestNamesForErrors: bool *
           keepAllBackgroundSymbolUses: bool *
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
-          enablePartialTypeChecking: bool *
+          enablePartialTypeCheckingRequestForChecker: bool *
           dependencyProvider: DependencyProvider option
              -> NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 

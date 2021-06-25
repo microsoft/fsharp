@@ -104,6 +104,7 @@ type StringText(str: string) =
 module SourceText =
 
     let ofString str = StringText(str) :> ISourceText
+
 // NOTE: the code in this file is a drop-in replacement runtime for Lexing.fs from the FsLexYacc repository
 
 namespace Internal.Utilities.Text.Lexing

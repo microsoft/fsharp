@@ -17,6 +17,11 @@
         <target state="translated">İşlem başarısız oldu. Hata metni hata akışında yazdırıldı. İlgili FSharpDiagnostic'i döndürmek için EvalInteractionNonThrowing, EvalScriptNonThrowing veya EvalExpressionNonThrowing kullanın</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Hata nedeniyle durduruldu\n</target>

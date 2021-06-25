@@ -11,6 +11,7 @@ open System.Text
 open System.Runtime.CompilerServices
 
 open FSharp.NativeInterop
+open FSharp.Compiler.Text
 
 open Internal.Utilities.Library
 
@@ -403,3 +404,6 @@ type internal ByteStorage =
 
     /// Creates a ByteStorage that has a copy of the given byte array.
     static member FromByteArrayAndCopy : byte [] * useBackingMemoryMappedFile: bool -> ByteStorage
+
+module internal SourceText =
+     val readFile: fileName: string -> inputCodePage: int option -> ISourceText

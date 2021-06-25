@@ -125,6 +125,7 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | LetRecEvaluatedOutOfOrder (_, _, _, m)
       | Error (_, m)
       | ErrorWithSuggestions (_, m, _, _)
+      | CompilerToolDiagnostic (_, m)
       | SyntaxError (_, m)
       | InternalError (_, m)
       | InterfaceNotRevealed(_, _, m)
@@ -342,6 +343,7 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | Error ((n, _), _) -> n
       | ErrorWithSuggestions ((n, _), _, _, _) -> n
       | Failure _ -> 192
+      | CompilerToolDiagnostic((n, _), _) -> n
       | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar))
 #if !NO_EXTENSIONTYPING
       | :? TypeProviderError as e -> e.Number
@@ -357,8 +359,9 @@ let GetWarningLevel err =
     | LetRecEvaluatedOutOfOrder _
     | DefensiveCopyWarning _  -> 5
 
-    | Error((n, _), _)
-    | ErrorWithSuggestions((n, _), _, _, _) ->
+    | CompilerToolDiagnostic((n, _), _)
+    | ErrorWithSuggestions((n, _), _, _, _)
+    | Error((n, _), _) ->
         // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
         // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
         // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
@@ -1447,6 +1450,8 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | ErrorWithSuggestions ((_, s), _, idText, suggestionF) ->
           os.Append(DecompileOpName s) |> ignore
           suggestNames suggestionF idText
+
+      | CompilerToolDiagnostic ((_, s), _) -> os.Append s |> ignore
 
       | InternalError (s, _)
 

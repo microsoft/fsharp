@@ -35,6 +35,8 @@ type public FSharpImplementationFileContents =
     /// Indicates if the implementation file has an explicit entry point
     member HasExplicitEntryPoint:  bool
 
+    // TODO: Add a stamp here to allow incrementalization w.r.t. FSharpAssemblyContents
+
 /// Represents a declaration in an implementation file, as seen by the F# language
 [<RequireQualifiedAccess>]
 type public FSharpImplementationFileDeclaration = 

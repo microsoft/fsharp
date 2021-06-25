@@ -14,6 +14,7 @@ fsiRemaining,"Treat remaining arguments as command line arguments, accessed usin
 fsiHelp,"Display this usage message (Short form: -?)"
 fsiExec,"Exit fsi after loading the files or running the .fsx script given on the command line"
 fsiGui,"Execute interactions on a Windows Forms event loop (on by default)"
+fsiRunAnalyzers,"Execute analyzers (off by default)"
 fsiQuiet,"Suppress fsi writing to stdout"
 fsiReadline,"Support TAB completion in console (on by default)"
 fsiEmitDebugInfoInQuotations,"Emit debug information in quotations"

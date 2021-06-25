@@ -124,6 +124,27 @@ type public FSharpChecker =
     member CheckFileInProject: parseResults: FSharpParseFileResults * filename: string * fileVersion: int * sourceText: ISourceText * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
+    ///   Run analyzers on a source code file
+    /// </summary>
+    ///
+    /// <param name="parseResults">The results of ParseFile for this file.</param>
+    /// <param name="checkResults">The results of CheckFileInProject for this file.</param>
+    /// <param name="options">The options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member AnalyzeFileInProject: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpDiagnostic[]>
+
+    /// <summary>
+    ///   Get the additional tooltips provided by all analyzers at a specific location
+    /// </summary>
+    ///
+    /// <param name="parseResults">The results of ParseFile for this file.</param>
+    /// <param name="checkResults">The results of CheckFileInProject for this file.</param>
+    /// <param name="options">The options for the project or script.</param>
+    /// <param name="pos">The position where the tool tip is requested.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetAdditionalAnalyzerToolTips: parseResults: FSharpParseFileResults * checkResults: FSharpCheckFileResults * options: FSharpProjectOptions * pos: Position * ?userOpName: string -> Async<TaggedText[][]>
+
+    /// <summary>
     /// <para>
     ///   Parse and check a source code file, returning a handle to the results
     /// </para>

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" >
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <OutputType>Library</OutputType>
+        <IsPackable>false</IsPackable>
+
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FscToolPath>..\..\..\artifacts\bin\fsc\Debug\net472</FscToolPath>
+        <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+        <DotnetFscCompilerPath></DotnetFscCompilerPath>
+        <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
+        <!-- TorchSharp local build packages -->
+        <RestoreSources Condition="Exists('$(MSBuildThisFileDirectory)../TorchSharp/bin/packages/Release')">
+          $(RestoreSources);../../../artifacts/packages/$(Configuration)/Shipping
+        </RestoreSources>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="test.fs" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="Test.Analyzer" Version="5.0.1-dev">
+         <IsFSharpDesignTimeProvider>true</IsFSharpDesignTimeProvider>
+      </PackageReference>
+    </ItemGroup>
+
+</Project>

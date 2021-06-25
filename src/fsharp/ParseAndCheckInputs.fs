@@ -479,6 +479,7 @@ let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, conditionalCompilat
 let ProcessMetaCommandsFromInput
      (nowarnF: 'state -> range * string -> 'state,
       hashReferenceF: 'state -> range * string * Directive -> 'state,
+      compilerToolF: 'state -> range * string -> 'state,
       loadSourceF: 'state -> range * string -> unit)
      (tcConfig:TcConfigBuilder,
       inp: ParsedInput,
@@ -529,6 +530,9 @@ let ProcessMetaCommandsFromInput
             | ParsedHashDirective(("reference" | "r"), args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
+
+            | ParsedHashDirective("compilertool", args, m) ->
+                List.fold (fun state d -> compilerToolF state (m,d)) state args
 
             | ParsedHashDirective(("i"), args, m) ->
                 matchedm<-m
@@ -609,9 +613,10 @@ let ApplyNoWarnsToTcConfig (tcConfig: TcConfig, inp: ParsedInput, pathOfMetaComm
     let tcConfigB = tcConfig.CloneToBuilder()
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
     let addReference = fun () (_m, _s, _) -> ()
+    let addCompilerTool = fun () (_m, _s) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
     ProcessMetaCommandsFromInput
-        (addNoWarn, addReference, addLoadedSource)
+        (addNoWarn, addReference, addCompilerTool, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
@@ -620,9 +625,10 @@ let ApplyMetaCommandsFromInputToTcConfig (tcConfig: TcConfig, inp: ParsedInput, 
     let tcConfigB = tcConfig.CloneToBuilder()
     let getWarningNumber = fun () _ -> ()
     let addReferenceDirective = fun () (m, path, directive) -> tcConfigB.AddReferenceDirective(dependencyProvider, m, path, directive)
+    let addCompilerTool = fun () (m, s) -> tcConfigB.AddCompilerToolsByPath(m, s)
     let addLoadedSource = fun () (m,s) -> tcConfigB.AddLoadedSource(m,s,pathOfMetaCommandSource)
     ProcessMetaCommandsFromInput
-        (getWarningNumber, addReferenceDirective, addLoadedSource)
+        (getWarningNumber, addReferenceDirective, addCompilerTool, addLoadedSource)
         (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
@@ -801,7 +807,7 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
                         tcsRootSigs=rootSigs
                         tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes}
 
-              return (tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
+              return (tcEnv, EmptyTopAttrs, (inp, None, ccuSigForFile)), tcState
 
           | ParsedInput.ImplFile (ParsedImplFileInput (_, _, qualNameOfFile, _, _, _, _) as file) ->
 
@@ -868,11 +874,11 @@ let TypeCheckOneInput (checkForErrors, tcConfig: TcConfig, tcImports: TcImports,
                         tcsRootImpls=rootImpls
                         tcsCcuSig=ccuSigForFile
                         tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
-              return (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), tcState
-
+              return (tcEnvAtEnd, topAttrs, (inp, Some implFile, ccuSigForFile)), tcState
+     
         with e ->
             errorRecovery e range0
-            return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
+            return (tcState.TcEnvFromSignatures, EmptyTopAttrs, (inp, None, tcState.tcsCcuSig)), tcState
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
@@ -886,13 +892,12 @@ let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals
         |> Cancellable.runWithoutCancellation
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
-let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
-    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles = List.unzip4 results
+let TypeCheckMultipleInputsFinish(results: (TcEnv * TopAttribs * ('T * TypedImplFile option * ModuleOrNamespaceType)) list, tcState: TcState) =
+    let tcEnvsAtEndFile, topAttrs, implFiles = List.unzip3 results
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
-    let implFiles = List.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
-    (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
+    (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState
 
 let TypeCheckOneInputAndFinish(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
@@ -903,7 +908,7 @@ let TypeCheckOneInputAndFinish(checkForErrors, tcConfig: TcConfig, tcImports, tc
         return result
     }
 
-let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
+let TypeCheckClosedInputSetFinish (tcState) =
     // Latest contents to the CCU
     let ccuContents = Construct.NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
@@ -912,12 +917,13 @@ let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
       if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
-    tcState, declaredImpls, ccuContents
+    tcState, ccuContents
 
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState = (tcState, inputs) ||> List.mapFold (TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt))
-    let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
-    let tcState, declaredImpls, ccuContents = TypeCheckClosedInputSetFinish (implFiles, tcState)
+    let (tcEnvAtEndOfLastFile, topAttrs, declaredImpls), tcState = TypeCheckMultipleInputsFinish(results, tcState)
+    let tcState, ccuContents = TypeCheckClosedInputSetFinish (tcState)
     tcState.Ccu.Deref.Contents <- ccuContents
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
+    

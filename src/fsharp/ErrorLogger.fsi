@@ -41,6 +41,8 @@ val ( |StopProcessing|_| ): exn:exn -> unit option
 
 val StopProcessing<'T> : exn
 
+exception CompilerToolDiagnostic of (int * string) * range
+
 exception Error of (int * string) * range
 
 exception InternalError of msg: string * range
@@ -107,6 +109,7 @@ module BuildPhaseSubcategory =
     [<LiteralAttribute>] val Output: string = "output"
     [<LiteralAttribute>] val Interactive: string = "interactive"
     [<LiteralAttribute>] val Internal: string = "internal"
+    [<LiteralAttribute>] val Analysis: string = "analysis"
 
 type PhasedDiagnostic =
     { Exception: exn
@@ -201,6 +204,8 @@ val SetThreadErrorLoggerNoUnwind: errorLogger:ErrorLogger -> unit
 val errorR: exn:exn -> unit
 
 val warning: exn:exn -> unit
+
+val diagnostic: exn:exn * severity: FSharpDiagnosticSeverity -> unit
 
 val error: exn:exn -> 'a
 

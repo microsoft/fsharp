@@ -91,7 +91,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
     static member NormalizeErrorString(text) = ErrorLogger.NormalizeErrorString(text)
     
     static member Create(severity: FSharpDiagnosticSeverity, message: string, number: int, range: range, ?numberPrefix: string, ?subcategory: string) =
-        let subcategory = defaultArg subcategory BuildPhaseSubcategory.TypeCheck
+        let subcategory = defaultArg subcategory BuildPhaseSubcategory.Analysis
         let numberPrefix = defaultArg numberPrefix "FS"
         FSharpDiagnostic(range, severity, message, subcategory, number, numberPrefix)
 

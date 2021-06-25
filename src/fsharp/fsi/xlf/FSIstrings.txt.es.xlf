@@ -17,6 +17,11 @@
         <target state="translated">Error en la operación. El texto del error se ha impreso en la secuencia de errores. Para devolver el valor FSharpDiagnostic correspondiente, use EvalInteractionNonThrowing, EvalScriptNonThrowing o EvalExpressionNonThrowing</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">Detenido debido a un error.\n</target>

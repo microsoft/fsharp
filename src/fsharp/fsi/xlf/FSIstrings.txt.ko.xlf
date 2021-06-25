@@ -17,6 +17,11 @@
         <target state="translated">작업이 실패했습니다. 오류 텍스트가 오류 스트림에 출력되었습니다. 해당 FSharpDiagnostic을 반환하려면 EvalInteractionNonThrowing, EvalScriptNonThrowing 또는 EvalExpressionNonThrowing을 사용하세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="fsiRunAnalyzers">
+        <source>Execute analyzers (off by default)</source>
+        <target state="new">Execute analyzers (off by default)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="stoppedDueToError">
         <source>Stopped due to error\n</source>
         <target state="translated">오류 때문에 중지되었습니다.\n</target>

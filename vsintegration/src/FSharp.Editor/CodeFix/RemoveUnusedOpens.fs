@@ -26,7 +26,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
         asyncMaybe {
             let document = context.Document
             let! sourceText = document.GetTextAsync()
-            let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
+            let! _, _, unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document)
             let changes =
                 unusedOpens
                 |> List.map (fun m ->
