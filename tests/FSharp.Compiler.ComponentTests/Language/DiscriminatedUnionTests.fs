@@ -9,24 +9,13 @@ open FSharp.Quotations.Patterns
 module DiscriminatedUnionTests =
 
     [<Fact>]
-    let ``Is* discriminated union properties are visible`` () =
-        FSharp """
-namespace rec Hello
-
-[<Struct>]
-type Foo =
-    private
-    | Foo of string
-    | Bar
-
-module Main =
-    [<EntryPoint>]
-    let main _ =
-        let foo = Foo.Foo "hi"
-        printfn "IsFoo: %b / IsBar: %b" foo.IsFoo foo.IsBar
-        0
+    let ``Is* discriminated union properties are visible, proper values are assigned`` () =
+        Fsx """
+type Foo = private | Foo of string | Bar
+let foo = Foo.Foo "hi"
+if not <| foo.IsFoo then failwith "Should be Foo"
+if foo.IsBar then failwith "Should not be Bar"
         """
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
-        |> withStdOutContains "IsFoo: true / IsBar: false"
