@@ -933,7 +933,6 @@ type SynIndexerArg =
     | IndexRange of
         expr1: SynExpr option *
         opm: range *
-        exprStep: SynExpr option *
         expr2: SynExpr option*
         range1: range *
         range2: range
@@ -944,14 +943,13 @@ type SynIndexerArg =
 
     member x.Range =
         match x with
-        | IndexRange (_, _, _, _, m1, m2) -> unionRanges m1 m2
+        | IndexRange (_, _, _, m1, m2) -> unionRanges m1 m2
         | FromEnd (_, m) -> m
 
     member x.Exprs = 
         match x with
-        | IndexRange (e1, _, step, e2, _, _) -> 
+        | IndexRange (e1, _, e2, _, _) -> 
             [ match e1 with Some e -> yield e | None -> ()
-              match step with Some e -> yield e | None -> ()
               match e2 with Some e -> yield e | None -> ()  ]
         | FromEnd (e, _) -> [e]
 

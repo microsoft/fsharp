@@ -1041,7 +1041,6 @@ type SynIndexerArg =
     | IndexRange of
         expr1: SynExpr option *
         opm: range *
-        exprStep: SynExpr option *
         expr2: SynExpr option*
         range1: range *
         range2: range

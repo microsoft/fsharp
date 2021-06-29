@@ -3756,6 +3756,9 @@ type ValSpecResult =
         partialValReprInfo: PartialValReprInfo *
         declKind: DeclKind
 
+type DecodedIndexArg =
+    | IndexArgRange of (SynExpr * bool) option * (SynExpr * bool) option * range * range
+    | IndexArgItem of SynExpr * bool * range
 //-------------------------------------------------------------------------
 // Additional data structures used by checking recursive bindings
 //-------------------------------------------------------------------------
@@ -5861,12 +5864,12 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
 
 and (|IndexArgOptionalFromEnd|) indexArg = 
     match indexArg with
-    | SynExpr.IndexerArg(SynIndexerArg.FromEnd (a,b), _) -> (a,true,b)
+    | SynExpr.IndexerArg(SynIndexerArg.FromEnd (a,b), _) -> (a, true, b)
     | expr -> (expr, false, expr.Range)
 
-and (|IndexArgItem|IndexArgRange|) indexArg = 
+and DecodeIndexArg indexArg = 
     match indexArg with
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (info1, _opm, exprStep, info2, m1, m2), _) ->
+    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (info1, _opm, info2, m1, m2), _) ->
         let info1 = 
             match info1 with 
             | Some (IndexArgOptionalFromEnd (expr1, isFromEnd1, _)) -> Some (expr1, isFromEnd1)
@@ -5875,7 +5878,7 @@ and (|IndexArgItem|IndexArgRange|) indexArg =
             match info2 with 
             | Some (IndexArgOptionalFromEnd (expr2, isFromEnd2, _)) -> Some (expr2, isFromEnd2)
             | None -> None 
-        IndexArgRange (info1, exprStep, info2, m1, m2)
+        IndexArgRange (info1, info2, m1, m2)
     | IndexArgOptionalFromEnd (expr, isFromEnd, m) ->
         IndexArgItem(expr, isFromEnd, m)
 
@@ -5916,19 +5919,16 @@ and ExpandIndexArgs (synLeftExpr: SynExpr option) indexArgs =
     let expandedIndexArgs =
         indexArgs
         |> List.mapi ( fun pos indexerArg ->
-            match indexerArg with
+            match DecodeIndexArg indexerArg with
             | IndexArgItem(expr, fromEnd, range) ->
                 [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
-            | IndexArgRange(info1, step, info2, range1, range2) ->
+            | IndexArgRange(info1, info2, range1, range2) ->
                 [
                    match info1 with 
                    | Some (a1, isFromEnd1) ->
                        yield mkSynSomeExpr range1 (if isFromEnd1 then rewriteReverseExpr pos a1 range1 else a1)
                    | None -> 
                        yield mkSynNoneExpr range1
-                   match step with 
-                   | Some e -> yield e
-                   | None -> ()
                    match info2 with 
                    | Some (a2, isFromEnd2) ->
                        yield mkSynSomeExpr range2 (if isFromEnd2 then rewriteReverseExpr pos a2 range2 else a2)
@@ -5949,7 +5949,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
     let ad = env.AccessRights
     // Find the first type in the effective hierarchy that either has a DefaultMember attribute OR
     // has a member called 'Item'
-    let isIndex = indexArgs |> List.forall (function IndexArgItem _ -> true | _ -> false)
+    let isIndex = indexArgs |> List.forall (fun indexArg -> match DecodeIndexArg indexArg with IndexArgItem _ -> true | _ -> false)
     let propName =
         if isIndex then
             FoldPrimaryHierarchyOfType (fun ty acc ->
@@ -5980,7 +5980,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
     let MakeIndexParam setSliceArrayOption =
-       match indexArgs with
+       match List.map DecodeIndexArg indexArgs with
        | [] -> failwith "unexpected empty index list"
        | [IndexArgItem _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
        | _ -> SynExpr.Paren (SynExpr.Tuple (false, expandedIndexArgs @ Option.toList setSliceArrayOption, [], idxRange), range0, None, idxRange)
@@ -5992,27 +5992,22 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
         let info =
             if isArray then
                 let fixedIndex3d4dEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.FixedIndexSlice3d4d
+                let indexArgs = List.map DecodeIndexArg indexArgs
                 match indexArgs, setInfo with
                 | [IndexArgItem _; IndexArgItem _], None                                        -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
                 | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], None                        -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
                 | [IndexArgItem _; IndexArgItem _; IndexArgItem _; IndexArgItem _], None          -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
                 | [IndexArgItem _], None                                                       -> Some (indexOpPath, "GetArray", expandedIndexArgs)
-                | _ ->
-                match indexArgs, setInfo with
                 | [IndexArgItem _; IndexArgItem _], Some (e3, _)                                -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
                 | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], Some (e3, _)                -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
                 | [IndexArgItem _; IndexArgItem _; IndexArgItem _; IndexArgItem _], Some (e3, _)  -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
                 | [IndexArgItem _], Some (e3, _)                                               -> Some (indexOpPath, "SetArray", (expandedIndexArgs @ [e3]))
-                | _ ->
-                match indexArgs, setInfo with
                 | [IndexArgRange _], None                                                       -> Some (sliceOpPath, "GetArraySlice", expandedIndexArgs)
                 | [IndexArgItem _;IndexArgRange _], None                                         -> Some (sliceOpPath, "GetArraySlice2DFixed1", expandedIndexArgs)
                 | [IndexArgRange _;IndexArgItem _], None                                         -> Some (sliceOpPath, "GetArraySlice2DFixed2", expandedIndexArgs)
                 | [IndexArgRange _;IndexArgRange _], None                                         -> Some (sliceOpPath, "GetArraySlice2D", expandedIndexArgs)
                 | [IndexArgRange _;IndexArgRange _;IndexArgRange _], None                           -> Some (sliceOpPath, "GetArraySlice3D", expandedIndexArgs)
                 | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None             -> Some (sliceOpPath, "GetArraySlice4D", expandedIndexArgs)
-                | _ ->
-                match indexArgs, setInfo with
                 | [IndexArgRange _], Some (e3, _)                                               -> Some (sliceOpPath, "SetArraySlice", (expandedIndexArgs @ [e3]))
                 | [IndexArgRange _;IndexArgRange _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2D", (expandedIndexArgs @ [e3]))
                 | [IndexArgItem _;IndexArgRange _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2DFixed1", (expandedIndexArgs @ [e3]))
@@ -6024,59 +6019,39 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
                     | [IndexArgItem _;IndexArgRange _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgItem _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
                     | [IndexArgItem _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgItem _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
                     | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
                     | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
                     | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
                     | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
                     | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
                     | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [e3]))
                     | [IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [e3]))
                     | [IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [e3]))
                     | [IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [e3]))
                     | [IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [e3]))
                     | [IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [e3]))
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [e3])
                     | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [e3])
                     | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [e3])
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [e3])
                     | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [e3])
                     | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [e3])
                     | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [e3])
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [e3])
                     | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [e3])
                     | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [e3])
-                    | _ ->
-                    match indexArgs, setInfo with
                     | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [e3])
                     | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [e3])
                     | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [e3])
@@ -6085,7 +6060,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
                 | _ -> None
 
             elif isString then
-                match indexArgs, setInfo with
+                match List.map DecodeIndexArg indexArgs, setInfo with
                 | [IndexArgRange _], None -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
                 | [IndexArgItem _], None -> Some (indexOpPath, "GetString", expandedIndexArgs)
                 | _ -> None

@@ -1935,23 +1935,26 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
 //    [| 1..4 |]
 // becomes [| for i in (..) 1 4 do yield i |]
 // instead of generating the array directly from the ranges
-let RewriteRangeIndexToExpr comp = 
-    // a..b
-    // a..b..c
+let RewriteRangeExpr comp = 
     match comp with
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (Some expr1, opm, step, Some expr2, _m1, _m2), wholem) ->
+    // a..b..c (parsed as (a..b)..c )
+    | SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some (SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some expr1, _, Some synStepExpr, _, _), _)), _, Some expr2, _m1, _m2), wholem) ->
+        Some (mkSynTrifix wholem ".. .." expr1 synStepExpr expr2)
+    // a..b
+    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (Some expr1, opm, Some expr2, _m1, _m2), wholem) ->
         let otherExpr =
-            match step with 
-            | None ->
-                match (mkSynInfix opm expr1 ".." expr2) with
-                | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
-                | _ -> failwith "impossible"
-            | Some synStepExpr ->
-                mkSynTrifix wholem ".. .." expr1 synStepExpr expr2
-        otherExpr
-    | _ -> comp
+            match mkSynInfix opm expr1 ".." expr2 with
+            | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
+            | _ -> failwith "impossible"
+        Some otherExpr  
+    | _ -> None
 
 let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (hasBuilder, comp) m =
+    match RewriteRangeExpr comp with
+    | Some replacementExpr -> 
+        TcExpr cenv overallTy env tpenv replacementExpr
+    | None ->
+
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
     match comp with 
@@ -1964,11 +1967,44 @@ let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (hasBuilder, comp
     if not hasBuilder && not cenv.g.compilingFslib then 
         error(Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm(), m))
         
-    let comp2 = RewriteRangeIndexToExpr comp
-    TcSequenceExpression cenv env tpenv comp2 overallTy m
+    TcSequenceExpression cenv env tpenv comp overallTy m
 
 let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, comp) m  =
-    let comp = RewriteRangeIndexToExpr comp
+    // The syntax '[ n .. m ]' and '[ n .. step .. m ]' is not really part of array or list syntax.
+    // It could be in the future, e.g. '[ 1; 2..30; 400 ]'
+    //
+    // The elaborated form of '[ n .. m ]' is 'List.ofSeq (seq (op_Range n m))' and this shouldn't change
+    match RewriteRangeExpr comp with
+    | Some replacementExpr -> 
+        let genCollElemTy = NewInferenceType ()
+
+        let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+
+        UnifyTypes cenv env m overallTy genCollTy
+
+        let exprty = mkSeqTy cenv.g genCollElemTy
+
+        let expr, tpenv = TcExpr cenv exprty env tpenv replacementExpr
+        let expr = 
+            if cenv.g.compilingFslib then 
+                //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
+                expr 
+            else 
+                // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the
+                // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
+                mkCallSeq cenv.g m genCollElemTy expr
+                   
+        let expr = mkCoerceExpr(expr, exprty, expr.Range, overallTy)
+
+        let expr = 
+            if isArray then 
+                mkCallSeqToArray cenv.g m genCollElemTy expr
+            else 
+                mkCallSeqToList cenv.g m genCollElemTy expr
+        expr, tpenv
+
+    | None ->
+
     // LanguageFeatures.ImplicitYield do not require this validation
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateExpressionWithIfRequiresParenthesis = not implicitYieldEnabled

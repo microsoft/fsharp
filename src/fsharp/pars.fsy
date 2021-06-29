@@ -490,10 +490,9 @@ let rangeOfLongIdent(lid:LongIdent) =
 %right COLON_EQUALS 
 %nonassoc pat_tuple expr_tuple
 %left COMMA
-%nonassoc slice_expr /* matrix.[e COMMA e] has higher precedence than "e COMMA e" */
+%nonassoc open_range_expr
+%left DOT_DOT /* for matrix.[1..2, 3..4] the ".." has higher precedence than expression "2 COMMA 3" */
 %nonassoc interpolation_fill /* "...{3,N4}..." .NET style fill has higher precedence than "e COMMA e" */
-%nonassoc DOT_DOT /* for matrix.[1..2, 3..4] the ".." has higher precedence than expression "2 COMMA 3" */
-%nonassoc slice_comma  /* for matrix.[1..2, 3..4] the ", " has higher precedence than ".." */
 %nonassoc paren_pat_colon
 %nonassoc paren_pat_attribs
 %left OR BAR_BAR JOIN_IN
@@ -3885,12 +3884,12 @@ declExpr:
          SynIndexerArg.IndexRange(
           Some $1,
           opm,
-          None,
           Some $3,
           rhs parseState 1,
           rhs parseState 3), wholem) }
 
-  | declExpr DOT_DOT declExpr DOT_DOT declExpr  
+/*
+| declExpr DOT_DOT declExpr DOT_DOT declExpr
       { let wholem = rhs2 parseState 1 3
         let opm = rhs parseState 2
         SynExpr.IndexerArg(
@@ -3901,8 +3900,8 @@ declExpr:
           Some $5,
           rhs parseState 1,
           rhs parseState 5), wholem) }
-
-  | declExpr DOT_DOT 
+*/
+  | declExpr DOT_DOT %prec open_range_expr   
       { let wholem = rhs2 parseState 1 2
         let opm = rhs parseState 2
         SynExpr.IndexerArg(
@@ -3910,18 +3909,16 @@ declExpr:
           Some $1,
           opm,
           None,
-          None,
           rhs parseState 1,
           opm), wholem) }
 
-  | DOT_DOT declExpr 
+  | DOT_DOT declExpr %prec open_range_expr
       { let wholem = rhs2 parseState 1 2
         let opm = rhs parseState 1
         SynExpr.IndexerArg(
          SynIndexerArg.IndexRange(
           None,
           opm,
-          None,
           Some $2,
           opm,
           rhs parseState 2), wholem) }
@@ -3933,11 +3930,10 @@ declExpr:
           None,
           m,
           None,
-          None,
           m,
           m), m) }
 
-  | INFIX_AT_HAT_OP declExpr %prec slice_expr
+  | INFIX_AT_HAT_OP declExpr
     { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.FromEndSlicing) then 
         raiseParseErrorAt (rhs parseState 1) (FSComp.SR.fromEndSlicingRequiresVFive())
       if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
