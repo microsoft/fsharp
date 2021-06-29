@@ -654,6 +654,10 @@ val TcConst: cenv: TcFileState -> ty: TType -> m: range -> env: TcEnv -> c: SynC
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
 
+/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+val RewriteRangeExpr: expr: SynExpr -> SynExpr option
+
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    
 

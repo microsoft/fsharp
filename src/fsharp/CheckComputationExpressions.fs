@@ -1928,27 +1928,6 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
     let delayedExpr = mkDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
-// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
-// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
-//
-// NOTE: we could eliminate these more efficiently in LowerCallsAndSeqs.fs, since
-//    [| 1..4 |]
-// becomes [| for i in (..) 1 4 do yield i |]
-// instead of generating the array directly from the ranges
-let RewriteRangeExpr comp = 
-    match comp with
-    // a..b..c (parsed as (a..b)..c )
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some (SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some expr1, _, Some synStepExpr, _, _), _)), _, Some expr2, _m1, _m2), wholem) ->
-        Some (mkSynTrifix wholem ".. .." expr1 synStepExpr expr2)
-    // a..b
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (Some expr1, opm, Some expr2, _m1, _m2), wholem) ->
-        let otherExpr =
-            match mkSynInfix opm expr1 ".." expr2 with
-            | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
-            | _ -> failwith "impossible"
-        Some otherExpr  
-    | _ -> None
-
 let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (hasBuilder, comp) m =
     match RewriteRangeExpr comp with
     | Some replacementExpr -> 

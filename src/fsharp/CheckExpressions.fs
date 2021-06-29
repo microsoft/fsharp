@@ -5639,6 +5639,10 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.ForEach (spForLoop, SeqExprOnly seqExprOnly, isFromSource, pat, enumSynExpr, bodySynExpr, m) ->
         assert isFromSource
         if seqExprOnly then warning (Error(FSComp.SR.tcExpressionRequiresSequence(), m))
+        let enumSynExpr =
+            match RewriteRangeExpr enumSynExpr with
+            | Some e -> e
+            | None -> enumSynExpr
         TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, m, spForLoop)
 
     | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
@@ -5846,6 +5850,27 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     | SynExpr.IndexerArg (_, m) ->
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
+
+// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+//
+// NOTE: we could eliminate these more efficiently in LowerCallsAndSeqs.fs, since
+//    [| 1..4 |]
+// becomes [| for i in (..) 1 4 do yield i |]
+// instead of generating the array directly from the ranges
+and RewriteRangeExpr expr = 
+    match expr with
+    // a..b..c (parsed as (a..b)..c )
+    | SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some (SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some expr1, _, Some synStepExpr, _, _), _)), _, Some expr2, _m1, _m2), wholem) ->
+        Some (mkSynTrifix wholem ".. .." expr1 synStepExpr expr2)
+    // a..b
+    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (Some expr1, opm, Some expr2, _m1, _m2), wholem) ->
+        let otherExpr =
+            match mkSynInfix opm expr1 ".." expr2 with
+            | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
+            | _ -> failwith "impossible"
+        Some otherExpr  
+    | _ -> None
 
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
