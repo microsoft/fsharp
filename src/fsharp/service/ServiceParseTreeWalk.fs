@@ -258,7 +258,7 @@ module SyntaxTraversal =
                     [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
 
                 | SynExpr.Tuple (_, synExprList, _, _range) 
-                | SynExpr.ArrayOrList (_, synExprList, _range) ->
+                | SynExpr.ArrayOrListFixedSize (_, synExprList, _range) ->
                     synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 
                 | SynExpr.AnonRecd (_isStruct, copyOpt, synExprList, _range) -> 
@@ -406,16 +406,16 @@ module SyntaxTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.ArrayOrListOfSeqExpr (_, synExpr, _range) -> traverseSynExpr synExpr
+                | SynExpr.ArrayOrListComputed (_, synExpr, _range) -> traverseSynExpr synExpr
 
-                | SynExpr.CompExpr (_, _, synExpr, _range) -> 
+                | SynExpr.ComputationExpr (_, synExpr, _range) -> 
                     // now parser treats this syntactic expression as computation expression
                     // { identifier }
-                    // here we detect this situation and treat CompExpr  { Identifier } as attempt to create record
-                    // note: sequence expressions use SynExpr.CompExpr too - they need to be filtered out
+                    // here we detect this situation and treat ComputationExpr  { Identifier } as attempt to create record
+                    // note: sequence expressions use SynExpr.ComputationExpr too - they need to be filtered out
                     let isPartOfArrayOrList = 
                         match origPath with
-                        | SyntaxNode.SynExpr(SynExpr.ArrayOrListOfSeqExpr (_, _, _)) :: _ -> true
+                        | SyntaxNode.SynExpr(SynExpr.ArrayOrListComputed (_, _, _)) :: _ -> true
                         | _ -> false
                     let ok = 
                         match isPartOfArrayOrList, synExpr with
@@ -512,18 +512,19 @@ module SyntaxTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.DotIndexedGet (synExpr, synExprList, _range, _range2) -> 
-                    [yield dive synExpr synExpr.Range traverseSynExpr
-                     for synExpr in synExprList do 
-                         for x in synExpr.Exprs do 
+                | SynExpr.IndexerArg (indexArg, _range) -> 
+                    [for x in indexArg.Exprs do 
                              yield dive x x.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.DotIndexedSet (synExpr, synExprList, synExpr2, _, _range, _range2) -> 
+                | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
-                     for synExpr in synExprList do 
-                         for x in synExpr.Exprs do 
-                             yield dive x x.Range traverseSynExpr
+                     yield dive indexArgs indexArgs.Range traverseSynExpr]
+                    |> pick expr
+
+                | SynExpr.DotIndexedSet (synExpr, indexArgs, synExpr2, _, _range, _range2) -> 
+                    [yield dive synExpr synExpr.Range traverseSynExpr
+                     yield dive indexArgs indexArgs.Range traverseSynExpr
                      yield dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 

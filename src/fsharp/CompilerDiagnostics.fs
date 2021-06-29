@@ -1175,7 +1175,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
                         | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr|Parser.NONTERM_braceBarExpr
-                        | Parser.NONTERM_typedSeqExprBlock
+                        | Parser.NONTERM_typedSequentialExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None
 

@@ -422,6 +422,11 @@
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInvalidUseOfReverseIndex">
+        <source>Invalid use of reverse index in list expression.</source>
+        <target state="new">Invalid use of reverse index in list expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
         <target state="translated">Eine [&lt;Literal&gt;]-Deklaration kann kein aktives Muster für ihren Bezeichner verwenden.</target>
@@ -445,6 +450,11 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">Ungültige interpolierte Zeichenfolge. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUnexpectedIndexerArgs">
+        <source>Unexpected indexer arguments.</source>
+        <target state="new">Unexpected indexer arguments.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">

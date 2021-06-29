@@ -3610,10 +3610,10 @@ FSharp.Compiler.EditorServices.Structure+Collapse: Int32 GetHashCode(System.Coll
 FSharp.Compiler.EditorServices.Structure+Collapse: Int32 Tag
 FSharp.Compiler.EditorServices.Structure+Collapse: Int32 get_Tag()
 FSharp.Compiler.EditorServices.Structure+Collapse: System.String ToString()
-FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ArrayOrList
+FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ArrayOrListFixedSize
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 Attribute
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 Comment
-FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 CompExpr
+FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ComputationExpr
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 CompExprInternal
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 Do
 FSharp.Compiler.EditorServices.Structure+Scope+Tags: Int32 ElseInIfThenElse
@@ -3762,10 +3762,10 @@ FSharp.Compiler.EditorServices.Structure+Scope: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.Structure+Scope: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.EditorServices.Structure+Scope: Int32 Tag
 FSharp.Compiler.EditorServices.Structure+Scope: Int32 get_Tag()
-FSharp.Compiler.EditorServices.Structure+Scope: Scope ArrayOrList
+FSharp.Compiler.EditorServices.Structure+Scope: Scope ArrayOrListFixedSize
 FSharp.Compiler.EditorServices.Structure+Scope: Scope Attribute
 FSharp.Compiler.EditorServices.Structure+Scope: Scope Comment
-FSharp.Compiler.EditorServices.Structure+Scope: Scope CompExpr
+FSharp.Compiler.EditorServices.Structure+Scope: Scope ComputationExpr
 FSharp.Compiler.EditorServices.Structure+Scope: Scope CompExprInternal
 FSharp.Compiler.EditorServices.Structure+Scope: Scope Do
 FSharp.Compiler.EditorServices.Structure+Scope: Scope ElseInIfThenElse
@@ -6098,30 +6098,30 @@ FSharp.Compiler.Syntax.SynExpr+ArbitraryAfterError: FSharp.Compiler.Text.Range g
 FSharp.Compiler.Syntax.SynExpr+ArbitraryAfterError: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+ArbitraryAfterError: System.String debugStr
 FSharp.Compiler.Syntax.SynExpr+ArbitraryAfterError: System.String get_debugStr()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrList: Boolean get_isArray()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrList: Boolean isArray
-FSharp.Compiler.Syntax.SynExpr+ArrayOrList: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrList: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+ArrayOrList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] exprs
-FSharp.Compiler.Syntax.SynExpr+ArrayOrList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] get_exprs()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr: Boolean get_isArray()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr: Boolean isArray
-FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr: FSharp.Compiler.Syntax.SynExpr expr
-FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr: FSharp.Compiler.Syntax.SynExpr get_expr()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize: Boolean get_isArray()
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize: Boolean isArray
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] exprs
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr] get_exprs()
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed: Boolean get_isArray()
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed: Boolean isArray
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed: FSharp.Compiler.Syntax.SynExpr expr
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed: FSharp.Compiler.Syntax.SynExpr get_expr()
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+Assert: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+Assert: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+Assert: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+Assert: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+CompExpr: Boolean get_isArrayOrList()
-FSharp.Compiler.Syntax.SynExpr+CompExpr: Boolean isArrayOrList
-FSharp.Compiler.Syntax.SynExpr+CompExpr: FSharp.Compiler.Syntax.SynExpr expr
-FSharp.Compiler.Syntax.SynExpr+CompExpr: FSharp.Compiler.Syntax.SynExpr get_expr()
-FSharp.Compiler.Syntax.SynExpr+CompExpr: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynExpr+CompExpr: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynExpr+CompExpr: Microsoft.FSharp.Core.FSharpRef`1[System.Boolean] get_isNotNakedRefCell()
-FSharp.Compiler.Syntax.SynExpr+CompExpr: Microsoft.FSharp.Core.FSharpRef`1[System.Boolean] isNotNakedRefCell
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: Boolean get_isArrayOrList()
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: Boolean isArrayOrList
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: FSharp.Compiler.Syntax.SynExpr expr
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: FSharp.Compiler.Syntax.SynExpr get_expr()
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: Microsoft.FSharp.Core.FSharpRef`1[System.Boolean] get_isNotNakedRefCell()
+FSharp.Compiler.Syntax.SynExpr+ComputationExpr: System.Boolean hasBuilder
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Syntax.SynConst constant
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Syntax.SynConst get_constant()
 FSharp.Compiler.Syntax.SynExpr+Const: FSharp.Compiler.Text.Range get_range()
@@ -6153,7 +6153,7 @@ FSharp.Compiler.Syntax.SynExpr+DotIndexedGet: FSharp.Compiler.Text.Range get_dot
 FSharp.Compiler.Syntax.SynExpr+DotIndexedGet: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+DotIndexedGet: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+DotIndexedGet: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynIndexerArg] get_indexExprs()
-FSharp.Compiler.Syntax.SynExpr+DotIndexedGet: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynIndexerArg] indexExprs
+FSharp.Compiler.Syntax.SynExpr+DotIndexedGet: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynIndexerArg] indexArgs
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Syntax.SynExpr get_objectExpr()
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Syntax.SynExpr get_valueExpr()
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Syntax.SynExpr objectExpr
@@ -6165,7 +6165,7 @@ FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Text.Range get_ran
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Text.Range leftOfSetRange
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynIndexerArg] get_indexExprs()
-FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynIndexerArg] indexExprs
+FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynIndexerArg] indexArgs
 FSharp.Compiler.Syntax.SynExpr+DotNamedIndexedPropertySet: FSharp.Compiler.Syntax.LongIdentWithDots get_longDotId()
 FSharp.Compiler.Syntax.SynExpr+DotNamedIndexedPropertySet: FSharp.Compiler.Syntax.LongIdentWithDots longDotId
 FSharp.Compiler.Syntax.SynExpr+DotNamedIndexedPropertySet: FSharp.Compiler.Syntax.SynExpr argExpr
@@ -6470,10 +6470,10 @@ FSharp.Compiler.Syntax.SynExpr+Tags: Int32 AddressOf
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 AnonRecd
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 App
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ArbitraryAfterError
-FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ArrayOrList
-FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ArrayOrListOfSeqExpr
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ArrayOrListFixedSize
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ArrayOrListComputed
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Assert
-FSharp.Compiler.Syntax.SynExpr+Tags: Int32 CompExpr
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 ComputationExpr
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Const
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 DiscardAfterMissingQualificationAfterDot
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Do
@@ -6627,7 +6627,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsApp
 FSharp.Compiler.Syntax.SynExpr: Boolean IsArbExprAndThusAlreadyReportedError
 FSharp.Compiler.Syntax.SynExpr: Boolean IsArbitraryAfterError
 FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrList
-FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrListOfSeqExpr
+FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrListComputationExpr
 FSharp.Compiler.Syntax.SynExpr: Boolean IsAssert
 FSharp.Compiler.Syntax.SynExpr: Boolean IsCompExpr
 FSharp.Compiler.Syntax.SynExpr: Boolean IsConst
@@ -6691,7 +6691,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsApp()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArbExprAndThusAlreadyReportedError()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArbitraryAfterError()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrList()
-FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrListOfSeqExpr()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrListComputationExpr()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsAssert()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsCompExpr()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsConst()
@@ -6754,7 +6754,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAnonRecd(Boole
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewApp(FSharp.Compiler.Syntax.ExprAtomicFlag, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArbitraryAfterError(System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrList(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrListOfSeqExpr(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrListComputationExpr(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAssert(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewCompExpr(Boolean, Microsoft.FSharp.Core.FSharpRef`1[System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewConst(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
@@ -6816,10 +6816,10 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+AddressOf
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+AnonRecd
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+App
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ArbitraryAfterError
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ArrayOrList
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ArrayOrListOfSeqExpr
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ArrayOrListFixedSize
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ArrayOrListComputed
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Assert
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+CompExpr
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+ComputationExpr
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Const
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+DiscardAfterMissingQualificationAfterDot
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Do
@@ -7634,12 +7634,12 @@ FSharp.Compiler.Syntax.SynPat+Ands: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynPat+Ands: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynPat+Ands: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] get_pats()
 FSharp.Compiler.Syntax.SynPat+Ands: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] pats
-FSharp.Compiler.Syntax.SynPat+ArrayOrList: Boolean get_isArray()
-FSharp.Compiler.Syntax.SynPat+ArrayOrList: Boolean isArray
-FSharp.Compiler.Syntax.SynPat+ArrayOrList: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.SynPat+ArrayOrList: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynPat+ArrayOrList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] elementPats
-FSharp.Compiler.Syntax.SynPat+ArrayOrList: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] get_elementPats()
+FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize: Boolean get_isArray()
+FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize: Boolean isArray
+FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] elementPats
+FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynPat] get_elementPats()
 FSharp.Compiler.Syntax.SynPat+As: FSharp.Compiler.Syntax.SynPat get_lhsPat()
 FSharp.Compiler.Syntax.SynPat+As: FSharp.Compiler.Syntax.SynPat get_rhsPat()
 FSharp.Compiler.Syntax.SynPat+As: FSharp.Compiler.Syntax.SynPat lhsPat
@@ -7725,7 +7725,7 @@ FSharp.Compiler.Syntax.SynPat+Record: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynPat+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.SynPat]] fieldPats
 FSharp.Compiler.Syntax.SynPat+Record: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Tuple`2[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.Ident],FSharp.Compiler.Syntax.SynPat]] get_fieldPats()
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 Ands
-FSharp.Compiler.Syntax.SynPat+Tags: Int32 ArrayOrList
+FSharp.Compiler.Syntax.SynPat+Tags: Int32 ArrayOrListFixedSize
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 As
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 Attrib
 FSharp.Compiler.Syntax.SynPat+Tags: Int32 Const
@@ -7819,7 +7819,7 @@ FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTuple(Boolean, M
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewTyped(FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat NewWild(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+Ands
-FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+ArrayOrList
+FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+ArrayOrListFixedSize
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+As
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+Attrib
 FSharp.Compiler.Syntax.SynPat: FSharp.Compiler.Syntax.SynPat+Const

@@ -161,7 +161,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     match expr with
                     | SynExpr.TypeApp (_, _, _, _, _, _, range) when rangeContainsPos range pos ->
                         Some range
-                    | SynExpr.App(_, _, _, SynExpr.CompExpr (_, _, expr, _), range) when rangeContainsPos range pos ->
+                    | SynExpr.App(_, _, _, SynExpr.ComputationExpr (_, expr, _), range) when rangeContainsPos range pos ->
                         traverseSynExpr expr
                     | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                         Some range
@@ -187,8 +187,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                 | SynExpr.App (_, _, _, _, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr argExpr pos
 
-                // Special case: `async { ... }` is actually a CompExpr inside of the argExpr of a SynExpr.App
-                | SynExpr.CompExpr (_, _, expr, range) when rangeContainsPos range pos ->
+                // Special case: `async { ... }` is actually a ComputationExpr inside of the argExpr of a SynExpr.App
+                | SynExpr.ComputationExpr (_, expr, range) when rangeContainsPos range pos ->
                     getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
                 | SynExpr.Paren (expr, _, _, range) when rangeContainsPos range pos ->
@@ -497,8 +497,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                   | SynExpr.TypeTest (e, _, _)
                   | SynExpr.Upcast (e, _, _)
                   | SynExpr.AddressOf (_, e, _, _)
-                  | SynExpr.CompExpr (_, _, e, _) 
-                  | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
+                  | SynExpr.ComputationExpr (_, e, _) 
+                  | SynExpr.ArrayOrListComputed (_, e, _)
                   | SynExpr.Typed (e, _, _)
                   | SynExpr.FromParseError (e, _) 
                   | SynExpr.DiscardAfterMissingQualificationAfterDot (e, _) 
@@ -538,7 +538,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e1 
                       yield! walkExpr false e2
 
-                  | SynExpr.ArrayOrList (_, es, _)
+                  | SynExpr.ArrayOrListFixedSize (_, es, _)
                   | SynExpr.Tuple (_, es, _, _) -> 
                       yield! walkExprs es
 
@@ -626,11 +626,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.DotIndexedGet (e1, es, _, _) -> 
                       yield! walkExpr false e1 
-                      yield! walkExprs [ for e in es do yield! e.Exprs ]
+                      yield! walkExpr false es
+
+                  | SynExpr.IndexerArg (es, _) -> 
+                      yield! walkExprs es.Exprs
 
                   | SynExpr.DotIndexedSet (e1, es, e2, _, _, _) ->
                       yield! walkExpr false e1 
-                      yield! walkExprs [ for e in es do yield! e.Exprs ]
+                      yield! walkExpr false es
                       yield! walkExpr false e2 
 
                   | SynExpr.DotNamedIndexedPropertySet (e1, _, e2, e3, _) ->

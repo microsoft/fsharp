@@ -1009,7 +1009,7 @@ let (|OptionalCoerce|) expr =
     | Expr.Op (TOp.Coerce, _, [arg], _) -> arg
     | _ -> expr
 
-// Making 'seq' optional means this kicks in for FSharp.Core, see TcArrayOrListSequenceExpression
+// Making 'seq' optional means this kicks in for FSharp.Core, see TcArrayOrListComputedExpression
 // which only adds a 'seq' call outside of FSharp.Core
 let (|OptionalSeq|_|) g amap expr =
     match expr with

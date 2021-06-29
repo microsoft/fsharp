@@ -23,7 +23,7 @@ module internal BlockStructure =
         | Scope.Interface
         | Scope.TypeExtension
         | Scope.RecordDefn
-        | Scope.CompExpr
+        | Scope.ComputationExpr
         | Scope.ObjExpr
         | Scope.UnionDefn
         | Scope.Attribute
@@ -84,7 +84,7 @@ module internal BlockStructure =
         | Scope.Interface
         | Scope.TypeExtension
         | Scope.RecordDefn
-        | Scope.CompExpr
+        | Scope.ComputationExpr
         | Scope.ObjExpr
         | Scope.UnionDefn
         | Scope.Type

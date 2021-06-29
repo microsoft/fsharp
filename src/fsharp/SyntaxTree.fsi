@@ -581,7 +581,7 @@ type SynExpr =
         range: range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
-    | ArrayOrList of
+    | ArrayOrListFixedSize of
         isArray: bool *
         exprs: SynExpr list *
         range: range
@@ -641,15 +641,23 @@ type SynExpr =
         range: range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of
+    | ArrayOrListComputed of
         isArray: bool *
         expr: SynExpr *
         range: range
 
+    /// F# syntax: expr..
+    /// F# syntax: ..expr
+    /// F# syntax: expr..expr
+    /// F# syntax: ^expr
+    /// F# syntax: *
+    | IndexerArg of
+        indexArg: SynIndexerArg *
+        range: range
+
     /// F# syntax: { expr }
-    | CompExpr of
-        isArrayOrList: bool *
-        isNotNakedRefCell: bool ref *
+    | ComputationExpr of
+        hasSeqBuilder: bool *
         expr: SynExpr *
         range: range
 
@@ -814,14 +822,14 @@ type SynExpr =
     /// F# syntax: expr.[expr, ..., expr]
     | DotIndexedGet of
         objectExpr: SynExpr *
-        indexExprs: SynIndexerArg list *
+        indexArgs: SynExpr *
         dotRange: range *
         range: range
 
     /// F# syntax: expr.[expr, ..., expr] <- expr
     | DotIndexedSet of
         objectExpr: SynExpr *
-        indexExprs: SynIndexerArg list *
+        indexArgs: SynExpr *
         valueExpr: SynExpr *
         leftOfSetRange: range *
         dotRange: range *
@@ -1028,24 +1036,25 @@ type SynInterpolatedStringPart =
 /// Represents a syntax tree for an F# indexer expression argument
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynIndexerArg =
-    /// A two-element range indexer argument
-    | Two of
-        expr1: SynExpr *
-        fromEnd1: bool *
-        expr2: SynExpr *
-        fromEnd2: bool *
+    /// A two-element range indexer argument a..b, a.., ..b. Also used to represent
+    /// a range in a list, array or sequence expression.
+    | IndexRange of
+        expr1: SynExpr option *
+        opm: range *
+        exprStep: SynExpr option *
+        expr2: SynExpr option*
         range1: range *
         range2: range
 
-    /// A one-element item indexer argument
-    | One of
+    /// A from-end single indexer argument ^expr
+    | FromEnd of
         expr: SynExpr *
-        fromEnd: bool * range
+        range: range
 
     /// Gets the syntax range of this construct
     member Range: range
 
-    /// Get the one or two expressions as a list
+    /// Get the one, two or three expressions as a list
     member Exprs: SynExpr list
 
 /// Represents a syntax tree for simple F# patterns

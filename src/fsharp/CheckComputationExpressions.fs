@@ -1928,31 +1928,55 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
     let delayedExpr = mkDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
-let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m =
+// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+//
+// NOTE: we could eliminate these more efficiently in LowerCallsAndSeqs.fs, since
+//    [| 1..4 |]
+// becomes [| for i in (..) 1 4 do yield i |]
+// instead of generating the array directly from the ranges
+let RewriteRangeIndexToExpr comp = 
+    // a..b
+    // a..b..c
+    match comp with
+    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (Some expr1, opm, step, Some expr2, _m1, _m2), wholem) ->
+        let otherExpr =
+            match step with 
+            | None ->
+                match (mkSynInfix opm expr1 ".." expr2) with
+                | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
+                | _ -> failwith "impossible"
+            | Some synStepExpr ->
+                mkSynTrifix wholem ".. .." expr1 synStepExpr expr2
+        otherExpr
+    | _ -> comp
+
+let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (hasBuilder, comp) m =
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
-    if not isArrayOrList then 
-        match comp with 
-        | SynExpr.New _ -> 
-            errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
-        | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
-            errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))
-        | _ -> 
-            ()
-    if not !isNotNakedRefCell && not cenv.g.compilingFslib then 
+    match comp with 
+    | SynExpr.New _ -> 
+        errorR(Error(FSComp.SR.tcInvalidObjectExpressionSyntaxForm(), m))
+    | SimpleSemicolonSequence cenv false _ when validateObjectSequenceOrRecordExpression ->
+        errorR(Error(FSComp.SR.tcInvalidObjectSequenceOrRecordExpression(), m))
+    | _ -> 
+        ()
+    if not hasBuilder && not cenv.g.compilingFslib then 
         error(Error(FSComp.SR.tcInvalidSequenceExpressionSyntaxForm(), m))
         
-    TcSequenceExpression cenv env tpenv comp overallTy m
+    let comp2 = RewriteRangeIndexToExpr comp
+    TcSequenceExpression cenv env tpenv comp2 overallTy m
 
-let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, comp) m  =
+let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, comp) m  =
+    let comp = RewriteRangeIndexToExpr comp
     // LanguageFeatures.ImplicitYield do not require this validation
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateExpressionWithIfRequiresParenthesis = not implicitYieldEnabled
     let acceptDeprecatedIfThenExpression = not implicitYieldEnabled
 
     match comp with 
-    | SynExpr.CompExpr (_, _, (SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems as body), _) -> 
-        match body with
+    | SimpleSemicolonSequence cenv acceptDeprecatedIfThenExpression elems -> 
+        match comp with
         | SimpleSemicolonSequence cenv false _ -> ()
         | _ when validateExpressionWithIfRequiresParenthesis -> errorR(Deprecated(FSComp.SR.tcExpressionWithIfRequiresParenthesis(), m))
         | _ -> ()
@@ -1965,11 +1989,11 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
                 then SynExpr.Const (SynConst.UInt16s (Array.ofList (List.map (function SynExpr.Const (SynConst.UInt16 x, _) -> x | _ -> failwith "unreachable") elems)), m)
                 elif nelems > 0 && List.forall (function SynExpr.Const (SynConst.Byte _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
-                else SynExpr.ArrayOrList (isArray, elems, m)
+                else SynExpr.ArrayOrListFixedSize (isArray, elems, m)
             else 
                 if elems.Length > 500 then 
                     error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
-                SynExpr.ArrayOrList (isArray, elems, m)
+                SynExpr.ArrayOrListFixedSize (isArray, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
