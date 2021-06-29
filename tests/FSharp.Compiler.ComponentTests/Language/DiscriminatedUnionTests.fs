@@ -19,3 +19,25 @@ if foo.IsBar then failwith "Should not be Bar"
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Is* discriminated union properties are visible, proper values are returned in recursive namespace, before the definition`` () =
+        FSharp """
+namespace rec Hello
+
+module Main =
+    [<EntryPoint>]
+    let main _ =
+        let foo = Foo.Foo "hi"
+        printf $"IsFoo: %b{foo.IsFoo} / IsBar: %b{foo.IsBar}"
+        0
+
+    [<Struct>]
+    type Foo =
+        private
+        | Foo of string
+        | Bar
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed

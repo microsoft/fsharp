@@ -42,7 +42,19 @@ type Worker () =
             |> Option.defaultValue null))
         let asm = Assembly.LoadFrom(assemblyPath)
         let entryPoint = asm.EntryPoint
-        (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+
+        let parameters = entryPoint.GetParameters()
+
+        // Pretty hacky way of executing both normal explicit entry point
+        // - Int32 main(System.String[])
+        // and implicit one
+        // - Void main@()
+        if parameters.Length = 0 then
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [||])) |> ignore
+        elif parameters.Length = 1 && parameters.[0].ParameterType = typeof<string []> then
+            (entryPoint.Invoke(Unchecked.defaultof<obj>, [| Array.empty<string> |])) |> ignore
+        else
+            failwith $"Unable to invoke entry point with following args: %A{parameters}"
 
 type SourceKind =
     | Fs
