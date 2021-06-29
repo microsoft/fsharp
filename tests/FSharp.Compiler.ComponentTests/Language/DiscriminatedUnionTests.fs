@@ -29,14 +29,44 @@ module Main =
     [<EntryPoint>]
     let main _ =
         let foo = Foo.Foo "hi"
-        printf $"IsFoo: %b{foo.IsFoo} / IsBar: %b{foo.IsBar}"
+        if not <| foo.IsFoo then failwith "Should be Foo"
+        if foo.IsBar then failwith "Should not be Bar"
         0
 
-    [<Struct>]
-    type Foo =
-        private
-        | Foo of string
-        | Bar
+[<Struct>]
+type Foo =
+    private
+    | Foo of string
+    | Bar
+        """
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+
+
+    [<Fact>]
+    let ``Is* discriminated union properties are visible, proper values are returned in recursive namespace, in SRTP`` () =
+        FSharp """
+namespace Hello
+
+[<Struct>]
+type Foo =
+    | Foo of string
+    | Bar
+
+module Main =
+
+    let inline (|HasIsFoo|) x = fun () -> (^a : (member IsFoo: bool) x)
+    let inline (|HasIsBar|) x = fun () -> (^a : (member IsBar: bool) x)
+    let getIsFooIsBar (HasIsFoo isFoo & HasIsBar isBar) = (isFoo(), isBar())
+
+    [<EntryPoint>]
+    let main _ =
+        let foo = Foo.Foo "hi"
+        let (isFoo, isBar) = getIsFooIsBar foo
+        if not <| isFoo then failwith "Should be Foo"
+        if isBar then failwith "Should not be Bar"
+        0
         """
         |> withLangVersionPreview
         |> compileExeAndRun
