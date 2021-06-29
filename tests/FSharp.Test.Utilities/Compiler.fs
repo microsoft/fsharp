@@ -717,7 +717,7 @@ module rec Compiler =
             match result with
             | Success r | Failure r ->
                 if not <| diagnosticMatches pattern r.Diagnostics then
-                    failwith "Expected diagnostic message pattern was not found in compilation diagnostics."
+                    failwithf "Expected diagnostic message pattern was not found in compilation diagnostics.\nDiagnostics:\n%A" r.Diagnostics
             result
 
         let withDiagnosticMessageDoesntMatch (pattern: string) (result: TestResult) : TestResult =

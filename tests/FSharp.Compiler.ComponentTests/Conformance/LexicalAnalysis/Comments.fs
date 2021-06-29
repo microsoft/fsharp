@@ -20,7 +20,7 @@ module Comments =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/Comments)
-    //<Expects status="error" id="FS0010" span="(8,3-8,4)">Unexpected symbol '\*' in implementation file$</Expects>
+    
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/Conformance/LexicalAnalysis/Comments", Includes=[|"E_star02.fs"|])>]
     let ``Comments - E_star02.fs - --test:ErrorRanges`` compilation =
         compilation
@@ -29,7 +29,7 @@ module Comments =
         |> compile
         |> shouldFail
         |> withErrorCode 0010
-        |> withDiagnosticMessageMatches "Unexpected symbol '\*' in implementation file$"
+        |> withDiagnosticMessageMatches @"Unexpected symbol '\)' in implementation file$"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Conformance/LexicalAnalysis/Comments)
