@@ -9,7 +9,7 @@ open FSharp.Quotations.Patterns
 module DiscriminatedUnionTests =
 
     [<Fact>]
-    let ``Is* discriminated union properties are visible, proper values are assigned`` () =
+    let ``Simple Is* discriminated union properties are visible, proper values are returned`` () =
         Fsx """
 type Foo = private | Foo of string | Bar
 let foo = Foo.Foo "hi"
