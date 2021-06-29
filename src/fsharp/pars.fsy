@@ -4254,8 +4254,14 @@ atomicExprQualification:
 
   | LPAREN  typedSequentialExpr rparen  
       { (fun e lhsm dotm -> 
-            mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
-            mkSynDotParenGet lhsm dotm e $2) }
+            // Check for expr.( * )
+            // Note that "*" is parsed as an expression as it is allowed in "foo.[3,*]"
+            match $2 with
+            | SynExpr.IndexerArg(SynIndexerArg.IndexRange (None, opm, None, _m1, _m2), _) ->
+                SynExpr.Ident(ident(CompileOpName "*", opm))
+            | _ ->
+              mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
+              mkSynDotParenGet lhsm dotm e $2) }
 
   | LBRACK  typedSequentialExpr RBRACK
       { (fun e lhsm dotm -> mkSynDotBrackGet lhsm dotm e $2) }

@@ -5438,6 +5438,11 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
 and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     match synExpr with
+    // ( * )
+    | SynExpr.Paren(SynExpr.IndexerArg(SynIndexerArg.IndexRange (None, opm, None, _m1, _m2), _), _, _, _) ->
+        let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm))
+        TcExpr cenv overallTy env tpenv replacementExpr
+
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) ->
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the
         // construct is a dot-lookup for the result of the construct.
