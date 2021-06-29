@@ -92,6 +92,11 @@
         <target state="translated">expressões de computação aplicáveis</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="new">attributes to the right of the 'module' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">consumo de membro da interface padrão</target>
@@ -139,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">padrões não-variáveis à direita dos padrões 'as'.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -359,7 +364,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">Não foi possível determinar o .NET SDK para este script. Não foi possível encontrar dotnet.exe e certifique-se de que o SDK do .NET esteja instalado.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">

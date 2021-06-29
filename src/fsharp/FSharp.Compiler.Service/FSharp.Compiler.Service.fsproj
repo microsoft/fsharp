@@ -112,18 +112,6 @@
     <Compile Include="..\LanguageFeatures.fs">
       <Link>Facilities\LanguageFeatures.fs</Link>
     </Compile>
-    <Compile Include="..\utils\prim-lexing.fsi">
-      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-lexing.fs">
-      <Link>LexYaccRuntime\prim-lexing.fs</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fsi">
-      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
-    </Compile>
-    <Compile Include="..\utils\prim-parsing.fs">
-      <Link>LexYaccRuntime\prim-parsing.fs</Link>
-    </Compile>
     <Compile Include="..\utils\ResizeArray.fsi">
       <Link>Utilities\ResizeArray.fsi</Link>
     </Compile>
@@ -246,6 +234,18 @@
     </Compile>
     <Compile Include="..\ErrorResolutionHints.fs">
       <Link>ErrorLogging\ErrorResolutionHints.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fsi">
+      <Link>LexYaccRuntime\prim-lexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-lexing.fs">
+      <Link>LexYaccRuntime\prim-lexing.fs</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fsi">
+      <Link>LexYaccRuntime\prim-parsing.fsi</Link>
+    </Compile>
+    <Compile Include="..\utils\prim-parsing.fs">
+      <Link>LexYaccRuntime\prim-parsing.fs</Link>
     </Compile>
     <FsLex Include="..\absil\illex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>

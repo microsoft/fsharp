@@ -1639,9 +1639,10 @@ module internal ParseAndCheckFile =
     // Public callers are unable to answer LanguageVersion feature support questions.
     // External Tools including the VS IDE will enable the default LanguageVersion
     let isFeatureSupported (_featureId:LanguageFeature) = true
+    let checkLanguageFeatureErrorRecover _featureId _range = ()
 
     let createLexbuf sourceText =
-        UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, sourceText)
+        UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
 
     let matchBraces(sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         let delayedLogger = CapturingErrorLogger("matchBraces")

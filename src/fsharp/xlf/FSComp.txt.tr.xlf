@@ -92,6 +92,11 @@
         <target state="translated">uygulama hesaplama ifadeleri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="new">attributes to the right of the 'module' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">varsayılan arabirim üyesi tüketimi</target>
@@ -139,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">'as' desenlerinin sağındaki değişken olmayan desenler</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -359,7 +364,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">Bu betik için .NET SDK belirlenemedi. dotnet.exe bulunamadı, bir .NET SDK'nın yüklü olduğundan emin olun.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">

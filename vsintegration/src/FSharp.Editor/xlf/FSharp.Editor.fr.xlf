@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="AddMissingInstanceMemberParameter">
         <source>Add missing instance member parameter</source>
-        <target state="new">Add missing instance member parameter</target>
+        <target state="translated">Ajouter un paramètre de membre d’instance manquant</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="UseNameof">
         <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
+        <target state="translated">Utiliser « nameof »</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">

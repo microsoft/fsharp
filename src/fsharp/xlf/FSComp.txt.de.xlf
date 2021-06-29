@@ -92,6 +92,11 @@
         <target state="translated">applikative Berechnungsausdrücke</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="new">attributes to the right of the 'module' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">standardmäßige Schnittstellenmembernutzung</target>
@@ -139,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">Nicht-Variablenmuster rechts neben as-Mustern</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -359,7 +364,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">Das .NET SDK für dieses Skript konnte nicht bestimmt werden. "dotnet.exe" konnte nicht gefunden werden, um sicherzustellen, dass ein .NET SDK installiert ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -7484,7 +7489,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den &amp;-Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
+        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">

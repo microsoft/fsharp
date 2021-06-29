@@ -729,12 +729,11 @@ type IncrementalBuilder(
 #if !NO_EXTENSIONTYPING
                         importsInvalidatedByTypeProvider: Event<unit>,
 #endif
-                        allDependencies) =
+                        allDependencies,
+                        defaultTimeStamp: DateTime) =
 
     let fileParsed = new Event<string>()
     let projectChecked = new Event<unit>()
-
-    let defaultTimeStamp = DateTime.UtcNow
 
     let mutable isImportsInvalidated = false
 
@@ -1075,7 +1074,7 @@ type IncrementalBuilder(
     let tryGetBeforeSlot (state: IncrementalBuilderState) slot =
         match slot with
         | 0 (* first file *) ->
-            (initialBoundModel, DateTime.MinValue)
+            (initialBoundModel, defaultTimeStamp)
             |> Some
         | _ ->
             tryGetSlot state (slot - 1)
@@ -1083,7 +1082,7 @@ type IncrementalBuilder(
     let evalUpToTargetSlot (state: IncrementalBuilderState) targetSlot =
         node {
             if targetSlot < 0 then
-                return Some(initialBoundModel, DateTime.MinValue)
+                return Some(initialBoundModel, defaultTimeStamp)
             else
                 let! boundModel = state.boundModels.[targetSlot].GetOrComputeValue()
                 return Some(boundModel, state.stampedFileNames.[targetSlot])
@@ -1091,7 +1090,7 @@ type IncrementalBuilder(
 
     let MaxTimeStampInDependencies stamps =
         if Seq.isEmpty stamps then
-            DateTime.MinValue
+            defaultTimeStamp
         else
             stamps
             |> Seq.max
@@ -1500,6 +1499,8 @@ type IncrementalBuilder(
                 | None -> new DependencyProvider()
                 | Some dependencyProvider -> dependencyProvider
 
+            let defaultTimeStamp = DateTime.UtcNow
+
             let! initialBoundModel = 
                 CombineImportedAssembliesTask(
                     assemblyName,
@@ -1539,7 +1540,8 @@ type IncrementalBuilder(
 #if !NO_EXTENSIONTYPING
                     importsInvalidatedByTypeProvider,
 #endif
-                    allDependencies)
+                    allDependencies,
+                    defaultTimeStamp)
             return Some builder
           with e ->
             errorRecoveryNoRange e

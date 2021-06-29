@@ -108,6 +108,6 @@ type LexerContinuation =
     
 and LexCont = LexerContinuation
 
-val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILInstr[]
+val ParseAssemblyCodeInstructions: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> checkLanguageFeatureErrorRecover:(Features.LanguageFeature -> range -> unit) -> m:range -> ILInstr[]
 
-val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> m:range -> ILType
+val ParseAssemblyCodeType: s:string -> reportLibraryOnlyFeatures: bool -> isFeatureSupported:(Features.LanguageFeature -> bool) -> checkLanguageFeatureErrorRecover:(Features.LanguageFeature -> range -> unit) -> m:range -> ILType

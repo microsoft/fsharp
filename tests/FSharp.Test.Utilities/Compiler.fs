@@ -442,10 +442,10 @@ module rec Compiler =
 
     let run (result: TestResult) : TestResult =
         match result with
-        | Failure f -> failwith (sprintf "Compilation should be successfull in order to run.\n Errors: %A" (f.Diagnostics))
+        | Failure f -> failwith (sprintf "Compilation should be successful in order to run.\n Errors: %A" (f.Diagnostics))
         | Success s ->
             match s.OutputPath with
-            | None -> failwith "Compilation didn't produce any output. Unable to run. (did you forget to set output type to Exe?)"
+            | None -> failwith "Compilation didn't produce any output. Unable to run. (Did you forget to set output type to Exe?)"
             | Some p ->
                 let (exitCode, output, errors) = CompilerAssert.ExecuteAndReturnResult (p, s.Dependencies, false)
                 let executionResult = { s with Output = Some (ExecutionOutput { ExitCode = exitCode; StdOut = output; StdErr = errors }) }

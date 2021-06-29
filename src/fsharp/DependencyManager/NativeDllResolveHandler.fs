@@ -111,25 +111,26 @@ type NativeDllResolveHandler (nativeProbingRoots: NativeResolutionProbe) =
         else
             None
 
-    let appendSemiColon (p: string) =
-        if not(p.EndsWith(";", StringComparison.OrdinalIgnoreCase)) then
-            p + ";"
+    let appendPathSeparator (p: string) =
+        let separator = string System.IO.Path.PathSeparator
+        if not(p.EndsWith(separator, StringComparison.OrdinalIgnoreCase)) then
+            p + separator
         else
             p
 
     let addedPaths = ConcurrentBag<string>()
 
     let addProbeToProcessPath probePath =
-        let probe = appendSemiColon probePath
-        let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+        let probe = appendPathSeparator probePath
+        let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
         if not (path.Contains(probe)) then
             Environment.SetEnvironmentVariable("PATH", path + probe)
             addedPaths.Add probe
 
     let removeProbeFromProcessPath probePath =
         if not(String.IsNullOrWhiteSpace(probePath)) then
-            let probe = appendSemiColon probePath
-            let path = appendSemiColon (Environment.GetEnvironmentVariable("PATH"))
+            let probe = appendPathSeparator probePath
+            let path = appendPathSeparator (Environment.GetEnvironmentVariable("PATH"))
             if path.Contains(probe) then Environment.SetEnvironmentVariable("PATH", path.Replace(probe, ""))
 
     member internal _.RefreshPathsInEnvironment(roots: string seq) =

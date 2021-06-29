@@ -5353,16 +5353,45 @@ FSharp.Compiler.Syntax.LongIdentWithDots: Microsoft.FSharp.Collections.FSharpLis
 FSharp.Compiler.Syntax.LongIdentWithDots: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.Range] get_dotRanges()
 FSharp.Compiler.Syntax.LongIdentWithDots: System.String ToString()
 FSharp.Compiler.Syntax.ParsedHashDirective
-FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Syntax.ParsedHashDirective NewParsedHashDirective(System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Syntax.ParsedHashDirective NewParsedHashDirective(System.String, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirectiveArgument], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.ParsedHashDirective: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedHashDirective: Int32 Tag
 FSharp.Compiler.Syntax.ParsedHashDirective: Int32 get_Tag()
-FSharp.Compiler.Syntax.ParsedHashDirective: Microsoft.FSharp.Collections.FSharpList`1[System.String] args
-FSharp.Compiler.Syntax.ParsedHashDirective: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_args()
+FSharp.Compiler.Syntax.ParsedHashDirective: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirectiveArgument] args
+FSharp.Compiler.Syntax.ParsedHashDirective: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirectiveArgument] get_args()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String ToString()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String get_ident()
 FSharp.Compiler.Syntax.ParsedHashDirective: System.String ident
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: System.String constant
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: System.String get_constant()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: System.String get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier: System.String value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Syntax.SynStringKind get_stringKind()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Syntax.SynStringKind stringKind
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: System.String get_value()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String: System.String value
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 SourceIdentifier
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags: Int32 String
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsSourceIdentifier
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean IsString
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsSourceIdentifier()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Boolean get_IsString()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewSourceIdentifier(System.String, System.String, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument NewString(System.String, FSharp.Compiler.Syntax.SynStringKind, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+SourceIdentifier
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+String
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Syntax.ParsedHashDirectiveArgument+Tags
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Int32 Tag
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedHashDirectiveArgument: System.String ToString()
 FSharp.Compiler.Syntax.ParsedImplFile
 FSharp.Compiler.Syntax.ParsedImplFile: FSharp.Compiler.Syntax.ParsedImplFile NewParsedImplFile(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedImplFileFragment])
 FSharp.Compiler.Syntax.ParsedImplFile: Int32 Tag

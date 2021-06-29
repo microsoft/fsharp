@@ -334,6 +334,25 @@ type BackgroundCompiler(
         return (builderOpt, diagnostics)
       }
 
+    let parseCacheLock = Lock<ParseCacheLockToken>()
+    
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
+    let parseFileCache = MruCache<ParseCacheLockToken,(_ * SourceTextHash * _),_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
+
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
+    //
+    /// Cache which holds recently seen type-checks.
+    /// This cache may hold out-of-date entries, in two senses
+    ///    - there may be a more recent antecedent state available because the background build has made it available
+    ///    - the source for the file may have changed
+
+    // Also keyed on source. This can only be out of date if the antecedent is out of date
+    let checkFileInProjectCache =
+        MruCache<ParseCacheLockToken, CheckFileCacheKey, GraphNode<CheckFileCacheValue>>
+            (keepStrongly=checkFileInProjectCacheSize,
+             areSame=AreSameForChecking3,
+             areSimilar=AreSubsumable3)
+
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.incrementalBuildersCache. This root typically holds more 
     // live information than anything else in the F# Language Service, since it holds up to 3 (projectCacheStrongSize) background project builds
     // strongly.
@@ -388,6 +407,17 @@ type BackgroundCompiler(
                     Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
                     return builderOpt,creationDiags
                 | _ ->
+                    // The builder could be re-created,
+                    //    clear the check file caches that are associated with it.
+                    //    We must do this in order to not return stale results when references
+                    //    in the project get changed/added/removed.
+                    parseCacheLock.AcquireLock(fun ltok -> 
+                        options.SourceFiles
+                        |> Array.iter (fun sourceFile ->
+                            let key = (sourceFile, 0L, options)
+                            checkFileInProjectCache.RemoveAnySimilar(ltok, key)
+                        )
+                    )
                     return! createAndGetBuilder (options, userOpName)
             }
         | _ -> 
@@ -412,25 +442,6 @@ type BackgroundCompiler(
             getBuilder
         | _ ->
             getOrCreateBuilder (options, userOpName)
-
-    let parseCacheLock = Lock<ParseCacheLockToken>()
-    
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
-    let parseFileCache = MruCache<ParseCacheLockToken,(_ * SourceTextHash * _),_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
-
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
-    //
-    /// Cache which holds recently seen type-checks.
-    /// This cache may hold out-of-date entries, in two senses
-    ///    - there may be a more recent antecedent state available because the background build has made it available
-    ///    - the source for the file may have changed
-
-    // Also keyed on source. This can only be out of date if the antecedent is out of date
-    let checkFileInProjectCache =
-        MruCache<ParseCacheLockToken, CheckFileCacheKey, GraphNode<CheckFileCacheValue>>
-            (keepStrongly=checkFileInProjectCacheSize,
-             areSame=AreSameForChecking3,
-             areSimilar=AreSubsumable3)
 
     /// Should be a fast operation. Ensures that we have only one async lazy object per file and its hash.
     let getCheckFileNode (parseResults,

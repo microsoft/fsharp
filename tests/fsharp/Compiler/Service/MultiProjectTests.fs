@@ -72,6 +72,54 @@ let test() =
             Assert.shouldBeEmpty(checkResults.Diagnostics)
             WeakReference(ms)
 
+    let compileFileAsDll (checker: FSharpChecker) filePath outputFilePath =
+        try
+            let result, _ =
+                checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
+                |> Async.RunSynchronously
+
+            if result.Length > 0 then
+                failwith "Compilation has errors."
+        with
+        | _ ->
+            try File.Delete(outputFilePath) with | _ -> ()
+            reraise()
+
+    let createOnDisk src =
+        let tmpFilePath = Path.GetTempFileName()
+        let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fs")
+        try File.Delete(tmpFilePath) with | _ -> ()
+        File.WriteAllText(tmpRealFilePath, src)
+        tmpRealFilePath
+
+    let createOnDiskCompiledAsDll checker src =
+        let tmpFilePath = Path.GetTempFileName()
+        let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fs")
+        try File.Delete(tmpFilePath) with | _ -> ()
+        File.WriteAllText(tmpRealFilePath, src)
+
+        let outputFilePath = Path.ChangeExtension(tmpRealFilePath, ".dll")
+
+        try
+            compileFileAsDll checker tmpRealFilePath outputFilePath
+            outputFilePath
+        finally
+            try File.Delete(tmpRealFilePath) with | _ -> ()
+
+    let updateFileOnDisk filePath src =
+        File.WriteAllText(filePath, src)
+
+    let updateCompiledDllOnDisk checker (dllPath: string) src =
+        if not (File.Exists dllPath) then
+            failwith $"File {dllPath} does not exist."
+
+        let filePath = createOnDisk src
+
+        try
+            compileFileAsDll checker filePath dllPath
+        finally
+            try File.Delete(filePath) with | _ -> ()
+
     [<Test>]
     let ``Using a CSharp reference project in-memory``() =
         AssertInMemoryCSharpReferenceIsValid() |> ignore
@@ -82,6 +130,74 @@ let test() =
         CompilerAssert.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         GC.Collect(2, GCCollectionMode.Forced, true)
         Assert.shouldBeFalse(weakRef.IsAlive)
+
+    [<Test>]
+    let ``Using compiler service, file referencing a DLL will correctly update when the referenced DLL file changes``() =
+        let checker = CompilerAssert.Checker
+
+        let dllPath1 = 
+            createOnDiskCompiledAsDll checker
+                """
+module Script1
+
+let x = 1
+                """
+
+        let filePath1 = 
+            createOnDisk 
+                """
+module Script2
+
+let x = Script1.x
+                """
+        
+        try
+            let fsOptions1 = CompilerAssert.DefaultProjectOptions
+            let fsOptions1 =
+                { fsOptions1 with 
+                    ProjectId = Some(Guid.NewGuid().ToString())
+                    OtherOptions = [|"-r:" + dllPath1|]
+                    ReferencedProjects = [||]
+                    SourceFiles = [|filePath1|] }              
+
+            let checkProjectResults = 
+                checker.ParseAndCheckProject(fsOptions1)
+                |> Async.RunSynchronously
+
+            Assert.IsEmpty(checkProjectResults.Diagnostics)
+
+            updateFileOnDisk filePath1
+                """
+module Script2
+
+let x = Script1.x
+let y = Script1.y
+                """
+
+            let checkProjectResults = 
+                checker.ParseAndCheckProject(fsOptions1)
+                |> Async.RunSynchronously
+
+            Assert.IsNotEmpty(checkProjectResults.Diagnostics)
+
+            updateCompiledDllOnDisk checker dllPath1
+                """
+module Script1
+
+let x = 1
+let y = 1
+                """
+
+            let checkProjectResults = 
+                checker.ParseAndCheckProject(fsOptions1)
+                |> Async.RunSynchronously
+
+            Assert.IsEmpty(checkProjectResults.Diagnostics)
+
+        finally
+            try File.Delete(dllPath1) with | _ -> ()
+            try File.Delete(filePath1) with | _ -> ()
+
 
 
         

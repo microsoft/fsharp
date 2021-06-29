@@ -212,8 +212,8 @@ let shouldStartFile args lexbuf (m:range) err tok =
     if (m.StartColumn <> 0 || m.StartLine <> 1) then fail args lexbuf err tok
     else tok
 
-let evalIfDefExpression startPos reportLibraryOnlyFeatures isFeatureSupported args (lookup:string->bool) (lexed:string) =
-    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, isFeatureSupported, lexed.ToCharArray ())
+let evalIfDefExpression startPos reportLibraryOnlyFeatures isFeatureSupported errorIfFeatureUnsupported args (lookup:string->bool) (lexed:string) =
+    let lexbuf          = LexBuffer<char>.FromChars (reportLibraryOnlyFeatures, isFeatureSupported, errorIfFeatureUnsupported, lexed.ToCharArray ())
     lexbuf.StartPos     <- startPos
     lexbuf.EndPos       <- startPos
     let tokenStream     = FSharp.Compiler.PPLexer.tokenstream args
@@ -938,7 +938,7 @@ rule token args skip = parse
    { let m = lexbuf.LexemeRange
      let lookup id = List.contains id args.defines
      let lexed = lexeme lexbuf
-     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.SupportsFeature args lookup lexed
+     let isTrue = evalIfDefExpression lexbuf.StartPos lexbuf.ReportLibraryOnlyFeatures lexbuf.SupportsFeature lexbuf.CheckLanguageFeatureErrorRecover args lookup lexed
      args.ifdefStack <- (IfDefIf,m) :: args.ifdefStack
 
      // Get the token; make sure it starts at zero position & return

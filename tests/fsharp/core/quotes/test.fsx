@@ -4119,6 +4119,19 @@ module CheckEliminatedConstructs =
        """IfThenElse (Call (None, op_Equality, [ValueWithName ([||], ts), Value (<null>)]),
             Value (true), Value (false))"""
         
+module Interpolation =
+    let interpolatedNoHoleQuoted = <@ $"abc" @>
+    let actual1 = interpolatedNoHoleQuoted.ToString()
+    checkStrings "brewbreebrwhat1" actual1 """Value ("abc")"""
+
+    let interpolatedWithLiteralQuoted = <@ $"abc {1} def" @>
+    let actual2 = interpolatedWithLiteralQuoted.ToString()
+    checkStrings "brewbreebrwhat2" actual2
+        """Call (None, PrintFormatToString,
+                 [NewObject (PrintfFormat`5, Value ("abc %P() def"),
+                             NewArray (Object, Call (None, Box, [Value (1)])),
+                             Value (<null>))])"""
+
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 

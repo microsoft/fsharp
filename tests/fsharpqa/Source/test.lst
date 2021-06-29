@@ -57,6 +57,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
 CompilerOptions01,NoMT				CompilerOptions\fsc\target
 CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\times
+CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\tokenize
 CompilerOptions01,NoMT				CompilerOptions\fsc\warn
 CompilerOptions01,NoMT				CompilerOptions\fsc\warnaserror
 CompilerOptions01,NoMT				CompilerOptions\fsc\warnon

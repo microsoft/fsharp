@@ -92,6 +92,11 @@
         <target state="translated">aplikativní výpočetní výrazy</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="new">attributes to the right of the 'module' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">využití člena výchozího rozhraní</target>
@@ -139,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">neproměnné vzory napravo od vzorů typu „jako“</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -7484,7 +7489,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">K ukazateli byref vrácenému funkcí nebo metodou se od F# 4.5 implicitně přistupuje přes ukazatel. Pokud chcete návratovou hodnotu získat jako ukazatel, použijte operátor adresy, například &amp;f(x) nebo &amp;obj.Metoda(arg1, arg2).</target>
+        <target state="translated">K ukazateli byref vrácenému funkcí nebo metodou se od F# 4.5 implicitně přistupuje přes ukazatel. Pokud chcete návratovou hodnotu získat jako ukazatel, použijte operátor adresy, například &amp;f(x) nebo &amp;obj.Method(arg1, arg2).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">

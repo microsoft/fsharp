@@ -2022,12 +2022,21 @@ type SynModuleOrNamespaceSig =
     /// Gets the syntax range of this construct
     member Range: range
 
+/// Represents a parsed hash directive argument
+[<NoEquality; NoComparison>]
+type ParsedHashDirectiveArgument =
+    | String of value: string * stringKind: SynStringKind * range: Range
+    | SourceIdentifier of constant: string * value: string * range: Range
+
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents a parsed hash directive
 [<NoEquality; NoComparison>]
 type ParsedHashDirective =
     | ParsedHashDirective of
         ident: string *
-        args: string list *
+        args: ParsedHashDirectiveArgument list *
         range: range
 
 /// Represents the syntax tree for the contents of a parsed implementation file

@@ -121,6 +121,11 @@ type LStatus =
     | Unprocessed
     | Processed
 
+type TokenizeOption =
+    | AndCompile
+    | Only
+    | Unfiltered
+
 type PackageManagerLine =
     { Directive: Directive
       LineStatus: LStatus
@@ -182,7 +187,7 @@ type TcConfigBuilder =
       mutable importAllReferencesOnly: bool
       mutable simulateException: string option
       mutable printAst: bool
-      mutable tokenizeOnly: bool
+      mutable tokenize: TokenizeOption
       mutable testInteractionParser: bool
       mutable reportNumDecls: bool
       mutable printSignature: bool
@@ -374,7 +379,7 @@ type TcConfig =
     member importAllReferencesOnly: bool
     member simulateException: string option
     member printAst: bool
-    member tokenizeOnly: bool
+    member tokenize: TokenizeOption
     member testInteractionParser: bool
     member reportNumDecls: bool
     member printSignature: bool

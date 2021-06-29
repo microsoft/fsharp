@@ -92,6 +92,11 @@
         <target state="translated">применимые вычислительные выражения</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="new">attributes to the right of the 'module' keyword</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">использование элемента интерфейса по умолчанию</target>
@@ -139,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
         <source>non-variable patterns to the right of 'as' patterns</source>
-        <target state="new">non-variable patterns to the right of 'as' patterns</target>
+        <target state="translated">шаблоны без переменных справа от шаблонов "as"</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
@@ -359,7 +364,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">Не удалось определить пакет SDK .NET для этого сценария. Не удалось найти dotnet.exe. Убедитесь, что пакет SDK .NET установлен.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -7449,12 +7454,12 @@
       </trans-unit>
       <trans-unit id="implicitlyDiscardedInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
-        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt; = &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield".</target>
+        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt;= &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield".</target>
         <note />
       </trans-unit>
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
-        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt; = &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield!".</target>
+        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt;= &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield!".</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">

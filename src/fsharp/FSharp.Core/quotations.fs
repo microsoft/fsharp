@@ -1856,7 +1856,7 @@ module Patterns =
                          |> List.iter (fun (resourceName, defns) ->
                              defns |> List.iter (fun (methodBase, exprBuilder) ->
                                 reflectedDefinitionTable.[ReflectedDefinitionTableKey.GetKey methodBase] <- Entry exprBuilder)
-                             decodedTopResources.Add((assem, resourceName), 0))
+                             decodedTopResources.[(assem, resourceName)] <- 0)
                      // we know it's in the table now, if it's ever going to be there
                      reflectedDefinitionTable.TryGetValue key
                 )

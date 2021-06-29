@@ -27,13 +27,29 @@ type internal IFSharpWorkspaceProjectContext =
 
     abstract SetProjectReferences : IFSharpWorkspaceProjectContext seq -> unit
 
+    abstract MetadataReferenceCount : int
+
+    abstract HasMetadataReference : referencePath: string -> bool
+
+    abstract SetMetadataReferences : referencePaths: string seq -> unit
+
 type internal IFSharpWorkspaceProjectContextFactory =
 
     abstract CreateProjectContext : filePath: string -> IFSharpWorkspaceProjectContext
 
+type private ProjectContextState =
+    {
+        refs: ImmutableDictionary<string, IFSharpWorkspaceProjectContext>
+        metadataRefs: ImmutableHashSet<string>
+    }
+
 type internal FSharpWorkspaceProjectContext(vsProjectContext: IWorkspaceProjectContext) =
 
-    let mutable refs = ImmutableDictionary.Create(StringComparer.OrdinalIgnoreCase)
+    let mutable state =
+        {
+            refs = ImmutableDictionary.Create(StringComparer.OrdinalIgnoreCase)
+            metadataRefs = ImmutableHashSet.Create(equalityComparer = StringComparer.OrdinalIgnoreCase)
+        }
 
     member private _.VisualStudioProjectContext = vsProjectContext
 
@@ -52,20 +68,27 @@ type internal FSharpWorkspaceProjectContext(vsProjectContext: IWorkspaceProjectC
         | _ ->
             ()
 
+    member private _.AddMetadataReference(builder: ImmutableHashSet<_>.Builder, referencePath: string) =
+        vsProjectContext.AddMetadataReference(referencePath, MetadataReferenceProperties.Assembly)
+        builder.Add(referencePath) |> ignore
+
+    member private _.RemoveMetadataReference(referencePath: string) =
+        vsProjectContext.RemoveMetadataReference(referencePath)
+
     interface IFSharpWorkspaceProjectContext with
 
         member _.Id = vsProjectContext.Id
 
         member _.FilePath = vsProjectContext.ProjectFilePath
 
-        member _.ProjectReferenceCount = refs.Count
+        member _.ProjectReferenceCount = state.refs.Count
 
-        member _.HasProjectReference(filePath) = refs.ContainsKey(filePath)
+        member _.HasProjectReference(filePath) = state.refs.ContainsKey(filePath)
 
         member this.SetProjectReferences(projRefs) =
             let builder = ImmutableDictionary.CreateBuilder()
 
-            refs.Values
+            state.refs.Values
             |> Seq.iter (fun x ->
                 this.RemoveProjectReference(x)
             )
@@ -75,7 +98,26 @@ type internal FSharpWorkspaceProjectContext(vsProjectContext: IWorkspaceProjectC
                 this.AddProjectReference(builder, x)
             )
 
-            refs <- builder.ToImmutable()
+            state <- { state with refs = builder.ToImmutable() }
+
+        member _.MetadataReferenceCount = state.metadataRefs.Count
+
+        member _.HasMetadataReference(referencePath) = state.metadataRefs.Contains(referencePath)
+
+        member this.SetMetadataReferences(referencePaths) =
+            let builder = ImmutableHashSet.CreateBuilder()
+
+            state.metadataRefs
+            |> Seq.iter (fun x ->
+                this.RemoveMetadataReference(x)
+            )
+
+            referencePaths
+            |> Seq.iter (fun x ->
+                this.AddMetadataReference(builder, x)
+            )
+
+            state <- { state with metadataRefs = builder.ToImmutable() }
 
         member _.Dispose() =
             vsProjectContext.Dispose()
@@ -105,11 +147,19 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
     let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
     let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
-    static let mustUpdateProject (refSourceFiles: string []) (projectContext: IFSharpWorkspaceProjectContext) =
+    static let mustUpdateProjectReferences (refSourceFiles: string []) (projectContext: IFSharpWorkspaceProjectContext) =
         refSourceFiles.Length <> projectContext.ProjectReferenceCount ||
         (
              refSourceFiles 
              |> Seq.forall projectContext.HasProjectReference
+             |> not
+        )
+
+    static let mustUpdateMetadataReferences (referencePaths: string []) (projectContext: IFSharpWorkspaceProjectContext) =
+        referencePaths.Length <> projectContext.MetadataReferenceCount ||
+        (
+             referencePaths
+             |> Seq.forall projectContext.HasMetadataReference
              |> not
         )
 
@@ -131,9 +181,18 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                 let filePath = scriptProjectOptions.SourceFiles.[scriptProjectOptions.SourceFiles.Length - 1]
                 let refSourceFiles = scriptProjectOptions.SourceFiles |> Array.take (scriptProjectOptions.SourceFiles.Length - 1)
 
+                let referencePaths =
+                    scriptProjectOptions.OtherOptions
+                    |> Seq.filter (fun x -> x.StartsWith("-r:", StringComparison.OrdinalIgnoreCase))
+                    |> Seq.map (fun x -> 
+                        let startIndex = "-r:".Length
+                        x.Substring(startIndex, x.Length - startIndex)
+                    )
+                    |> Array.ofSeq
+
                 match files.TryGetValue(filePath) with
                 | true, (projectContext: IFSharpWorkspaceProjectContext) ->
-                    if mustUpdateProject refSourceFiles projectContext then
+                    if mustUpdateProjectReferences refSourceFiles projectContext then
                         lock gate (fun () ->
                             let newProjRefs =
                                 refSourceFiles
@@ -147,6 +206,11 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                                 )
 
                             projectContext.SetProjectReferences(newProjRefs)
+                        )
+
+                    if mustUpdateMetadataReferences referencePaths projectContext then
+                        lock gate (fun () ->
+                            projectContext.SetMetadataReferences(referencePaths)
                         )
                 | _ ->
                     ()

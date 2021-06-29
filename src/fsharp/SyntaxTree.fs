@@ -1838,10 +1838,20 @@ type SynModuleOrNamespaceSig =
         | SynModuleOrNamespaceSig (range=m) -> m
 
 [<NoEquality; NoComparison>]
+type ParsedHashDirectiveArgument =
+     | String of value: string * stringKind: SynStringKind * range: Range
+     | SourceIdentifier of constant: string * value: string * range: Range
+
+     member this.Range =
+         match this with
+         | ParsedHashDirectiveArgument.String (range=m)
+         | ParsedHashDirectiveArgument.SourceIdentifier (range=m) -> m
+
+[<NoEquality; NoComparison>]
 type ParsedHashDirective =
     | ParsedHashDirective of
         ident: string *
-        args: string list *
+        args: ParsedHashDirectiveArgument list *
         range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

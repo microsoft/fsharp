@@ -170,9 +170,12 @@ let GetScopedPragmasForHashDirective hd =
     [ match hd with
       | ParsedHashDirective("nowarn", numbers, m) ->
           for s in numbers do
-          match GetWarningNumber(m, s) with
-            | None -> ()
-            | Some n -> yield ScopedPragma.WarningOff(m, n)
+              match s with
+              | ParsedHashDirectiveArgument.SourceIdentifier _ -> ()
+              | ParsedHashDirectiveArgument.String (s, _, _) ->
+                  match GetWarningNumber(m, s) with
+                  | None -> ()
+                  | Some n -> yield ScopedPragma.WarningOff(m, n)
       | _ -> () ]
 
 let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls)) =
@@ -286,11 +289,13 @@ let ParseInput (lexer, errorLogger: ErrorLogger, lexbuf: UnicodeLexing.Lexbuf, d
         let filteringErrorLogger = GetErrorLoggerFilteringByScopedPragmas(false, scopedPragmas, errorLogger)
         delayLogger.CommitDelayedDiagnostics filteringErrorLogger
 
+type Tokenizer = unit -> Parser.token
+
 // Show all tokens in the stream, for testing purposes
-let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
+let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
     while true do
         printf "tokenize - getting one token from %s\n" shortFilename
-        let t = tokenizer.GetToken()
+        let t = tokenizer ()
         printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
         match t with
         | Parser.EOF _ -> exit 0
@@ -298,11 +303,11 @@ let ShowAllTokensAndExit (shortFilename, tokenizer: LexFilter.LexFilter, lexbuf:
         if lexbuf.IsPastEndOfStream then printf "!!! at end of stream\n"
 
 // Test one of the parser entry points, just for testing purposes
-let TestInteractionParserAndExit (tokenizer: LexFilter.LexFilter, lexbuf: LexBuffer<char>) =
+let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
     while true do
-        match (Parser.interaction (fun _ -> tokenizer.GetToken()) lexbuf) with
+        match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions(l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
-        | ParsedScriptInteraction.HashDirective (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
+        | ParsedScriptInteraction.HashDirective(_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
     exit 0
 
 // Report the statistics for testing purposes
@@ -366,10 +371,14 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
             Lexhelp.usingLexbufForParsing (lexbuf, filename) (fun lexbuf ->
 
                 // Set up the LexFilter over the token stream
-                let tokenizer = LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf)
+                let tokenizer,tokenizeOnly =
+                    match tcConfig.tokenize with
+                    | Unfiltered -> (fun () -> Lexer.token lexargs skipWhitespaceTokens lexbuf), true
+                    | Only ->       LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, true
+                    | _ ->          LexFilter.LexFilter(lightStatus, tcConfig.compilingFslib, Lexer.token lexargs skipWhitespaceTokens, lexbuf).GetToken, false
 
                 // If '--tokenize' then show the tokens now and exit
-                if tcConfig.tokenizeOnly then
+                if tokenizeOnly then
                     ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf)
 
                 // Test hook for one of the parser entry points
@@ -377,7 +386,7 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, conditionalComp
                     TestInteractionParserAndExit (tokenizer, lexbuf)
 
                 // Parse the input
-                let res = ParseInput((fun _ -> tokenizer.GetToken()), errorLogger, lexbuf, None, filename, isLastCompiland)
+                let res = ParseInput((fun _ -> tokenizer ()), errorLogger, lexbuf, None, filename, isLastCompiland)
 
                 // Report the statistics for testing purposes
                 if tcConfig.reportNumDecls then
@@ -408,7 +417,8 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompil
     use reader = fileStream.GetReader(tcConfig.inputCodePage, retryLocked)
 
     // Set up the LexBuffer for the file
-    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion.SupportsFeature, reader)
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfig.langVersion
+    let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion.SupportsFeature, checkLanguageFeatureErrorRecover, reader)
 
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
@@ -512,7 +522,7 @@ let ProcessMetaCommandsFromInput
         let mutable matchedm = range0
         try
             match hash with
-            | ParsedHashDirective("I", args, m) ->
+            | ParsedHashDirective("I", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashIncludeNotAllowedInNonScript m)
                 match args with
@@ -523,18 +533,18 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                     errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
                     state
-            | ParsedHashDirective("nowarn",numbers,m) ->
+            | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers,m) ->
                 List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
-            | ParsedHashDirective(("reference" | "r"), args, m) ->
+            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
-            | ParsedHashDirective(("i"), args, m) ->
+            | ParsedHashDirective(("i"), ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Include args m state
 
-            | ParsedHashDirective("load", args, m) ->
+            | ParsedHashDirective("load", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashDirectiveNotAllowedInNonScript m)
                 match args with
@@ -544,7 +554,7 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
                 state
-            | ParsedHashDirective("time", args, m) ->
+            | ParsedHashDirective("time", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashDirectiveNotAllowedInNonScript m)
                 match args with
