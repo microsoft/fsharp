@@ -158,7 +158,7 @@ type ValFlags(flags: int64) =
 
     member x.IsCompilerGenerated =      (flags       &&&                     0b00000000000000001000L) <> 0x0L
 
-    member x.SetIsCompilerGenerated isCompGen = 
+    member x.WithIsCompilerGenerated isCompGen = 
             let flags =                 (flags       &&&                  ~~~0b00000000000000001000L) |||
                                         (match isCompGen with
                                           | false           ->               0b00000000000000000000L
@@ -2833,6 +2833,10 @@ type Val =
             | slotsig :: _ -> slotsig.Name
             | _ -> x.val_logical_name
 
+    // Set the logical name of the value
+    member x.SetLogicalName(nm) = 
+        x.val_logical_name <- nm
+
     member x.ValCompiledName =
         match x.val_opt_data with
         | Some optData -> optData.val_compiled_name
@@ -2897,6 +2901,8 @@ type Val =
         DemangleOperatorName x.CoreDisplayName
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
+
+    member x.SetIsCompilerGenerated(v) = x.val_flags <- x.val_flags.WithIsCompilerGenerated(v) 
 
     member x.SetIsMemberOrModuleBinding() = x.val_flags <- x.val_flags.WithIsMemberOrModuleBinding 
 

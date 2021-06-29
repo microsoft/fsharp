@@ -23,12 +23,15 @@ type cenv =
 
 /// Find all the mutable locals that escape a method, function or lambda expression
 let DecideEscapes syntacticArgs body =
-    let cantBeFree v = 
+    let isMutableEscape v = 
         let passedIn = ListSet.contains valEq v syntacticArgs 
-        not passedIn && (v.IsMutable && v.ValReprInfo.IsNone) 
+        not passedIn &&
+        v.IsMutable &&
+        v.ValReprInfo.IsNone &&
+        not (Optimizer.IsKnownOnlyMutableBeforeUse (mkLocalValRef v))
 
     let frees = freeInExpr CollectLocals body
-    frees.FreeLocals |> Zset.filter cantBeFree 
+    frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
 let DecideLambda exprF cenv topValInfo expr ety z   = 

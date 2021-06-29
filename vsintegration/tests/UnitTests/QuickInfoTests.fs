@@ -16,7 +16,7 @@ let internal GetQuickInfo (project:FSharpProject) (fileName:string) (caretPositi
     async {
         let code = File.ReadAllText(fileName)
         let document, _ = RoslynTestHelpers.CreateDocument(fileName, code)
-        return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, document, caretPosition, FSharpParsingOptions.Default, project.Options, LanguageServicePerformanceOptions.Default)
+        return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
     } |> Async.RunSynchronously
 
 let GetQuickInfoText (project:FSharpProject) (fileName:string) (caretPosition:int) =

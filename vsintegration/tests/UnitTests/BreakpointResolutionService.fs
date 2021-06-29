@@ -75,9 +75,7 @@ let main argv =
         let document, sourceText = RoslynTestHelpers.CreateDocument(fileName, code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
 
-       // let document = Microsoft.CodeAnalysis.DocumentInfo.Create(Microsoft.CodeAnalysis.DocumentId()
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, document, searchSpan, parsingOptions) |> Async.RunSynchronously
+        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan) |> Async.RunSynchronously
         
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")

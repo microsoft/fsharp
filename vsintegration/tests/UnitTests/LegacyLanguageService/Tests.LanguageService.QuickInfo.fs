@@ -1038,6 +1038,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
            "Generic.LinkedList" "System.Collections.ICollection.ISynchronized" // Bug 5092: A framework class contained a private method impl
 
     [<Test>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/11724")>]
     member public this.``Regression.ModulesFromExternalLibrariesBug5785``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="AddMissingInstanceMemberParameter">
         <source>Add missing instance member parameter</source>
-        <target state="new">Add missing instance member parameter</target>
+        <target state="translated">Добавить отсутствующий параметр экземплярного элемента</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
-        <target state="new">Remove unused binding</target>
+        <target state="translated">Удалить неиспользуемую привязку</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="UseNameof">
         <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
+        <target state="translated">Использовать "nameof"</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
-        <target state="new">Use '.Value' to dereference expression</target>
+        <target state="translated">Использовать синтаксис ".значение" для разыменования выражения</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

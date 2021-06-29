@@ -20,12 +20,8 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-
-    static let userOpName = "AddTypeAnnotationToObjectOfIndeterminateType"
 
     let fixableDiagnosticIds = set ["FS0072"; "FS3245"]
 
@@ -40,23 +36,21 @@ type internal FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider
 
             let document = context.Document
             let position = context.Span.Start
-            let checker = checkerProvider.Checker
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! sourceText = document.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+
+            let! sourceText = document.GetTextAsync(context.CancellationToken)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, userOpName=userOpName)
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider))
+
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAddTypeAnnotationToObjectOfIndeterminateTypeFixProvider)) |> liftAsync
             let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with
             | FindDeclResult.DeclFound declRange when declRange.FileName = document.FilePath ->
                 let! declSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, declRange)
                 let declTextLine = sourceText.Lines.GetLineFromPosition declSpan.Start
-                let! declLexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(declRange.StartLine, declRange.EndColumn, declTextLine.ToString(), declLexerSymbol.FullIsland)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(declRange.StartLine, declRange.EndColumn, declTextLine.ToString(), lexerSymbol.FullIsland)
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as mfv ->
                     let typeString = mfv.FullType.FormatWithConstraints symbolUse.DisplayContext

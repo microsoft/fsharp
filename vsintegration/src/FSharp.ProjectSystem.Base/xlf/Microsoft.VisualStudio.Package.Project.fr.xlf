@@ -131,8 +131,8 @@
         <target state="translated">Les noms de fichiers et de dossiers ne peuvent pas :
 - être des chaînes vides ; 
 - être des noms réservés au système, notamment 'CON', 'AUX', PRN', 'COM1' ou 'LPT2' ; 
-- contenir uniquement '.' ;
-- comporter les caractères suivants : / ? : &amp;  \ * " &lt; &gt; | # %</target>
+- contenir uniquement '.'
+- comporter les caractères suivants : / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorInvalidProjectName">

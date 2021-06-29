@@ -11,6 +11,7 @@ open System.Linq
 open System.Text
 open System.Runtime.InteropServices
 open System.Reflection.PortableExecutable
+open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.FindSymbols
@@ -91,7 +92,8 @@ module internal MetadataAsSource =
             None
 
 [<Sealed>]
-type internal FSharpMetadataAsSourceService(projectContextFactory: IWorkspaceProjectContextFactory) =
+[<Export(typeof<FSharpMetadataAsSourceService>); Composition.Shared>]
+type internal FSharpMetadataAsSourceService [<ImportingConstructor>] (projectContextFactory: IWorkspaceProjectContextFactory) =
 
     let serviceProvider = ServiceProvider.GlobalProvider
     let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IWorkspaceProjectContext>()

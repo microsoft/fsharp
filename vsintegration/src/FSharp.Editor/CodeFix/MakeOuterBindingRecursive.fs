@@ -12,20 +12,16 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpMakeOuterBindingRecursiveCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
 
-    static let userOpName = "MakeOuterBindingRecursive"
     let fixableDiagnosticIds = set ["FS0039"]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(context.Document, parsingOptions, userOpName)
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpMakeOuterBindingRecursiveCodeFixProvider)) |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let diagnosticRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

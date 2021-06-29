@@ -153,6 +153,10 @@ val ConcatAttributesLists: attrsLists:SynAttributeList list -> SynAttribute list
 
 val ( |Attributes| ): synAttributes:SynAttributeList list -> SynAttribute list
 
+val ( |TyparDecls| ): typarDecls: SynTyparDecls option -> SynTyparDecl list
+val ( |TyparsAndConstraints| ): typarDecls: SynTyparDecls option -> SynTyparDecl list * SynTypeConstraint list
+val ( |ValTyparDecls| ): valTyparDecls: SynValTyparDecls -> SynTyparDecl list * SynTypeConstraint list * bool
+
 val rangeOfNonNilAttrs: attrs:SynAttributes -> range
 
 val stripParenTypes: synType:SynType -> SynType
@@ -262,3 +266,5 @@ val inferredTyparDecls: SynValTyparDecls
 val noInferredTypars: SynValTyparDecls
 
 val synExprContainsError: inpExpr:SynExpr -> bool
+
+val ( |ParsedHashDirectiveArguments| ) : ParsedHashDirectiveArgument list -> string list

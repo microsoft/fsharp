@@ -11,20 +11,16 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
 
-    static let userOpName = "ConvertCSharpLambdaToFSharpLambda"
     let fixableDiagnosticIds = set ["FS0039"; "FS0043"]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(context.Document, parsingOptions, userOpName)
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpConvertCSharpLambdaToFSharpLambdaCodeFixProvider)) |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

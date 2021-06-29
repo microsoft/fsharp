@@ -180,7 +180,7 @@ let idOfPat (parseState:IParseState) m p =
     match p with
     | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop ->
         mkSynId r "_"
-    | SynPat.Named (SynPat.Wild _, id, false, _, _) -> id
+    | SynPat.Named (id, false, _, _) -> id
     | SynPat.LongIdent(LongIdentWithDots([id], _), _, None, SynArgPats.Pats [], None, _) -> id
     | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
 
@@ -649,11 +649,14 @@ hashDirectiveArgs:
 
 
 /* One argument to a #directive */
-hashDirectiveArg: 
+hashDirectiveArg:
   | string 
-      { let s, _ = $1
-        s }
-      
+      { let s, kind = $1
+        ParsedHashDirectiveArgument.String (s, kind, lhs parseState) }
+  | sourceIdentifier 
+      { let c,v = $1
+        ParsedHashDirectiveArgument.SourceIdentifier (c, v, lhs parseState) }
+
 
 /*--------------------------------------------------------------------------*/
 /* F# Language Proper - signature files */
@@ -805,7 +808,7 @@ moduleSpfn:
       { let isRec, path, xml, vis = $3 
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        let info = SynComponentInfo($1, [], [], path, xml, false, vis, rhs parseState 3)
+        let info = SynComponentInfo($1, None, [], path, xml, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let m = (rhs2 parseState 1 4, $5) ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
         SynModuleSigDecl.NestedModule(info, isRec, $5, m) }
@@ -1323,7 +1326,7 @@ moduleDefn:
             [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            let info = SynComponentInfo(attribs, [], [], path, xml, false, vis, rhs parseState 3)
+            let info = SynComponentInfo(attribs, None, [], path, xml, false, vis, rhs parseState 3)
             [ SynModuleDecl.NestedModule(info, isRec, def, false, (rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
   /* unattached custom attributes */
@@ -1508,9 +1511,8 @@ memberFlags:
 /* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo: 
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
-     { let typars, lid, fixity, tpcs1, vis, xmlDoc = $2 
-       let tpcs2 = $3 
-       SynComponentInfo($1, typars, (tpcs1 @ tpcs2), lid, xmlDoc, fixity, vis, rangeOfLid lid)  }
+     { let typars, lid, fixity, vis, xmlDoc = $2
+       SynComponentInfo ($1, typars, $3, lid, xmlDoc, fixity, vis, rangeOfLid lid) }
 
 /* Part of a set of type definitions */
 tyconDefnList:  
@@ -1753,10 +1755,10 @@ memberCore:
                          let getset = 
                                let rec go p = 
                                    match p with 
-                                   | SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) ->  id.idText
-                                   | SynPat.Named (_, nm, _, _, _) ->  nm.idText
-                                   | SynPat.Typed (p, _, _) ->  go p
-                                   | SynPat.Attrib (p, _, _) ->  go p
+                                   | SynPat.LongIdent (LongIdentWithDots([id], _), _, _, _, _, _) -> id.idText
+                                   | SynPat.Named (nm, _, _, _) | SynPat.As (_, SynPat.Named (nm, _, _, _), _) -> nm.idText
+                                   | SynPat.Typed (p, _, _) -> go p
+                                   | SynPat.Attrib (p, _, _) -> go p
                                    | _ -> raiseParseErrorAt mBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
                                go pv 
                          if getset = "get" then
@@ -1863,7 +1865,7 @@ memberCore:
                        let lidOuter, lidVisOuter = 
                            match bindingPatOuter with 
                            | SynPat.LongIdent (lid, None, None, SynArgPats.Pats [], lidVisOuter, m) ->  lid, lidVisOuter
-                           | SynPat.Named (_, id, _, visOuter, m) -> LongIdentWithDots([id], []), visOuter
+                           | SynPat.Named (id, _, visOuter, m) | SynPat.As(_, SynPat.Named (id, _, visOuter, m), _) -> LongIdentWithDots([id], []), visOuter
                            | p -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax()) 
 
                        // Merge the visibility from the outer point with the inner point, e.g.
@@ -1898,7 +1900,8 @@ memberCore:
                                        args
 //                               let idTool : Ident list = lidOuter |> List.map (fun (li:Ident) -> ident(li.idText, id.idRange)) |> List.rev |> List.take 1
                                SynPat.LongIdent (lidOuter, Some(id), tyargs, SynArgPats.Pats args, mergeLidVisOuter lidVisInner, m)
-                           | SynPat.Named (_, nm, _, lidVisInner, m) ->  SynPat.LongIdent (lidOuter, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
+                           | SynPat.Named (nm, _, lidVisInner, m)
+                           | SynPat.As (_, SynPat.Named (nm, _, lidVisInner, m), _) -> SynPat.LongIdent (lidOuter, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
                            | SynPat.Typed (p, ty, m) ->  SynPat.Typed(go p, ty, m)
                            | SynPat.Attrib (p, attribs, m) ->  SynPat.Attrib(go p, attribs, m)
                            | SynPat.Wild(m) ->  SynPat.Wild(m)
@@ -2280,18 +2283,20 @@ interfaceMember:
 
 tyconNameAndTyparDecls:  
   | opt_access path 
-      { [], $2.Lid, false, [], $1, grabXmlDoc(parseState, 2) }
+      { None, $2.Lid, false, $1, grabXmlDoc(parseState, 2) }
 
   | opt_access prefixTyparDecls  path
-      { $2, $3.Lid, false, [], $1, grabXmlDoc(parseState, 2) }
+      { Some $2, $3.Lid, false, $1, grabXmlDoc(parseState, 2) }
 
   | opt_access path postfixTyparDecls 
-      { let tps, tpcs = $3 
-        tps, $2.Lid, true, tpcs, $1, grabXmlDoc(parseState, 2) }
+      { Some $3, $2.Lid, true, $1, grabXmlDoc(parseState, 2) }
 
 prefixTyparDecls:
-  | typar { [ SynTyparDecl([], $1) ] }
-  | LPAREN typarDeclList rparen {  List.rev $2 }
+  | typar
+      { SynTyparDecls.SinglePrefix (SynTyparDecl([], $1), rhs parseState 1) }
+
+  | LPAREN typarDeclList rparen
+      { SynTyparDecls.PrefixList (List.rev $2, rhs2 parseState 1 3) }
 
 typarDeclList: 
   | typarDeclList COMMA typarDecl { $3 :: $1 } 
@@ -2305,8 +2310,9 @@ typarDecl :
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
 postfixTyparDecls: 
   | opt_HIGH_PRECEDENCE_TYAPP LESS typarDeclList opt_typeConstraints GREATER 
-      { if not $2 then warning(Error(FSComp.SR.parsNonAdjacentTypars(), rhs2 parseState 2 5))
-        List.rev $3, $4 }
+      { let m = rhs2 parseState 2 5
+        if not $2 then warning(Error(FSComp.SR.parsNonAdjacentTypars(), m))
+        SynTyparDecls.PostfixList (List.rev $3, $4, m) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
@@ -2322,15 +2328,17 @@ explicitValTyparDeclsCore:
 
 explicitValTyparDecls: 
   | opt_HIGH_PRECEDENCE_TYAPP LESS explicitValTyparDeclsCore opt_typeConstraints GREATER 
-      { if not $2 then warning(Error(FSComp.SR.parsNonAdjacentTypars(), rhs2 parseState 2 5))
+      { let m = rhs2 parseState 2 5
+        if not $2 then warning(Error(FSComp.SR.parsNonAdjacentTypars(), m))
         let tps, flex = $3 
-        SynValTyparDecls(tps, flex, $4) }
+        let tps = SynTyparDecls.PostfixList (tps, $4, m)
+        SynValTyparDecls(Some tps, flex) }
 
 opt_explicitValTyparDecls: 
   | explicitValTyparDecls 
       { $1 } 
   |       
-      { SynValTyparDecls([], true, []) }
+      { SynValTyparDecls(None, true) }
 
 opt_explicitValTyparDecls2: 
   | explicitValTyparDecls 
@@ -2694,9 +2702,10 @@ cPrototype:
                                   mRhs)
         (fun attrs _ -> 
             let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let binding = mkSynBinding 
                               (xmlDoc, bindingId) 
-                              (vis, false, false, mBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None)
+                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -2725,7 +2734,7 @@ cArg:
      { let m = lhs parseState in SynPat.Typed(SynPat.Wild m, $2, m) |> addAttribs $1 }
 
   | opt_attributes cType ident 
-     { let m = lhs parseState in SynPat.Typed(SynPat.Named (SynPat.Wild m, $3, false, None, m), $2, m) |> addAttribs $1 }
+     { let m = lhs parseState in SynPat.Typed(SynPat.Named ($3, false, None, m), $2, m) |> addAttribs $1 }
 
 /* An type in an 'extern' DllImport function definition */
 cType: 
@@ -3003,7 +3012,7 @@ bindingPattern:
 simplePattern:
   | ident
       { let m = rhs parseState 1 
-        SynPat.Named(SynPat.Wild m, $1, false, None, m) }
+        SynPat.Named($1, false, None, m) }
 
   | QMARK ident
       { SynPat.OptionalVal($2, rhs parseState 2) }
@@ -3053,8 +3062,8 @@ simplePatterns:
 
 
 headBindingPattern:
-  | headBindingPattern AS ident 
-      { SynPat.Named ($1, $3, false, None, rhs2 parseState 1 3) }
+  | headBindingPattern AS constrPattern 
+      { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
   | headBindingPattern BAR headBindingPattern  
       { SynPat.Or($1, $3, rhs2 parseState 1 3) }
@@ -3235,13 +3244,13 @@ parenPatternBody:
 /* whole pattern to the left, whereas ': t' binds only the pattern */
 /* immediately preceding in the tuple. */
 /* */
-/* Also, it is unexpected that '(a, b : t)' in a pattern binds differently to */
-/* '(a, b : t)' in an expression. It's not that easy to solve that without */
+/* Also, it is unexpected that '(a, b : t)' in a pattern (a, (b : 't)) binds differently to */
+/* '(a, b : t)' in an expression ((a, b) : 't). It's not that easy to solve that without */
 /* duplicating the entire expression grammar, or making a fairly severe breaking change */
 /* to the language. */
 parenPattern:
-  | parenPattern AS ident 
-      { SynPat.Named ($1, $3, false, None, rhs2 parseState 1 3) }
+  | parenPattern AS constrPattern 
+      { SynPat.As($1, $3, rhs2 parseState 1 3) }
 
   | parenPattern BAR parenPattern  
       { SynPat.Or($1, $3, rhs2 parseState 1 3) }

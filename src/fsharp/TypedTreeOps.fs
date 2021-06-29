@@ -5100,7 +5100,7 @@ let markAsCompGen compgen d =
         match compgen with 
         | CloneAllAndMarkExprValsAsCompilerGenerated -> true
         | _ -> false
-    { d with val_flags= d.val_flags.SetIsCompilerGenerated(d.val_flags.IsCompilerGenerated || compgen) }
+    { d with val_flags= d.val_flags.WithIsCompilerGenerated(d.val_flags.IsCompilerGenerated || compgen) }
 
 let bindLocalVal (v: Val) (v': Val) tmenv = 
     { tmenv with valRemap=tmenv.valRemap.Add v (mkLocalValRef v') }

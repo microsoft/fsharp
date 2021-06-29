@@ -20,11 +20,9 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider
     [<ImportingConstructor>]
     (
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
 
-    static let userOpName = "AddMissingRecToMutuallyRecFunctions"
     let fixableDiagnosticIds = set ["FS0576"]
 
     let createCodeFix (context: CodeFixContext, symbolName: string, titleFormat: string, textChange: TextChange, diagnostics: ImmutableArray<Diagnostic>) =
@@ -45,9 +43,8 @@ type internal FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
+            let! defines = context.Document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingRecToMutuallyRecFunctionsCodeFixProvider)) |> liftAsync
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
             let funcStartPos =
                 let rec loop ch pos =

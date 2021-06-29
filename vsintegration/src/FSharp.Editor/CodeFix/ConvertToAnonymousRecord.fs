@@ -14,12 +14,8 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpConvertToAnonymousRecordCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-
-    static let userOpName = "ConvertToAnonymousRecord"
 
     let fixableDiagnosticIds = set ["FS0039"]
 
@@ -28,8 +24,7 @@ type internal FSharpConvertToAnonymousRecordCodeFixProvider
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpConvertToAnonymousRecordCodeFixProvider)) |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)

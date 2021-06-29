@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
-        <target state="new">discard pattern in use binding</target>
+        <target state="translated">descartar o padrão em uso de associação</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -137,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">padrões não-variáveis à direita dos padrões 'as'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">interoperabilidade opcional anulável</target>
@@ -159,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
-        <target state="new">binary formatting for integers</target>
+        <target state="translated">formatação binária para números inteiros</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -179,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
-        <target state="new">struct representation for active patterns</target>
+        <target state="translated">representação estrutural para padrões ativos</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -264,7 +269,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">Imprimir as interfaces inferidas de todos os arquivos de compilação para os arquivos de assinatura associados</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -289,7 +294,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">Especificar um arquivo de ícone do Win32 (.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -409,7 +414,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
-        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
+        <target state="translated">O uso de '[&lt;Struct&gt;]' em valores, funções e métodos somente é permitido em definições de padrões ativos parciais</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

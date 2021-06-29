@@ -20,19 +20,14 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpChangeTypeofWithNameToNameofExpressionRefactoring
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeRefactoringProvider()
-
-    static let userOpName = "ChangeTypeofWithNameToNameofExpression"
 
     override _.ComputeRefactoringsAsync context =
         asyncMaybe {
             let document = context.Document
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeTypeofWithNameToNameofExpressionRefactoring)) |> liftAsync
 
             let selectionRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! namedTypeOfResults = parseResults.TryRangeOfTypeofWithNameAndTypeExpr(selectionRange.Start)

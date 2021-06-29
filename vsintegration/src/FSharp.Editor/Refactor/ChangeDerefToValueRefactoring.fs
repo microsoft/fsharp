@@ -20,19 +20,14 @@ open Microsoft.CodeAnalysis.CodeActions
 type internal FSharpChangeDerefToValueRefactoring
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeRefactoringProvider()
-
-    static let userOpName = "ChangeDerefToValue"
 
     override _.ComputeRefactoringsAsync context =
         asyncMaybe {
             let document = context.Document
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeDerefToValueRefactoring)) |> liftAsync
 
             let selectionRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos selectionRange.Start

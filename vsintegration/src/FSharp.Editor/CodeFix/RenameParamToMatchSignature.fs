@@ -17,12 +17,10 @@ open FSharp.Compiler.Tokenization.FSharpKeywords
 type internal FSharpRenameParamToMatchSignature
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     inherit CodeFixProvider()
-    static let userOpName = "RenameParamToMatchSignature"
+
     let fixableDiagnosticIds = ["FS3218"]
         
         
@@ -44,7 +42,7 @@ type internal FSharpRenameParamToMatchSignature
                                 let document = context.Document
                                 let! cancellationToken = Async.CancellationToken |> liftAsync
                                 let! sourceText = document.GetTextAsync(cancellationToken)
-                                let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, context.Span.Start, projectInfoManager, checkerProvider.Checker, userOpName) 
+                                let! symbolUses = getSymbolUsesOfSymbolAtLocationInDocument (document, context.Span.Start) 
                                 let changes = 
                                     [| for symbolUse in symbolUses do
                                             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range) with 

@@ -53,14 +53,11 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let textLines = sourceText.Lines
         let caretLinePos = textLines.GetLinePosition(caretPosition)
         let caretLineColumn = caretLinePos.Character
-        let perfOptions = LanguageServicePerformanceOptions.Default
         
-        let document = RoslynTestHelpers.CreateDocument(fileName, sourceText)
-        let parseResults, _, checkFileResults =
-            let x =
-                checker.ParseAndCheckDocument(document, project.Options, perfOptions, "TestSignatureHelpProvider")
-                |> Async.RunSynchronously
-            x.Value
+        let document = RoslynTestHelpers.CreateDocument(fileName, sourceText, options = project.Options)
+        let parseResults, checkFileResults =
+            document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
+            |> Async.RunSynchronously
 
         let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn).Value
         let triggered =
@@ -103,17 +100,11 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let textLines = sourceText.Lines
     let caretLinePos = textLines.GetLinePosition(caretPosition)
     let caretLineColumn = caretLinePos.Character
-    let perfOptions = LanguageServicePerformanceOptions.Default
                
-    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
-    let parseResults, _, checkFileResults =
-        let x =
-            checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
-            |> Async.RunSynchronously
-
-        if x.IsNone then
-            Assert.Fail("Could not parse and check document.")
-        x.Value
+    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText, options = projectOptions)
+    let parseResults, checkFileResults =
+        document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
+        |> Async.RunSynchronously
 
     let actual = 
         let paramInfoLocations = parseResults.FindParameterLocations(Position.fromZ caretLinePos.Line caretLineColumn)
@@ -142,16 +133,10 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
 let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: string) expectedArgumentCount expectedArgumentIndex =
     let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
     let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
-    let perfOptions = LanguageServicePerformanceOptions.Default
     
-    let parseResults, _, checkFileResults =
-        let x =
-            checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
-            |> Async.RunSynchronously
-
-        if x.IsNone then
-            Assert.Fail("Could not parse and check document.")
-        x.Value
+    let parseResults, checkFileResults =
+        document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
+        |> Async.RunSynchronously
 
     let adjustedColumnInSource =
         let rec loop ch pos =
@@ -429,16 +414,10 @@ M.f
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
         let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
-        let perfOptions = LanguageServicePerformanceOptions.Default
     
-        let parseResults, _, checkFileResults =
-            let x =
-                checker.ParseAndCheckDocument(document, projectOptions, perfOptions, "TestSignatureHelpProvider")
-                |> Async.RunSynchronously
-
-            if x.IsNone then
-                Assert.Fail("Could not parse and check document.")
-            x.Value
+        let parseResults, checkFileResults =
+            document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
+            |> Async.RunSynchronously
     
         let adjustedColumnInSource =
             let rec loop ch pos =

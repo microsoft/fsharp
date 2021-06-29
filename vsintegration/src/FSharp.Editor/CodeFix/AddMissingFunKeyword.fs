@@ -15,11 +15,8 @@ open FSharp.Compiler.CodeAnalysis
 type internal FSharpAddMissingFunKeywordCodeFixProvider
     [<ImportingConstructor>]
     (
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-
-    static let userOpName = "AddMissingFunKeyword"
 
     let fixableDiagnosticIds = set ["FS0010"]
 
@@ -34,8 +31,7 @@ type internal FSharpAddMissingFunKeywordCodeFixProvider
             // Only trigger when failing to parse `->`, which arises when `fun` is missing
             do! Option.guard (textOfError = "->")
 
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let! defines = document.GetFSharpCompilationDefinesAsync(nameof(FSharpAddMissingFunKeywordCodeFixProvider)) |> liftAsync
 
             let adjustedPosition =
                 let rec loop ch pos =

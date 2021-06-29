@@ -15,11 +15,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
 type internal UnusedDeclarationsAnalyzer
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
-    
-    static let userOpName = "UnusedDeclarationsAnalyzer"
 
     interface IFSharpUnusedDeclarationsDiagnosticAnalyzer with
 
@@ -28,19 +24,16 @@ type internal UnusedDeclarationsAnalyzer
             else
 
             asyncMaybe {
-                do! Option.guard document.FSharpOptions.CodeFixes.UnusedDeclarations
+                do! Option.guard document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
 
                 do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
-                match! projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName) with
-                | (_parsingOptions, projectOptions) ->
-                    let! sourceText = document.GetTextAsync()
-                    let checker = checkerProvider.Checker
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
-                    let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
-                    return
-                        unusedRanges
-                        |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
-                        |> Seq.toImmutableArray
+                let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(UnusedDeclarationsAnalyzer)) |> liftAsync
+                let! unusedRanges = UnusedDeclarations.getUnusedDeclarations( checkResults, (isScriptFile document.FilePath)) |> liftAsync
+                let! sourceText = document.GetTextAsync()
+                return
+                    unusedRanges
+                    |> Seq.map (fun m -> Diagnostic.Create(descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                    |> Seq.toImmutableArray
             }
             |> Async.map (Option.defaultValue ImmutableArray.Empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

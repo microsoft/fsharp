@@ -592,12 +592,12 @@
       </trans-unit>
       <trans-unit id="DetailsImport">
         <source>An 'Import' of the file '{1}' was found in the project file '{0}'. This file is not registered as a safe file to import, and could contain targets and tasks that are harmful.  If this imported file is indeed considered safe, then it can be registered by writing to the registry key {2}.</source>
-        <target state="translated">В файле проекта "{0}" найден &lt;Import&gt; файла "{1}". Этот файл не зарегистрирован как безопасный для импорта, и может содержать опасные цели и задания.  Если файл является безопасным, он может быть зарегистрирован при помощи записи в раздел реестра {2}.</target>
+        <target state="translated">В файле проекта "{1}" найден импорт файла "{0}". Этот файл не зарегистрирован как безопасный для импорта и может содержать уязвимые места или злонамеренные задачи.  Если этот файл в самом деле безопасен, его можно зарегистрировать при помощи записи в раздел реестра {2}.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsUserImport">
         <source>An 'Import' of the file '{1}' was found in the user project file '{0}'.  All imports in user project files are considered unsafe.</source>
-        <target state="translated">В файле проекта пользователя "{0}" найден &lt;Import&gt; файла "{1}".  Весь импорт в пользовательских файлах проекта считается небезопасным.</target>
+        <target state="translated">В файле проекта пользователя "{0}" найден импорт файла "{1}".  Весь импорт в пользовательских файлах проекта считается небезопасным.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsItem">

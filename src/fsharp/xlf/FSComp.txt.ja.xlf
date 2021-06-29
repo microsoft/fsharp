@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
-        <target state="new">discard pattern in use binding</target>
+        <target state="translated">使用バインドでパターンを破棄する</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -137,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">'as' パターンの右側の非変数パターン</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">Null 許容のオプションの相互運用</target>
@@ -159,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
-        <target state="new">binary formatting for integers</target>
+        <target state="translated">整数のバイナリ形式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -179,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
-        <target state="new">struct representation for active patterns</target>
+        <target state="translated">アクティブなパターンの構造体表現</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -264,7 +269,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">すべてのコンパイル ファイルの推定されたインターフェイスを関連する署名ファイルに印刷します</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -289,7 +294,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">Win32 アイコン ファイル (.ico) を指定する</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -354,7 +359,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">このスクリプトの .NET SDK を特定できませんでした。dotnet.exe が見つかりませんでした。 .NET SDK がインストールされていることをご確認ください。</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -405,6 +410,11 @@
       <trans-unit id="tcInvalidAlignmentInInterpolatedString">
         <source>Invalid alignment in interpolated string</source>
         <target state="translated">補間された文字列内の配置が無効です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidStructReturn">
+        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
+        <target state="translated">値、関数、およびメソッドでの '[&lt;Struct&gt;]' は、部分的なアクティブ パターンの定義でのみ使うことができます</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -5982,16 +5992,6 @@
         <target state="translated">アセンブリ '{0}' はコマンド ラインに一覧表示されます。アセンブリは '-r' などのコマンド ライン フラグを使用して参照する必要があります。</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcInvalidStructReturn">
-        <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
-        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcInvalidTypeArgumentCount">
-        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
-        <target state="new">The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="fscRemotingError">
         <source>The resident compilation service was not used because a problem occured in communicating with the server.</source>
         <target state="translated">サーバーとの通信で問題が発生したため、常駐コンパイル サービスが使用されませんでした。</target>
@@ -6275,6 +6275,11 @@
       <trans-unit id="tcInferredGenericTypeGivesRiseToInconsistency">
         <source>The function or member '{0}' is used in a way that requires further type annotations at its definition to ensure consistency of inferred types. The inferred signature is '{1}'.</source>
         <target state="translated">現在使用されている関数またはメンバー '{0}' では、推論された型の一貫性を確保するために、さらに型の注釈が必要です。推論されたシグネチャは '{1}' です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidTypeArgumentCount">
+        <source>The number of type arguments did not match: '{0}' given, '{1}' expected. This may be related to a previously reported error.</source>
+        <target state="translated">型引数の数が一致しません: 指定されているのは '{0}' 個ですが、'{1}' 個にする必要があります。このエラーは、前に報告されたエラーに関係する場合があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotOverrideSealedMethod">

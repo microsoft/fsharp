@@ -28,14 +28,11 @@ type internal FSharpCompletionProvider
     (
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider
     ) =
 
     inherit CompletionProvider()
 
-    static let userOpName = "CompletionProvider"
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
     static let mutable declarationItems: DeclarationListItem[] = [||]
@@ -58,8 +55,6 @@ type internal FSharpCompletionProvider
                 glyph = Nullable Glyph.Keyword,
                 sortText = sprintf "%06d" (1000000 + n))
                 .AddProperty(KeywordDescription, description))
-    
-    let checker = checkerProvider.Checker
     
     let settings: EditorOptions = workspace.Services.GetService()
 
@@ -107,12 +102,11 @@ type internal FSharpCompletionProvider
                     (triggerChar = '.' || (intelliSenseOptions.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
                 
 
-    static member ProvideCompletionsAsyncAux(checker: FSharpChecker, document: Document, caretPosition: int, options: FSharpProjectOptions, 
-                                             getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, languageServicePerformanceOptions: LanguageServicePerformanceOptions, intellisenseOptions: IntelliSenseOptions) = 
+    static member ProvideCompletionsAsyncAux(document: Document, caretPosition: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list, intellisenseOptions: IntelliSenseOptions) = 
 
         asyncMaybe {
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions, userOpName = userOpName)
-            let! sourceText = document.GetTextAsync() |> liftTaskAsync
+            let! parseResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("ProvideCompletionsAsyncAux") |> liftAsync
+            let! sourceText = document.GetTextAsync()
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
             let caretLine = textLines.GetLineFromPosition(caretPosition)
@@ -211,7 +205,7 @@ type internal FSharpCompletionProvider
         let getInfo() = 
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
-            let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+            let defines = document.GetFSharpQuickDefines()
             (documentId, document.FilePath, defines)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo, settings.IntelliSense)
@@ -221,16 +215,14 @@ type internal FSharpCompletionProvider
             use _logBlock = Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+            let defines = document.GetFSharpQuickDefines()
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
-            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
             let getAllSymbols(fileCheckResults: FSharpCheckFileResults) =
                 if settings.IntelliSense.IncludeSymbolsFromUnopenedNamespacesOrModules
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
             let! results = 
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, context.Document, context.Position, projectOptions,
-                                                                    getAllSymbols, settings.LanguageServicePerformance, settings.IntelliSense)
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(context.Document, context.Position, getAllSymbols, settings.IntelliSense)
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
 
@@ -291,8 +283,7 @@ type internal FSharpCompletionProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
-                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                    let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
+                    let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpCompletionProvider)) |> liftAsync
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 

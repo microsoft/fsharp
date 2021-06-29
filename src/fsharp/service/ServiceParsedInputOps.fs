@@ -484,9 +484,7 @@ module ParsedInput =
 
         and walkPatWithKind (kind: EntityKind option) = function
             | SynPat.Ands (pats, _) -> List.tryPick walkPat pats
-            | SynPat.Named(SynPat.Wild nameRange as pat, _, _, _, _) -> 
-                if isPosInRange nameRange then None
-                else walkPat pat
+            | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
             | SynPat.Typed(pat, t, _) -> walkPat pat |> Option.orElse (walkType t)
             | SynPat.Attrib(pat, Attributes attrs, _) -> walkPat pat |> Option.orElse (List.tryPick walkAttribute attrs)
             | SynPat.Or(pat1, pat2, _) -> List.tryPick walkPat [pat1; pat2]
@@ -494,7 +492,7 @@ module ParsedInput =
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElse (
                     typars 
-                    |> Option.bind (fun (SynValTyparDecls (typars, _, constraints)) -> 
+                    |> Option.bind (fun (ValTyparDecls (typars, constraints, _)) -> 
                         List.tryPick walkTyparDecl typars
                         |> Option.orElse (List.tryPick walkTypeConstraint constraints)))
                 |> Option.orElse (List.tryPick walkPat pats)
@@ -686,7 +684,8 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> None
 
-        and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, typars, constraints, _, _, _, _, r)) =
+        and walkComponentInfo isModule (SynComponentInfo(Attributes attrs, TyparsAndConstraints (typars, cs1), cs2, _, _, _, _, r)) =
+            let constraints = cs1 @ cs2
             if isModule then None else ifPosInRange r (fun _ -> Some EntityKind.Type)
             |> Option.orElse (
                 List.tryPick walkAttribute attrs
@@ -987,10 +986,11 @@ module ParsedInput =
                     member _.VisitBinding(_path, defaultTraverse, (SynBinding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
-                            | SynPat.Named (range = range) when rangeContainsPos range pos -> 
+                            | SynPat.Named (range = range)
+                            | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos -> 
                                 // parameter without type hint, no completion
                                 Some CompletionContext.Invalid 
-                            | SynPat.Typed(SynPat.Named(SynPat.Wild range, _, _, _, _), _, _) when rangeContainsPos range pos ->
+                            | SynPat.Typed(SynPat.Named(_, _, _, range), _, _) when rangeContainsPos range pos ->
                                 // parameter with type hint, but we are on its name, no completion
                                 Some CompletionContext.Invalid
                             | _ -> defaultTraverse synBinding
@@ -1015,7 +1015,8 @@ module ParsedInput =
                                     | _ -> visitParam pat
                                 )
                             | _ -> defaultTraverse synBinding
-                        | SynPat.Named(range = range) when rangeContainsPos range pos ->
+                        | SynPat.Named(range = range)
+                        | SynPat.As (_, SynPat.Named (range = range), _) when rangeContainsPos range pos ->
                             // let fo|o = 1
                             Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
@@ -1200,20 +1201,19 @@ module ParsedInput =
             | SynPat.Tuple (_,pats, _)
             | SynPat.ArrayOrList (_, pats, _)
             | SynPat.Ands (pats, _) -> List.iter walkPat pats
-            | SynPat.Named (pat, ident, _, _, _) ->
-                walkPat pat
-                addIdent ident
+            | SynPat.Named (ident, _, _, _) -> addIdent ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
                 walkType t
             | SynPat.Attrib (pat, Attributes attrs, _) ->
                 walkPat pat
                 List.iter walkAttribute attrs
+            | SynPat.As (pat1, pat2, _)
             | SynPat.Or (pat1, pat2, _) -> List.iter walkPat [pat1; pat2]
             | SynPat.LongIdent (ident, _, typars, ConstructorPats pats, _, _) ->
                 addLongIdentWithDots ident
                 typars
-                |> Option.iter (fun (SynValTyparDecls (typars, _, constraints)) ->
+                |> Option.iter (fun (ValTyparDecls (typars, constraints, _)) ->
                      List.iter walkTyparDecl typars
                      List.iter walkTypeConstraint constraints)
                 List.iter walkPat pats
@@ -1222,7 +1222,7 @@ module ParsedInput =
             | SynPat.QuoteExpr(e, _) -> walkExpr e
             | _ -> ()
     
-        and walkTypar (SynTypar (_, _, _)) = ()
+        and walkTypar (SynTypar _) = ()
     
         and walkBinding (SynBinding(_, _, _, _, Attributes attrs, _, _, pat, returnInfo, e, _, _)) =
             List.iter walkAttribute attrs
@@ -1446,7 +1446,8 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev (_, t, _) -> walkType t
             | _ -> ()
     
-        and walkComponentInfo isTypeExtensionOrAlias (SynComponentInfo(Attributes attrs, typars, constraints, longIdent, _, _, _, _)) =
+        and walkComponentInfo isTypeExtensionOrAlias (SynComponentInfo(Attributes attrs, TyparsAndConstraints (typars, cs1), cs2, longIdent, _, _, _, _)) =
+            let constraints = cs1 @ cs2
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints

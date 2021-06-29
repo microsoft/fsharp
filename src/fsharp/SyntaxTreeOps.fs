@@ -93,9 +93,9 @@ let mkSynAnonField (ty: SynType) = SynField([], false, None, ty, false, PreXmlDo
 
 let mkSynNamedField (ident, ty: SynType, m) = SynField([], false, Some ident, ty, false, PreXmlDoc.Empty, None, m)
 
-let mkSynPatVar vis (id: Ident) = SynPat.Named (SynPat.Wild id.idRange, id, false, vis, id.idRange)
+let mkSynPatVar vis (id: Ident) = SynPat.Named (id, false, vis, id.idRange)
 
-let mkSynThisPatVar (id: Ident) = SynPat.Named (SynPat.Wild id.idRange, id, true, None, id.idRange)
+let mkSynThisPatVar (id: Ident) = SynPat.Named (id, true, None, id.idRange)
 
 let mkSynPatMaybeVar lidwd vis m =  SynPat.LongIdent (lidwd, None, None, SynArgPats.Pats [], vis, m)
 
@@ -140,7 +140,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Attrib(p2, attribs, m),
         laterF
 
-    | SynPat.Named (SynPat.Wild _, v, thisV, _, m) ->
+    | SynPat.Named (v, thisV, _, m) ->
         SynSimplePat.Id (v, None, false, thisV, false, m),
         None
 
@@ -164,7 +164,8 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
                 let altNameRefCell = Some (ref (SynSimplePatAlternativeIdInfo.Undecided (mkSynId m (synArgNameGenerator.New()))))
                 let item = mkSynIdGetWithAlt m id altNameRefCell
                 false, altNameRefCell, id, item
-            | SynPat.Named(_, ident, _, _, _) ->
+            | SynPat.Named(ident, _, _, _)
+            | SynPat.As(_, SynPat.Named(ident, _, _, _), _) ->
                 // named pats should be referred to as their name in docs, tooltips, etc.
                 let item = mkSynIdGet m ident.idText
                 false, None, ident, item
@@ -387,6 +388,21 @@ let ConcatAttributesLists (attrsLists: SynAttributeList list) =
 let (|Attributes|) synAttributes =
     ConcatAttributesLists synAttributes
 
+let (|TyparDecls|) (typarDecls: SynTyparDecls option) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls)
+    |> Option.defaultValue []
+
+let (|TyparsAndConstraints|) (typarDecls: SynTyparDecls option) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls, x.Constraints)
+    |> Option.defaultValue ([], [])
+
+let (|ValTyparDecls|) (SynValTyparDecls(typarDecls, canInfer)) =
+    typarDecls
+    |> Option.map (fun x -> x.TyparDecls, x.Constraints, canInfer)
+    |> Option.defaultValue ([], [], canInfer)
+
 let rangeOfNonNilAttrs (attrs: SynAttributes) =
     (attrs.Head.Range, attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
 
@@ -594,9 +610,9 @@ let StaticMemberFlags k : SynMemberFlags =
       IsOverrideOrExplicitImpl=false
       IsFinal=false }
 
-let inferredTyparDecls = SynValTyparDecls([], true, [])
+let inferredTyparDecls = SynValTyparDecls(None, true)
 
-let noInferredTypars = SynValTyparDecls([], false, [])
+let noInferredTypars = SynValTyparDecls(None, false)
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (SynBinding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr
@@ -731,3 +747,10 @@ let rec synExprContainsError inpExpr =
                       | SynInterpolatedStringPart.FillExpr (x, _) -> Some x))
 
     walkExpr inpExpr
+
+let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
+    List.map
+        (function
+        | ParsedHashDirectiveArgument.String (s, _, _) -> s
+        | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
+        input

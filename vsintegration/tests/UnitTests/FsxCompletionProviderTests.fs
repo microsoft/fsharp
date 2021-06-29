@@ -55,12 +55,11 @@ type Worker () =
     }
 
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
-        let projectOptions = { projectOptions with ProjectId = Some(Guid.NewGuid().ToString()) }
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+        let document = RoslynTestHelpers.CreateDocument(filePath, SourceText.From(fileContents), options = projectOptions)
         let expected = expected |> Seq.toList
         let actual = 
-            let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, document, caretPosition, projectOptions, (fun _ -> []), LanguageServicePerformanceOptions.Default, IntelliSenseOptions.Default) 
+            let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> []), IntelliSenseOptions.Default) 
                     |> Async.RunSynchronously 
             x |> Option.defaultValue (ResizeArray())
             |> Seq.toList

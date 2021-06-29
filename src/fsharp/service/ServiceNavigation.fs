@@ -160,7 +160,7 @@ module NavigationImpl =
                 [ createMemberLid(lidShow, kind, icon, unionRanges rangeMerge m, enclosingEntityKind, isAbstract, access) ]
             | SynPat.LongIdent(LongIdentWithDots(lid,_), _, _, _, access, _), _ -> 
                 [ createMemberLid(lid, NavigationItemKind.Field, FSharpGlyph.Field, unionRanges (List.head lid).idRange m, enclosingEntityKind, isAbstract, access) ]
-            | SynPat.Named(_, id, _, access, _), _ -> 
+            | SynPat.Named (id, _, access, _), _ | SynPat.As(_, SynPat.Named (id, _, access, _), _), _ -> 
                 let glyph = if isMember then FSharpGlyph.Method else FSharpGlyph.Field
                 [ createMember(id, NavigationItemKind.Field, glyph, unionRanges id.idRange m, enclosingEntityKind, isAbstract, access) ]
             | _ -> []
@@ -580,7 +580,7 @@ module NavigateTo =
             | SynPat.LongIdent(LongIdentWithDots([id], _), _, _, _, _, _) ->
                 // functions
                 addIdent kind id false container
-            | SynPat.Named(_, id, _, _, _) ->
+            | SynPat.Named (id, _, _, _) | SynPat.As(_, SynPat.Named (id, _, _, _), _) ->
                 // values
                 addIdent kind id false container
             | _ -> ()

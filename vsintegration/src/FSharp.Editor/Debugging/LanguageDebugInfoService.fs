@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Implementation.Debugging
 
 [<Export(typeof<IFSharpLanguageDebugInfoService>)>]
-type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: FSharpProjectOptionsManager) =
+type internal FSharpLanguageDebugInfoService [<ImportingConstructor>]() =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
         let tokenIndex = tokens |> Seq.tryFindIndex(fun t -> t.TextSpan.Contains(position))
@@ -49,7 +49,7 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInf
 
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<FSharpDebugDataTipInfo> =
             async {
-                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
+                let defines = document.GetFSharpQuickDefines() 
                 let! cancellationToken = Async.CancellationToken
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)

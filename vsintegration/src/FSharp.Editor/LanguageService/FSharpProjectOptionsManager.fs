@@ -6,21 +6,13 @@ open System
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Collections.Immutable
-open System.ComponentModel.Composition
 open System.IO
 open System.Linq
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.LanguageServices
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.Shell
 open System.Threading
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices
 open Microsoft.VisualStudio.FSharp.Interactive.Session
 open System.Runtime.CompilerServices
 
@@ -75,7 +67,7 @@ module private FSharpProjectOptionsHelpers =
             let p2 = newProject.Solution.GetProject(p2.ProjectId)
             doesProjectIdDiffer || 
             (
-                if p1.Language = LanguageNames.FSharp then
+                if p1.IsFSharp then
                     p1.Version <> p2.Version
                 else
                     let v1 = p1.GetDependentVersionAsync(ct).Result
@@ -84,9 +76,9 @@ module private FSharpProjectOptionsHelpers =
             )
         )
 
-    let isProjectInvalidated (oldProject: Project) (newProject: Project) (settings: EditorOptions) ct =
+    let isProjectInvalidated (oldProject: Project) (newProject: Project) ct =
         let hasProjectVersionChanged = hasProjectVersionChanged oldProject newProject
-        if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+        if newProject.AreFSharpInMemoryCrossProjectReferencesEnabled then
             hasProjectVersionChanged || hasDependentVersionChanged oldProject newProject ct
         else
             hasProjectVersionChanged
@@ -99,20 +91,22 @@ type private FSharpProjectOptionsMessage =
     | ClearSingleFileOptionsCache of DocumentId
 
 [<Sealed>]
-type private FSharpProjectOptionsReactor (workspace: Workspace, settings: EditorOptions, _serviceProvider, checkerProvider: FSharpCheckerProvider) =
+type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
     let cancellationTokenSource = new CancellationTokenSource()
 
-    // Hack to store command line options from HandleCommandLineChanges
-    let cpsCommandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
+    // Store command line options
+    let commandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
 
     let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
     let cache = ConcurrentDictionary<ProjectId, Project * FSharpParsingOptions * FSharpProjectOptions>()
-    let singleFileCache = ConcurrentDictionary<DocumentId, VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
+    let singleFileCache = ConcurrentDictionary<DocumentId, Project * VersionStamp * FSharpParsingOptions * FSharpProjectOptions>()
 
     // This is used to not constantly emit the same compilation.
     let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
     let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
+
+    let scriptUpdatedEvent = Event<FSharpProjectOptions>()
 
     let createPEReference (referencedProject: Project) (comp: Compilation) =
         let projectId = referencedProject.Id
@@ -171,7 +165,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                 let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
                 
                 let! scriptProjectOptions, _ =
-                    checkerProvider.Checker.GetProjectOptionsFromScript(document.FilePath,
+                    checker.GetProjectOptionsFromScript(document.FilePath,
                         sourceText.ToFSharpSourceText(),
                         SessionsProperties.fsiPreview,
                         assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
@@ -193,6 +187,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
                 let projectOptions =
                     if isScriptFile document.FilePath then
+                        scriptUpdatedEvent.Trigger(scriptProjectOptions)
                         scriptProjectOptions
                     else
                         {
@@ -209,14 +204,14 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             Stamp = Some(int64 (fileStamp.GetHashCode()))
                         }
 
-                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
-                singleFileCache.[document.Id] <- (fileStamp, parsingOptions, projectOptions)
+                singleFileCache.[document.Id] <- (document.Project, fileStamp, parsingOptions, projectOptions)
 
                 return Some(parsingOptions, projectOptions)
 
-            | true, (fileStamp2, parsingOptions, projectOptions) ->
-                if fileStamp <> fileStamp2 then
+            | true, (oldProject, oldFileStamp, parsingOptions, projectOptions) ->
+                if fileStamp <> oldFileStamp || isProjectInvalidated document.Project oldProject ct then
                     singleFileCache.TryRemove(document.Id) |> ignore
                     return! tryComputeOptionsBySingleScriptOrFile document ct userOpName
                 else
@@ -225,8 +220,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
 
     let tryGetProjectSite (project: Project) =
         // Cps
-        if cpsCommandLineOptions.ContainsKey project.Id then
-            Some (mapCpsProjectToSite(project, cpsCommandLineOptions))
+        if commandLineOptions.ContainsKey project.Id then
+            Some (mapCpsProjectToSite(project, commandLineOptions))
         else
             // Legacy
             match legacyProjectSites.TryGetValue project.Id with
@@ -245,7 +240,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             
                 let referencedProjects = ResizeArray()
 
-                if settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences then
+                if project.AreFSharpInMemoryCrossProjectReferencesEnabled then
                     for projectReference in project.ProjectReferences do
                         let referencedProject = project.Solution.GetProject(projectReference.ProjectId)
                         if referencedProject.Language = FSharpConstants.FSharpLanguageName then
@@ -303,7 +298,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     return None
                 else
                     // Clear any caches that need clearing and invalidate the project.
-                    let currentSolution = workspace.CurrentSolution
+                    let currentSolution = project.Solution.Workspace.CurrentSolution
                     let projectsToClearCache =
                         cache
                         |> Seq.filter (fun pair -> not (currentSolution.ContainsProject pair.Key))
@@ -316,7 +311,7 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             |> Seq.map (fun pair ->
                                 let _, _, projectOptions = pair.Value
                                 projectOptions)
-                        checkerProvider.Checker.ClearCache(options, userOpName = "tryComputeOptions")
+                        checker.ClearCache(options, userOpName = "tryComputeOptions")
 
                     lastSuccessfulCompilations.ToArray()
                     |> Array.iter (fun pair ->
@@ -324,16 +319,16 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                             lastSuccessfulCompilations.TryRemove(pair.Key) |> ignore
                     )
 
-                    checkerProvider.Checker.InvalidateConfiguration(projectOptions, userOpName = "tryComputeOptions")
+                    checker.InvalidateConfiguration(projectOptions, userOpName = "tryComputeOptions")
 
-                    let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                    let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(projectOptions)
 
                     cache.[projectId] <- (project, parsingOptions, projectOptions)
 
                     return Some(parsingOptions, projectOptions)
   
             | true, (oldProject, parsingOptions, projectOptions) ->
-                if isProjectInvalidated oldProject project settings ct then
+                if isProjectInvalidated oldProject project ct then
                     cache.TryRemove(projectId) |> ignore
                     return! tryComputeOptions project ct
                 else
@@ -401,15 +396,15 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
                     match cache.TryRemove(projectId) with
                     | true, (_, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(projectId) |> ignore
-                        checkerProvider.Checker.ClearCache([projectOptions])
+                        checker.ClearCache([projectOptions])
                     | _ ->
                         ()
                     legacyProjectSites.TryRemove(projectId) |> ignore
                 | FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId) ->
                     match singleFileCache.TryRemove(documentId) with
-                    | true, (_, _, projectOptions) ->
+                    | true, (_, _, _, projectOptions) ->
                         lastSuccessfulCompilations.TryRemove(documentId.ProjectId) |> ignore
-                        checkerProvider.Checker.ClearCache([projectOptions])
+                        checker.ClearCache([projectOptions])
                     | _ ->
                         ()
         }
@@ -428,8 +423,8 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
     member _.ClearSingleFileOptionsCache(documentId) =
         agent.Post(FSharpProjectOptionsMessage.ClearSingleFileOptionsCache(documentId))
 
-    member _.SetCpsCommandLineOptions(projectId, sourcePaths, options) =
-        cpsCommandLineOptions.[projectId] <- (sourcePaths, options)
+    member _.SetCommandLineOptions(projectId, sourcePaths, options) =
+        commandLineOptions.[projectId] <- (sourcePaths, options)
 
     member _.SetLegacyProjectSite (projectId, projectSite) =
         legacyProjectSites.[projectId] <- projectSite
@@ -440,11 +435,13 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
         | _ -> None
 
     member _.ClearAllCaches() =
-        cpsCommandLineOptions.Clear()
+        commandLineOptions.Clear()
         legacyProjectSites.Clear()
         cache.Clear()
         singleFileCache.Clear()
         lastSuccessfulCompilations.Clear()
+
+    member _.ScriptUpdated = scriptUpdatedEvent.Publish
 
     interface IDisposable with
         member _.Dispose() = 
@@ -452,26 +449,14 @@ type private FSharpProjectOptionsReactor (workspace: Workspace, settings: Editor
             cancellationTokenSource.Dispose() 
             (agent :> IDisposable).Dispose()
 
-/// Exposes FCS FSharpProjectOptions information management as MEF component.
-//
-// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
-// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
-// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
-[<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
+/// Manages mappings of Roslyn workspace Projects/Documents to FCS.
 type internal FSharpProjectOptionsManager
-    [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspace,
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
-        settings: EditorOptions
+        checker: FSharpChecker,
+        workspace: Workspace
     ) =
 
-    let projectDisplayNameOf projectFileName =
-        if String.IsNullOrWhiteSpace projectFileName then projectFileName
-        else Path.GetFileNameWithoutExtension projectFileName
-
-    let reactor = new FSharpProjectOptionsReactor(workspace, settings, serviceProvider, checkerProvider)
+    let reactor = new FSharpProjectOptionsReactor(checker)
 
     do
         // We need to listen to this event for lifecycle purposes.
@@ -484,9 +469,11 @@ type internal FSharpProjectOptionsManager
         workspace.DocumentClosed.Add(fun args ->
             let doc = args.Document
             let proj = doc.Project
-            if proj.Language = LanguageNames.FSharp && proj.IsFSharpMiscellaneousOrMetadata then
+            if proj.IsFSharp && proj.IsFSharpMiscellaneousOrMetadata then
                 reactor.ClearSingleFileOptionsCache(doc.Id)
         )
+
+    member _.ScriptUpdated = reactor.ScriptUpdated
 
     member _.SetLegacyProjectSite (projectId, projectSite) =
         reactor.SetLegacyProjectSite (projectId, projectSite)
@@ -535,32 +522,10 @@ type internal FSharpProjectOptionsManager
         | Some (_, parsingOptions, _) -> parsingOptions
         | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
 
+    member this.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
+        reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())
+
     member this.ClearAllCaches() =
         reactor.ClearAllCaches()
 
-    [<Export>]
-    /// This handles commandline change notifications from the Dotnet Project-system
-    /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
-    /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
-        use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
-
-        let projectId =
-            match Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.TryGetProjectIdByBinPath(workspace, path) with
-            | true, projectId -> projectId
-            | false, _ -> Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetOrCreateProjectIdForPath(workspace, path, projectDisplayNameOf path)
-        let path = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetProjectFilePath(workspace, projectId)
-
-        let getFullPath p =
-            let p' =
-                if Path.IsPathRooted(p) || path = null then p
-                else Path.Combine(Path.GetDirectoryName(path), p)
-            Path.GetFullPathSafe(p')
-
-        let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
-
-        reactor.SetCpsCommandLineOptions(projectId, sourcePaths, options.ToArray())
-
-    member _.Checker = checkerProvider.Checker
-
-    member _.MetadataAsSource = checkerProvider.MetadataAsSource
+    member _.Checker = checker

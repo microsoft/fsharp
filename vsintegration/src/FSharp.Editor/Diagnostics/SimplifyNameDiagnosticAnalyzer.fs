@@ -20,8 +20,6 @@ type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Dia
 type internal SimplifyNameDiagnosticAnalyzer
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
@@ -38,9 +36,8 @@ type internal SimplifyNameDiagnosticAnalyzer
             else
 
             asyncMaybe {
-                do! Option.guard document.FSharpOptions.CodeFixes.SimplifyName
+                do! Option.guard document.Project.IsFSharpCodeFixesSimplifyNameEnabled
                 do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let textVersionHash = textVersion.GetHashCode()
                 let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
@@ -50,8 +47,7 @@ type internal SimplifyNameDiagnosticAnalyzer
                     | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
                     | _ ->
                         let! sourceText = document.GetTextAsync()
-                        let checker = checkerProvider.Checker
-                        let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName=userOpName)
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync(nameof(SimplifyNameDiagnosticAnalyzer)) |> liftAsync
                         let! result = SimplifyNames.getSimplifiableNames(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
                         let mutable diag = ResizeArray()
                         for r in result do

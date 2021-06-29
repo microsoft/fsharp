@@ -35,7 +35,7 @@ type Pattern =
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_range of char * char * range
     | TPat_null of range
-    | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_isinst of TType * TType * Pattern option * range
     | TPat_error of range
 
     member Range: range

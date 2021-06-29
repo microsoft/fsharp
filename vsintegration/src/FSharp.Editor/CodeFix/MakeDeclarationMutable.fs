@@ -18,12 +18,8 @@ open FSharp.Compiler.Text
 type internal FSharpMakeDeclarationMutableFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-
-    static let userOpName = "MakeDeclarationMutable"
 
     let fixableDiagnosticIds = set ["FS0027"]
 
@@ -39,15 +35,13 @@ type internal FSharpMakeDeclarationMutableFixProvider
             let document = context.Document
             do! Option.guard (not(isSignatureFile document.FilePath))
             let position = context.Span.Start
-            let checker = checkerProvider.Checker
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
+
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpMakeDeclarationMutableFixProvider))
             let! sourceText = document.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! parseFileResults, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, userOpName=userOpName)
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpMakeDeclarationMutableFixProvider)) |> liftAsync
             let decl = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
 
             match decl with

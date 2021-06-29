@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
-        <target state="new">discard pattern in use binding</target>
+        <target state="translated">放弃使用绑定模式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -137,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">"as" 模式右侧的非变量模式</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">可以为 null 的可选互操作</target>
@@ -159,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
-        <target state="new">binary formatting for integers</target>
+        <target state="translated">整数的二进制格式设置</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -179,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
-        <target state="new">struct representation for active patterns</target>
+        <target state="translated">活动模式的结构表示形式</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -264,7 +269,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">将所有编译文件的推断接口打印到关联的签名文件</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -289,7 +294,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">指定 Win32 图标文件(.ico)</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -409,7 +414,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
-        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
+        <target state="translated">只允许在部分活动模式定义中对值、函数和方法使用 "[&lt;Struct&gt;]"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

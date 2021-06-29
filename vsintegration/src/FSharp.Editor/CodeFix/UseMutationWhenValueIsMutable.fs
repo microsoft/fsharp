@@ -19,12 +19,8 @@ open FSharp.Compiler.Text
 type internal FSharpUseMutationWhenValueIsMutableFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
-
-    static let userOpName = "UseMutationWhenValueIsMutable"
 
     let fixableDiagnosticIds = set ["FS0020"]
 
@@ -39,10 +35,8 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
 
             let document = context.Document
             do! Option.guard (not(isSignatureFile document.FilePath))
-            let checker = checkerProvider.Checker
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, CancellationToken.None, userOpName)
-            let! sourceText = document.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+
+            let! sourceText = document.GetTextAsync(context.CancellationToken) 
             
             let adjustedPosition =
                 let rec loop ch pos =
@@ -56,8 +50,8 @@ type internal FSharpUseMutationWhenValueIsMutableFixProvider
             let textLine = sourceText.Lines.GetLineFromPosition adjustedPosition
             let textLinePos = sourceText.Lines.GetLinePosition adjustedPosition
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (document, projectOptions, userOpName=userOpName)
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, adjustedPosition, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! lexerSymbol = document.TryFindFSharpLexerSymbolAsync(adjustedPosition, SymbolLookupKind.Greedy, false, false, nameof(FSharpUseMutationWhenValueIsMutableFixProvider))
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland)
 
             match symbolUse.Symbol with

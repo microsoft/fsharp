@@ -20,8 +20,6 @@ open System.Windows.Forms
 type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
         settings: EditorOptions
     ) =
     
@@ -153,8 +151,8 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document)
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, parsingOptions, position)
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, document.GetFSharpChecker(), indentStyle, parsingOptions, position)
             return textChange |> Option.toList |> toIList
         }
         
@@ -164,7 +162,7 @@ type internal FSharpEditorFormattingService
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document) 
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
             let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
             return textChanges |> Option.defaultValue Seq.empty |> toIList
         }

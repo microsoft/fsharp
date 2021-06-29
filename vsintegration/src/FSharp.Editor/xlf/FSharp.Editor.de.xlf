@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
         <source>F# Disposable Values (top-level)</source>
-        <target state="translated">Disposable-Werte in F# (oberste Ebene)</target>
+        <target state="translated">F# Verfügbare Werte (oberste Ebene)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
-        <target state="new">Remove unused binding</target>
+        <target state="translated">Nicht verwendete Bindung entfernen</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
-        <target state="new">Use '.Value' to dereference expression</target>
+        <target state="translated">".Value" zum Dereferenzieren eines Ausdrucks verwenden</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

@@ -47,3 +47,16 @@ module Simple =
         |> withDiagnosticMessageMatches "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name"
         |> ignore
 
+    [<Fact>]
+    let ``As patterns``() =
+        Fsx """
+        let (|Id|) = id
+        let a = [1..4]
+        match a with
+        | 1 | 1 as b::(Id 2 as c as c2)::[d as 3; Id e & Id _ as Id 4] as Id f when b = 1 && c = 2 && c2 = 2 && d = 3 && e = 4 && a = f -> ()
+        | _ -> failwith "Match failed"
+        """
+        |> asExe
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed

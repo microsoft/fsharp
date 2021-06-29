@@ -21,9 +21,7 @@ type internal FSharpHighlightSpan =
     override this.ToString() = sprintf "%+A" this
 
 [<Export(typeof<IFSharpDocumentHighlightsService>)>]
-type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
-
-    static let userOpName = "DocumentHighlights"
+type internal FSharpDocumentHighlightsService [<ImportingConstructor>] () =
 
     /// Fix invalid spans if they appear to have redundant suffix and prefix.
     static let fixInvalidSymbolSpans (sourceText: SourceText) (lastIdent: string) (spans: FSharpHighlightSpan []) =
@@ -51,16 +49,17 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
         |> Seq.distinctBy (fun span -> span.TextSpan.Start)
         |> Seq.toArray
 
-    static member GetDocumentHighlights(checker: FSharpChecker, document: Document, position: int, 
-                                        defines: string list, options: FSharpProjectOptions, languageServicePerformanceOptions: LanguageServicePerformanceOptions) : Async<FSharpHighlightSpan[] option> =
+    static member GetDocumentHighlights(document: Document, position: int) : Async<FSharpHighlightSpan[] option> =
         asyncMaybe {
-            let! sourceText = document.GetTextAsync() |> liftTaskAsync
-            let filePath = document.FilePath
+            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(FSharpDocumentHighlightsService.GetDocumentHighlights))
+
+            let! ct = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(ct)
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, languageServicePerformanceOptions,  userOpName = userOpName)
+
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpDocumentHighlightsService)) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
             let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol)
             return 
@@ -76,10 +75,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
     interface IFSharpDocumentHighlightsService with
         member _.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<FSharpDocumentHighlights>> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-                let perfOptions = document.FSharpOptions.LanguageServicePerformance
-                let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document, position, defines, projectOptions, perfOptions)
+                let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(document, position)
                 let highlightSpans = 
                     spans 
                     |> Array.map (fun span ->

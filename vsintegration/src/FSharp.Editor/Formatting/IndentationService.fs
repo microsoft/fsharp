@@ -21,7 +21,7 @@ open FSharp.Compiler.Tokenization
 [<Export(typeof<IFSharpSynchronousIndentationService>)>]
 type internal FSharpIndentationService
     [<ImportingConstructor>]
-    (projectInfoManager: FSharpProjectOptionsManager) =
+    () =
 
     static member IsSmartIndentEnabled (options: Microsoft.CodeAnalysis.Options.OptionSet) =
         options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
@@ -101,7 +101,7 @@ type internal FSharpIndentationService
                 let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
                 let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
                 let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-                let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document)
+                let parsingOptions = document.GetFSharpQuickParsingOptions()
                 let indent = FSharpIndentationService.GetDesiredIndentation(document.Id, sourceText, document.FilePath, lineNumber, tabSize, indentStyle, parsingOptions)
                 return
                     match indent with

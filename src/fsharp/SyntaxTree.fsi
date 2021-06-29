@@ -405,6 +405,20 @@ type SynTypeConstraint =
        typeArgs: SynType list *
        range: range
 
+    member Range: range
+
+/// List of type parameter declarations with optional type constraints,
+/// enclosed in `< ... >` (postfix) or `( ... )` (prefix), or a single prefix parameter.
+[<RequireQualifiedAccess>]
+type SynTyparDecls =
+    | PostfixList of decls: SynTyparDecl list * constraints: SynTypeConstraint list * range: range
+    | PrefixList of decls: SynTyparDecl list * range: range
+    | SinglePrefix of decl: SynTyparDecl * range: range
+
+    member TyparDecls: SynTyparDecl list
+    member Constraints: SynTypeConstraint list
+    member Range: range
+
 /// Represents a syntax tree for F# types
 [<NoEquality; NoComparison;RequireQualifiedAccess>]
 type SynType = 
@@ -1070,6 +1084,8 @@ type SynSimplePat =
         attributes: SynAttributes *
         range: range
 
+    member Range: range
+
 /// Represents the alternative identifier for a simple pattern
 [<RequireQualifiedAccess>]
 type SynSimplePatAlternativeIdInfo =
@@ -1099,9 +1115,8 @@ type SynStaticOptimizationConstraint =
 /// function definition or other binding point, after the elimination of pattern matching
 /// from the construct, e.g. after changing a "function pat1 -> rule1 | ..." to a
 /// "fun v -> match v with ..."
-[<NoEquality; NoComparison;RequireQualifiedAccess>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePats =
-
     | SimplePats of
         pats: SynSimplePat list *
         range: range
@@ -1110,6 +1125,8 @@ type SynSimplePats =
         pats: SynSimplePats *
         targetType: SynType *
         range: range
+
+    member Range: range
 
 /// Represents a syntax tree for arguments patterns 
 [<RequireQualifiedAccess>]
@@ -1122,7 +1139,7 @@ type SynArgPats =
         range: range
 
 /// Represents a syntax tree for an F# pattern
-[<NoEquality; NoComparison;RequireQualifiedAccess>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
 
     /// A constant in a pattern
@@ -1134,9 +1151,9 @@ type SynPat =
     | Wild of
         range: range
 
-    /// A named pattern 'pat as ident'
+    /// A name pattern 'ident' but @dsyme wants to keep the old name "named"
+    /// when this double-purposed to also represent 'pat as ident' to reduce churn
     | Named of
-        pat: SynPat *
         ident: Ident *
         isSelfIdentifier: bool *
         accessibility: SynAccess option *
@@ -1163,6 +1180,12 @@ type SynPat =
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of
         pats: SynPat list *
+        range: range
+
+    /// A conjunctive pattern 'pat1 as pat2'
+    | As of
+        lhsPat: SynPat *
+        rhsPat: SynPat *
         range: range
 
     /// A long identifier pattern possibly with argument patterns
@@ -1592,7 +1615,7 @@ type SynField =
 type SynComponentInfo =
     | SynComponentInfo of
         attributes: SynAttributes *
-        typeParams: SynTyparDecl list *
+        typeParams: SynTyparDecls option *
         constraints: SynTypeConstraint list *
         longId: LongIdent *
         xmlDoc: PreXmlDoc *
@@ -1650,11 +1673,9 @@ type SynArgInfo =
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
-
     | SynValTyparDecls of
-        typars: SynTyparDecl list *
-        canInfer: bool *
-        constraints: SynTypeConstraint list
+        typars: SynTyparDecls option *
+        canInfer: bool
 
 /// Represents the syntactic elements associated with the "return" of a function or method. 
 [<NoEquality; NoComparison>]
@@ -1993,12 +2014,21 @@ type SynModuleOrNamespaceSig =
     /// Gets the syntax range of this construct
     member Range: range
 
+/// Represents a parsed hash directive argument
+[<NoEquality; NoComparison>]
+type ParsedHashDirectiveArgument =
+    | String of value: string * stringKind: SynStringKind * range: Range
+    | SourceIdentifier of constant: string * value: string * range: Range
+
+    /// Gets the syntax range of this construct
+    member Range: range
+
 /// Represents a parsed hash directive
 [<NoEquality; NoComparison>]
 type ParsedHashDirective =
     | ParsedHashDirective of
         ident: string *
-        args: string list *
+        args: ParsedHashDirectiveArgument list *
         range: range
 
 /// Represents the syntax tree for the contents of a parsed implementation file

@@ -13,12 +13,10 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpRemoveUnusedBindingCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     inherit CodeFixProvider()
-    static let userOpName = "RemoveUnusedBinding"
+
     let fixableDiagnosticIds = set ["FS1182"]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
@@ -26,13 +24,12 @@ type internal FSharpRemoveUnusedBindingCodeFixProvider
     override _.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             // Don't show code fixes for unused values, even if they are compiler-generated.
-            do! Option.guard context.Document.FSharpOptions.CodeFixes.UnusedDeclarations
+            do! Option.guard context.Document.Project.IsFSharpCodeFixesUnusedDeclarationsEnabled
 
             let document = context.Document
             let! sourceText = document.GetTextAsync(context.CancellationToken)
 
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpRemoveUnusedBindingCodeFixProvider)) |> liftAsync
 
             let diagnostics =
                 context.Diagnostics

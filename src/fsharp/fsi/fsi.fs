@@ -2223,26 +2223,26 @@ type internal FsiInteractionProcessor
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs)
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", sourceFiles, m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", ParsedHashDirectiveArguments sourceFiles, m), _) ->
                 let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, errorLogger)
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [path], m), _) ->
                 packageManagerDirective Directive.Resolution path m
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", ParsedHashDirectiveArguments [path], m), _) ->
                 packageManagerDirective Directive.Include path m
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("I", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("I", ParsedHashDirectiveArguments [path], m), _) ->
                 tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
                 fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
                 istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("cd", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("cd", ParsedHashDirectiveArguments [path], m), _) ->
                 ChangeDirectory path m
                 istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("silentCd", [path], m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("silentCd", ParsedHashDirectiveArguments [path], m), _) ->
                 ChangeDirectory path m
                 fsiConsolePrompt.SkipNext() (* "silent" directive *)
                 istate, Completed None
@@ -2257,14 +2257,14 @@ type internal FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = not istate.timing}, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", [("on" | "off") as v], _), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", ParsedHashDirectiveArguments [("on" | "off") as v], _), _) ->
                 if v <> "on" then
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
                 else
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = (v = "on")}, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("nowarn", numbers, m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m), _) ->
                 List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
                 istate, Completed None
 
@@ -2293,7 +2293,7 @@ type internal FsiInteractionProcessor
                 fsiOptions.ShowHelp(m)
                 istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(c, arg, m), _) ->
+            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(c, ParsedHashDirectiveArguments arg, m), _) ->
                 warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
                 istate, Completed None
         )

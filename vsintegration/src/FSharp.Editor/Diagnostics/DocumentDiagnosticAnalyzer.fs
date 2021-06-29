@@ -25,11 +25,7 @@ type internal DiagnosticsType =
 type internal FSharpDocumentDiagnosticAnalyzer
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
-
-    static let userOpName = "DocumentDiagnosticAnalyzer"
 
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpDiagnostic> with 
@@ -56,14 +52,11 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 hash 
         }
 
-    static member GetDiagnostics(checker: FSharpChecker, document: Document, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
+    static member GetDiagnostics(document: Document, diagnosticType: DiagnosticsType) = 
         async {
             let! ct = Async.CancellationToken
 
-            let! parseResults = checker.ParseDocument(document, parsingOptions, userOpName)
-            match parseResults with
-            | None -> return ImmutableArray.Empty
-            | Some parseResults ->
+            let! parseResults = document.GetFSharpParseResultsAsync("GetDiagnostics")
 
             let! sourceText = document.GetTextAsync(ct) |> Async.AwaitTask
             let filePath = document.FilePath
@@ -72,14 +65,11 @@ type internal FSharpDocumentDiagnosticAnalyzer
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckDocument(document, parseResults, options, userOpName)
-                        match checkResultsAnswer with
-                        | FSharpCheckFileAnswer.Aborted -> return [||]
-                        | FSharpCheckFileAnswer.Succeeded results ->
-                            // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
-                            let allErrors = HashSet(results.Diagnostics, errorInfoEqualityComparer)
-                            allErrors.ExceptWith(parseResults.Diagnostics)
-                            return Seq.toArray allErrors
+                        let! _, checkResults = document.GetFSharpParseAndCheckResultsAsync("GetDiagnostics")
+                        // In order to eleminate duplicates, we should not return parse errors here because they are returned by `AnalyzeSyntaxAsync` method.
+                        let allErrors = HashSet(checkResults.Diagnostics, errorInfoEqualityComparer)
+                        allErrors.ExceptWith(parseResults.Diagnostics)
+                        return Seq.toArray allErrors
                     | DiagnosticsType.Syntax ->
                         return parseResults.Diagnostics
                 }
@@ -119,9 +109,8 @@ type internal FSharpDocumentDiagnosticAnalyzer
             else
 
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document, parsingOptions, projectOptions, DiagnosticsType.Syntax)
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax)
                     |> liftAsync
             } 
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
@@ -132,9 +121,8 @@ type internal FSharpDocumentDiagnosticAnalyzer
             else
 
             asyncMaybe {
-                let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
                 return! 
-                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checkerProvider.Checker, document, parsingOptions, projectOptions, DiagnosticsType.Semantic)
+                    FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic)
                     |> liftAsync
             }
             |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)

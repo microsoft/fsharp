@@ -18,11 +18,10 @@ open Microsoft.VisualStudio.Shell.Interop
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        metadataAsSource: FSharpMetadataAsSourceService
     ) =
 
-    let gtd = GoToDefinition(checkerProvider, projectInfoManager)
+    let gtd = GoToDefinition(metadataAsSource)
     let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
    
     interface IFSharpGoToDefinitionService with

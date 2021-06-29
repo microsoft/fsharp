@@ -17,20 +17,16 @@ type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
 type internal FSharpNavigationBarItemService
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
-    static let userOpName = "NavigationBarItem"
     static let emptyResult: IList<FSharpNavigationBarItem> = upcast [||]
 
     interface IFSharpNavigationBarItemService with
         member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigationBarItemService)) |> liftAsync
                 let navItems = Navigation.getNavigation parseResults.ParseTree
+                let! sourceText = document.GetTextAsync(cancellationToken)
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return
                     navItems.Declarations

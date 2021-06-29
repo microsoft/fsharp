@@ -44,8 +44,7 @@ type internal FSharpCodeLensService
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
         buffer: ITextBuffer, 
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        metadataAsSource: FSharpMetadataAsSourceService,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<FSharpClassificationTypeMap>,
         codeLens : CodeLensDisplayService,
@@ -53,8 +52,6 @@ type internal FSharpCodeLensService
     ) as self =
 
     let lineLens = codeLens
-    let userOpName = "FSharpCodeLensService"
-    let checker = checkerProvider.Checker
 
     let visit pos parseTree = 
         SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
@@ -157,8 +154,8 @@ type internal FSharpCodeLensService
             logInfof "Rechecking code due to buffer edit!"
 #endif
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
-            let! _, options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, bufferChangedCts.Token, userOpName)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, "LineLens", allowStaleResults=true)
+            let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
+            let parsedInput = parseFileResults.ParseTree
 #if DEBUG
             logInfof "Getting uses of all symbols!"
 #endif
@@ -194,7 +191,7 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()        
                                 typeLayout |> Seq.iter taggedText.Add
                                 let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar, IVsStatusbar>()) 
-                                let navigation = QuickInfoNavigation(statusBar, checkerProvider, projectInfoManager, document, realPosition)
+                                let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 

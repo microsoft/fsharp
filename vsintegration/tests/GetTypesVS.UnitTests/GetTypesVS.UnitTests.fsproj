@@ -23,6 +23,7 @@
   <ItemGroup>
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildVersion)" />
   </ItemGroup>
 
   <ItemGroup>

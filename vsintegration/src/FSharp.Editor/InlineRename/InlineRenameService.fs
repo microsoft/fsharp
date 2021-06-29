@@ -71,8 +71,6 @@ type internal InlineRenameLocationSet(locations: FSharpInlineRenameLocation [], 
 
 type internal InlineRenameInfo
     (
-        checker: FSharpChecker,
-        projectInfoManager: FSharpProjectOptionsManager,
         document: Document,
         triggerSpan: TextSpan, 
         lexerSymbol: LexerSymbol,
@@ -81,15 +79,13 @@ type internal InlineRenameInfo
         checkFileResults: FSharpCheckFileResults
     ) =
 
-    static let userOpName = "InlineRename"
-
     let getDocumentText (document: Document) cancellationToken =
         match document.TryGetText() with
         | true, text -> text
         | _ -> document.GetTextAsync(cancellationToken).Result
 
-    let symbolUses = 
-        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution, userOpName)
+    let symbolUses =
+        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution)
         |> Async.cache
 
     interface IFSharpInlineRenameInfo with
@@ -144,35 +140,31 @@ type internal InlineRenameInfo
 type internal InlineRenameService 
     [<ImportingConstructor>]
     (
-        projectInfoManager: FSharpProjectOptionsManager,
-        checkerProvider: FSharpCheckerProvider
     ) =
 
-    static let userOpName = "InlineRename"
-    static member GetInlineRenameInfo(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager, document: Document, sourceText: SourceText, position: int, 
-                                      defines: string list, options: FSharpProjectOptions) : Async<IFSharpInlineRenameInfo option> = 
+    static member GetInlineRenameInfo(document: Document, position: int) : Async<IFSharpInlineRenameInfo option> = 
         asyncMaybe {
+            let! ct = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(ct)
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, userOpName = userOpName)
+            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, nameof(InlineRenameService))
+
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(InlineRenameService)) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
 
             let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.Range)
             let triggerSpan = Tokenizer.fixupSpan(sourceText, span)
 
-            return InlineRenameInfo(checker, projectInfoManager, document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> IFSharpInlineRenameInfo
+            return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> IFSharpInlineRenameInfo
         }
     
     interface IFSharpEditorInlineRenameService with
         member _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<IFSharpInlineRenameInfo> =
             asyncMaybe {
-                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
-                let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-                return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, projectOptions)
+                return! InlineRenameService.GetInlineRenameInfo(document, position)
             }
             |> Async.map (Option.defaultValue FailureInlineRenameInfo.Instance)
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

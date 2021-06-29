@@ -12,12 +12,9 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
     
-    static let userOpName = "FSharpChangeRefCellDerefToNotExpressionCodeFix"
     let fixableDiagnosticIds = set ["FS0001"]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
@@ -25,9 +22,8 @@ type internal FSharpChangeRefCellDerefToNotExpressionCodeFixProvider
     override this.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let document = context.Document
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, context.CancellationToken, userOpName)
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpChangeRefCellDerefToNotExpressionCodeFixProvider)) |> liftAsync
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseDocument(document, parsingOptions, userOpName=userOpName)
 
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
             let! derefRange = parseResults.TryRangeOfRefCellDereferenceContainingPos errorRange.Start

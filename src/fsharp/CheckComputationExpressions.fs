@@ -1142,7 +1142,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             Some (transBind q varSpace bindRange "Bind" [rhsExpr] pat spBind innerComp translatedCtxt)
 
         // 'use! pat = e1 in e2' --> build.Bind(e1, (function  _argN -> match _argN with pat -> build.Using(x, (fun _argN -> match _argN with pat -> e2))))
-        | SynExpr.LetOrUseBang (spBind, true, isFromSource, (SynPat.Named (SynPat.Wild _, id, false, _, _) as pat) , rhsExpr, [], innerComp, _)
+        | SynExpr.LetOrUseBang (spBind, true, isFromSource, (SynPat.Named (id, false, _, _) as pat) , rhsExpr, [], innerComp, _)
         | SynExpr.LetOrUseBang (spBind, true, isFromSource, (SynPat.LongIdent (longDotId=LongIdentWithDots([id], _)) as pat), rhsExpr, [], innerComp, _) ->
 
             let bindRange = match spBind with DebugPointAtBinding.Yes m -> m | _ -> rhsExpr.Range

@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
         <source>discard pattern in use binding</source>
-        <target state="new">discard pattern in use binding</target>
+        <target state="translated">vzor discard ve vazbě použití</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDotlessFloat32Literal">
@@ -137,6 +137,11 @@
         <target state="translated">nameof</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureNonVariablePatternsToRightOfAsPatterns">
+        <source>non-variable patterns to the right of 'as' patterns</source>
+        <target state="translated">neproměnné vzory napravo od vzorů typu „jako“</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNullableOptionalInterop">
         <source>nullable optional interop</source>
         <target state="translated">nepovinný zprostředkovatel komunikace s možnou hodnotou null</target>
@@ -159,7 +164,7 @@
       </trans-unit>
       <trans-unit id="featurePrintfBinaryFormat">
         <source>binary formatting for integers</source>
-        <target state="new">binary formatting for integers</target>
+        <target state="translated">formátování typu binary pro integery</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRelaxWhitespace">
@@ -179,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureStructActivePattern">
         <source>struct representation for active patterns</source>
-        <target state="new">struct representation for active patterns</target>
+        <target state="translated">reprezentace struktury aktivních vzorů</target>
         <note />
       </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
@@ -264,7 +269,7 @@
       </trans-unit>
       <trans-unit id="optsAllSigs">
         <source>Print the inferred interfaces of all compilation files to associated signature files</source>
-        <target state="new">Print the inferred interfaces of all compilation files to associated signature files</target>
+        <target state="translated">Vytiskněte odvozená rozhraní všech kompilovaných souborů do přidružených souborů podpisu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -289,7 +294,7 @@
       </trans-unit>
       <trans-unit id="optsWin32icon">
         <source>Specify a Win32 icon file (.ico)</source>
-        <target state="new">Specify a Win32 icon file (.ico)</target>
+        <target state="translated">Zadejte soubor ikony Win32 (.ico).</target>
         <note />
       </trans-unit>
       <trans-unit id="packageManagementRequiresVFive">
@@ -409,7 +414,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
-        <target state="new">The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</target>
+        <target state="translated">Použití [&lt;Struct&gt;] u hodnot, funkcí a metod je povolené jenom u částečných aktivních definic vzorů.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">

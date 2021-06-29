@@ -11,20 +11,16 @@ open Microsoft.CodeAnalysis.CodeFixes
 type internal FSharpRemoveReturnOrYieldCodeFixProvider
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
 
-    static let userOpName = "RemoveReturnOrYield"
     let fixableDiagnosticIds = set ["FS0748"; "FS0747"]
 
     override _.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override _.RegisterCodeFixesAsync context =
         asyncMaybe {
-            let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(context.Document, context.CancellationToken, userOpName)
-            let! parseResults = checkerProvider.Checker.ParseDocument(context.Document, parsingOptions, userOpName=userOpName)
+            let! parseResults = context.Document.GetFSharpParseResultsAsync(nameof(FSharpRemoveReturnOrYieldCodeFixProvider)) |> liftAsync
 
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let errorRange = RoslynHelpers.TextSpanToFSharpRange(context.Document.FilePath, context.Span, sourceText)

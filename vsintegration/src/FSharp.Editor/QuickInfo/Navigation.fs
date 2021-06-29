@@ -14,8 +14,7 @@ open Microsoft.VisualStudio.Shell.Interop
 type internal QuickInfoNavigation
     (
         statusBar: StatusBar,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        metadataAsSource: FSharpMetadataAsSourceService,
         initialDoc: Document,
         thisSymbolUseRange: range
     ) =
@@ -43,7 +42,7 @@ type internal QuickInfoNavigation
             let! targetDoc = solution.TryGetDocumentFromFSharpRange (range, initialDoc.Project.Id)
             let! targetSource = targetDoc.GetTextAsync()
             let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
-            let gtd = GoToDefinition(checkerProvider, projectInfoManager)
+            let gtd = GoToDefinition(metadataAsSource)
 
             // To ensure proper navigation decsions, we need to check the type of document the navigation call
             // is originating from and the target we're provided by default:

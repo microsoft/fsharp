@@ -612,7 +612,7 @@
       </trans-unit>
       <trans-unit id="DetailsUsingTask">
         <source>A 'UsingTask' tag which registers the '{1}' task was found in the project file '{0}'.  'UsingTask' tags in the project file take precedence over those in the imported .TARGETS files, and therefore could be used to execute arbitrary code during an otherwise unmodified build process.</source>
-        <target state="translated">In der Projektdatei "{0}" wurde ein &lt;UsingTask&gt;-Tag gefunden, das die Aufgabe "{1}" registriert. &lt;UsingTask&gt;-Tags in der Projektdatei haben Vorrang gegenüber denen in importierten TARGETS-Dateien. Daher könnten sie dazu verwendet werden, willkürlichen Code während eines sonst unveränderten Buildprozesses auszuführen.</target>
+        <target state="translated">In der Projektdatei "{1}" wurde ein &lt;UsingTask&gt;-Tag gefunden, das die Aufgabe "{0}" registriert. &lt;UsingTask&gt;-Tags in der Projektdatei haben Vorrang gegenüber denen in importierten TARGETS-Dateien. Daher könnten sie dazu verwendet werden, willkürlichen Code während eines sonst unveränderten Buildprozesses auszuführen.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsTarget">

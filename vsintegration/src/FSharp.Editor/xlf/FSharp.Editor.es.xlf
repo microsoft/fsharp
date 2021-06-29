@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="AddMissingInstanceMemberParameter">
         <source>Add missing instance member parameter</source>
-        <target state="new">Add missing instance member parameter</target>
+        <target state="translated">Agregar parámetro de miembro de instancia que falta</target>
         <note />
       </trans-unit>
       <trans-unit id="AddNewKeyword">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="FSharpDisposableTopLevelValuesClassificationType">
         <source>F# Disposable Values (top-level)</source>
-        <target state="translated">Valores descartables de F# (nivel superior)</target>
+        <target state="translated">Valores desechables en F# (nivel superior)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpDisposableTypesClassificationType">
@@ -104,7 +104,7 @@
       </trans-unit>
       <trans-unit id="RemoveUnusedBinding">
         <source>Remove unused binding</source>
-        <target state="new">Remove unused binding</target>
+        <target state="translated">Quitar el enlace no usado</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveYield">
@@ -259,7 +259,7 @@
       </trans-unit>
       <trans-unit id="UseNameof">
         <source>Use 'nameof'</source>
-        <target state="new">Use 'nameof'</target>
+        <target state="translated">Usar 'nameof'</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="UseValueInsteadOfDeref">
         <source>Use '.Value' to dereference expression</source>
-        <target state="new">Use '.Value' to dereference expression</target>
+        <target state="translated">Usar ".Value" para desreferenciar la expresión</target>
         <note />
       </trans-unit>
       <trans-unit id="WrapExpressionInParentheses">

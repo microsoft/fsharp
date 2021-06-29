@@ -51,7 +51,7 @@ type Pattern =
     | TPat_recd of TyconRef * TypeInst * Pattern list * range
     | TPat_range of char * char * range
     | TPat_null of range
-    | TPat_isinst of TType * TType * PatternValBinding option * range
+    | TPat_isinst of TType * TType * Pattern option * range
     | TPat_error of range
 
     member this.Range =
@@ -1271,9 +1271,8 @@ let CompilePatternBasic
                             | _ ->
                                 // Otherwise call the helper
                                mkCallUnboxFast g exprm (instType tpinst tgtTy1) (accessf tpinst exprIn)
-
-                        let (v, exprIn) =  BindSubExprOfInput g amap origInputValTypars pbind exprm (SubExpr(accessf', ve))
-                        [Frontier (i, active', valMap.Add v exprIn )]
+                        BindProjectionPattern (Active(path, SubExpr(accessf', ve), pbind)) (active', valMap)
+                        |> mkFrontiers <| i
                     | None ->
                         [Frontier (i, active', valMap)]
 

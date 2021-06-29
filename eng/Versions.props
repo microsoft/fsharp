@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>5</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>1</FSBuildVersion>
+    <FSBuildVersion>3</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- F# Language version -->
     <FSLanguageVersion>$(FSMajorVersion).$(FSMinorVersion)</FSLanguageVersion>
@@ -27,15 +27,15 @@
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
     <!-- FSharp.Compiler.Service version -->
-    <FCSMajorVersion>39</FCSMajorVersion>
+    <FCSMajorVersion>40</FCSMajorVersion>
     <FCSMinorVersion>0</FCSMinorVersion>
-    <FCSBuildVersion>0</FCSBuildVersion>
+    <FCSBuildVersion>1</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersion>5.0.0</FSharpCoreShippedPackageVersion>
+    <FSharpCoreShippedPackageVersion>5.0.2</FSharpCoreShippedPackageVersion>
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersion>$(FSCorePackageVersion)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersion>
     <FSToolsMajorVersion>11</FSToolsMajorVersion>
@@ -48,7 +48,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>16</VSMajorVersion>
-    <VSMinorVersion>9</VSMinorVersion>
+    <VSMinorVersion>10</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>

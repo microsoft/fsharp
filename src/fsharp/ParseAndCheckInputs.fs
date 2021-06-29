@@ -170,9 +170,12 @@ let GetScopedPragmasForHashDirective hd =
     [ match hd with
       | ParsedHashDirective("nowarn", numbers, m) ->
           for s in numbers do
-          match GetWarningNumber(m, s) with
-            | None -> ()
-            | Some n -> yield ScopedPragma.WarningOff(m, n)
+              match s with
+              | ParsedHashDirectiveArgument.SourceIdentifier _ -> ()
+              | ParsedHashDirectiveArgument.String (s, _, _) ->
+                  match GetWarningNumber(m, s) with
+                  | None -> ()
+                  | Some n -> yield ScopedPragma.WarningOff(m, n)
       | _ -> () ]
 
 let PostParseModuleImpls (defaultNamespace, filename, isLastCompiland, ParsedImplFile (hashDirectives, impls)) =
@@ -512,7 +515,7 @@ let ProcessMetaCommandsFromInput
         let mutable matchedm = range0
         try
             match hash with
-            | ParsedHashDirective("I", args, m) ->
+            | ParsedHashDirective("I", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashIncludeNotAllowedInNonScript m)
                 match args with
@@ -523,18 +526,18 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                     errorR(Error(FSComp.SR.buildInvalidHashIDirective(), m))
                     state
-            | ParsedHashDirective("nowarn",numbers,m) ->
+            | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers,m) ->
                 List.fold (fun state d -> nowarnF state (m,d)) state numbers
 
-            | ParsedHashDirective(("reference" | "r"), args, m) ->
+            | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
-            | ParsedHashDirective(("i"), args, m) ->
+            | ParsedHashDirective(("i"), ParsedHashDirectiveArguments args, m) ->
                 matchedm<-m
                 ProcessDependencyManagerDirective Directive.Include args m state
 
-            | ParsedHashDirective("load", args, m) ->
+            | ParsedHashDirective("load", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashDirectiveNotAllowedInNonScript m)
                 match args with
@@ -544,7 +547,7 @@ let ProcessMetaCommandsFromInput
                 | _ ->
                    errorR(Error(FSComp.SR.buildInvalidHashloadDirective(), m))
                 state
-            | ParsedHashDirective("time", args, m) ->
+            | ParsedHashDirective("time", ParsedHashDirectiveArguments args, m) ->
                 if not canHaveScriptMetaCommands then
                     errorR(HashDirectiveNotAllowedInNonScript m)
                 match args with

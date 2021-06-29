@@ -37,6 +37,7 @@
     <Compile Include="Tests.Watson.fs" />
     <Compile Include="Tests.XmlDocComments.fs" />
     <Compile Include="Tests.RoslynHelpers.fs" />
+    <Compile Include="Workspace\WorkspaceTests.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
     <Compile Include="LegacyLanguageService\Tests.LanguageService.GotoDefinition.fs" />
@@ -196,6 +197,8 @@
     <PackageReference Include="Microsoft.VisualStudio.Utilities" Version="$(MicrosoftVisualStudioUtilitiesVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.ProjectSystem" Version="$(MicrosoftVisualStudioProjectSystemVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.ProjectSystem.Managed" Version="$(MicrosoftVisualStudioProjectSystemManagedVersion)" />
     <PackageReference Include="NUnit" Version="$(NUnitVersion)" />
     <PackageReference Include="VSSDK.VSHelp" Version="$(VSSDKVSHelpVersion)" />
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8Version)" PrivateAssets="all" ExcludeAssets="contentFiles;build;analyzers;native" />

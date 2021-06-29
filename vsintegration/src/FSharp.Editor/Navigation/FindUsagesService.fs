@@ -20,11 +20,7 @@ open Microsoft.CodeAnalysis.Text
 type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
-    
-    static let userOpName = "FindUsages"
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
     let rangeToDocumentSpans (solution: Solution, range: range) =
@@ -48,17 +44,14 @@ type internal FSharpFindUsagesService
                 return spans |> Array.choose id |> Array.toList
         }
 
-    let findReferencedSymbolsAsync(document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
+    let findReferencedSymbolsAsync(document: Document, position: int, context: IFSharpFindUsagesContext, allReferences: bool) : Async<unit> =
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
-            let checker = checkerProvider.Checker
-            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document, context.CancellationToken, userOpName)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Greedy, false, false, "findReferencedSymbolsAsync")
             
-            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpFindUsagesService)) |> liftAsync
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
             let declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false)
             let tags = FSharpGlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
@@ -129,15 +122,15 @@ type internal FSharpFindUsagesService
                     // In order to find all its usages we have to check all F# projects.
                     | _ -> Seq.toList document.Project.Solution.Projects
                 
-                let! _ = SymbolHelpers.getSymbolUsesInProjects (symbolUse.Symbol, projectInfoManager, checker, projectsToCheck, onFound, userOpName) |> liftAsync
+                let! _ = SymbolHelpers.getSymbolUsesInProjects (symbolUse.Symbol, projectsToCheck, onFound) |> liftAsync
                 ()
         } |> Async.Ignore
 
     interface IFSharpFindUsagesService with
         member _.FindReferencesAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context, true, userOpName)
+            findReferencedSymbolsAsync(document, position, context, true)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
         member _.FindImplementationsAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context, false, userOpName)
+            findReferencedSymbolsAsync(document, position, context, false)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  
