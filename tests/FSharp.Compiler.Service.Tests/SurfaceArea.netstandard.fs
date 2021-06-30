@@ -6672,7 +6672,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsApp
 FSharp.Compiler.Syntax.SynExpr: Boolean IsArbExprAndThusAlreadyReportedError
 FSharp.Compiler.Syntax.SynExpr: Boolean IsArbitraryAfterError
 FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrListComputed
-FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrListFixedSize
+FSharp.Compiler.Syntax.SynExpr: Boolean IsArrayOrList
 FSharp.Compiler.Syntax.SynExpr: Boolean IsAssert
 FSharp.Compiler.Syntax.SynExpr: Boolean IsComputationExpr
 FSharp.Compiler.Syntax.SynExpr: Boolean IsConst
@@ -6738,7 +6738,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsApp()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArbExprAndThusAlreadyReportedError()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArbitraryAfterError()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrListComputed()
-FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrListFixedSize()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsArrayOrList()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsAssert()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsComputationExpr()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsConst()
@@ -6803,7 +6803,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAnonRecd(Boole
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewApp(FSharp.Compiler.Syntax.ExprAtomicFlag, Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArbitraryAfterError(System.String, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrListComputed(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrListFixedSize(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewArrayOrList(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAssert(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewComputationExpr(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewConst(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
