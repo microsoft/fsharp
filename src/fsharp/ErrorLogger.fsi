@@ -198,11 +198,17 @@ val SetThreadBuildPhaseNoUnwind: phase:BuildPhase -> unit
 
 val SetThreadErrorLoggerNoUnwind: errorLogger:ErrorLogger -> unit
 
+/// Reports an error diagnostic and continues
 val errorR: exn:exn -> unit
 
+/// Reports a warning diagnostic
 val warning: exn:exn -> unit
 
+/// Reports an error and raises a ReportedError exception
 val error: exn:exn -> 'a
+
+/// Reports an informational diagnostic
+val informationalWarning: exn:exn -> unit
 
 val simulateError: p:PhasedDiagnostic -> 'a
 

@@ -555,7 +555,7 @@ module ParsedInput =
             | SynExpr.Quote (_, _, e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Typed (e, _, _) -> walkExprWithKind parentKind e
             | SynExpr.Tuple (_, es, _, _) -> List.tryPick (walkExprWithKind parentKind) es
-            | SynExpr.ArrayOrListFixedSize (_, es, _) -> List.tryPick (walkExprWithKind parentKind) es
+            | SynExpr.ArrayOrList (_, es, _) -> List.tryPick (walkExprWithKind parentKind) es
             | SynExpr.Record (_, _, fields, r) -> 
                 ifPosInRange r (fun _ ->
                     fields |> List.tryPick (fun (_, e, _) -> e |> Option.bind (walkExprWithKind parentKind)))
@@ -1278,7 +1278,7 @@ module ParsedInput =
             | SynExpr.Downcast (e, t, _) -> walkExpr e; walkType t
             | SynExpr.Tuple (_, es, _, _)
             | Sequentials es
-            | SynExpr.ArrayOrListFixedSize (_, es, _) -> List.iter walkExpr es
+            | SynExpr.ArrayOrList (_, es, _) -> List.iter walkExpr es
             | SynExpr.App (_, _, e1, e2, _)
             | SynExpr.TryFinally (e1, e2, _, _, _)
             | SynExpr.While (_, e1, e2, _) -> List.iter walkExpr [e1; e2]

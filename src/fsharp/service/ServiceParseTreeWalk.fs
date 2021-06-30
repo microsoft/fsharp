@@ -258,7 +258,7 @@ module SyntaxTraversal =
                     [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
 
                 | SynExpr.Tuple (_, synExprList, _, _range) 
-                | SynExpr.ArrayOrListFixedSize (_, synExprList, _range) ->
+                | SynExpr.ArrayOrList (_, synExprList, _range) ->
                     synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 
                 | SynExpr.AnonRecd (_isStruct, copyOpt, synExprList, _range) -> 

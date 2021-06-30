@@ -407,6 +407,11 @@
         <target state="translated">Типы ByRef запрещены в объявлении открытого типа.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</source>
+        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">Несоответствие в интерполированной строке. В интерполированных строках запрещено использовать описатели формата "%", если только каждому из них не назначено выражение, например "'%d{{1+1}}".</target>
@@ -455,11 +460,6 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">Недопустимая интерполированная строка. {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUnexpectedIndexerArgs">
-        <source>Unexpected indexer arguments.</source>
-        <target state="new">Unexpected indexer arguments.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -3383,8 +3383,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">Недопустимое выражение индексатора</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="needs-review-translation">Недопустимое выражение индексатора</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">

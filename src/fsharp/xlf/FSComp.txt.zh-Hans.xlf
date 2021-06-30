@@ -407,6 +407,11 @@
         <target state="translated">在开放类型声明中不允许使用 Byref 类型。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</source>
+        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">在内插字符串中不匹配。内插字符串不会使用 "%" 格式说明符，除非为每个字符串提供像 "'%d{{1+1}}" 这样的表达式</target>
@@ -455,11 +460,6 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">内插字符串无效。{0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUnexpectedIndexerArgs">
-        <source>Unexpected indexer arguments.</source>
-        <target state="new">Unexpected indexer arguments.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -3383,8 +3383,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">索引器表达式无效</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="needs-review-translation">索引器表达式无效</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">

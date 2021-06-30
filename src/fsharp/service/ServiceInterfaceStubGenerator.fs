@@ -771,7 +771,7 @@ module InterfaceStubGenerator =
                     walkExpr synExpr
 
                 | SynExpr.Tuple (_, synExprList, _, _range)
-                | SynExpr.ArrayOrListFixedSize (_, synExprList, _range) ->
+                | SynExpr.ArrayOrList (_, synExprList, _range) ->
                     List.tryPick walkExpr synExprList
 
                 | SynExpr.Record (_inheritOpt, _copyOpt, fields, _range) -> 

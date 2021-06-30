@@ -483,7 +483,7 @@ type SynExpr =
         recordFields:(Ident * SynExpr) list *
         range: range
 
-    | ArrayOrListFixedSize of
+    | ArrayOrList of
         isArray: bool *
         exprs: SynExpr list *
         range: range
@@ -842,7 +842,7 @@ type SynExpr =
         | SynExpr.Typed (range=m)
         | SynExpr.Tuple (range=m)
         | SynExpr.AnonRecd (range=m)
-        | SynExpr.ArrayOrListFixedSize (range=m)
+        | SynExpr.ArrayOrList (range=m)
         | SynExpr.Record (range=m)
         | SynExpr.New (range=m)
         | SynExpr.ObjExpr (range=m)

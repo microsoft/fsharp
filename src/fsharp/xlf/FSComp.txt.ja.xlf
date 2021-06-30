@@ -407,6 +407,11 @@
         <target state="translated">Byref 型は、オープン型宣言では使用できません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</source>
+        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">補間された文字列が一致しません。'%d{{1+1}}' などの式が指定されている場合を除き、補間された文字列では '%' 書式指定子を使用できません</target>
@@ -455,11 +460,6 @@
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">補間された文字列が無効です。{0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcUnexpectedIndexerArgs">
-        <source>Unexpected indexer arguments.</source>
-        <target state="new">Unexpected indexer arguments.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -3383,8 +3383,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">インデクサー式が無効です</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="needs-review-translation">インデクサー式が無効です</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">

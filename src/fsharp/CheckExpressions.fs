@@ -4935,7 +4935,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 List.fold (fun f x -> mkSynApp1 f (convSynPatToSynExpr x) m) e args
             | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple (isStruct, List.map convSynPatToSynExpr args, [], m)
             | SynPat.Paren (p, _) -> convSynPatToSynExpr p
-            | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrListFixedSize (isArray,List.map convSynPatToSynExpr args, m)
+            | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList (isArray,List.map convSynPatToSynExpr args, m)
             | SynPat.QuoteExpr (e,_) -> e
             | SynPat.Null m -> SynExpr.Null m
             | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
@@ -5399,12 +5399,14 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
     // e1.[e21, ..., e2n]
     // etc.
     | SynExpr.DotIndexedGet (e1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
+        warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None e1 indexArgs delayed
 
     // e1.[e2] <- e3
     // e1.[e21, ..., e2n] <- e3
     // etc.
     | SynExpr.DotIndexedSet (e1, IndexerArgs indexArgs, e3, mOfLeftOfSet, mDot, mWholeExpr) ->
+        warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (e3, mOfLeftOfSet)) e1 indexArgs delayed
 
     | _ ->
@@ -5580,7 +5582,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr) ->
         TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedFieldExprs, mWholeExpr)
 
-    | SynExpr.ArrayOrListFixedSize (isArray, args, m) ->
+    | SynExpr.ArrayOrList (isArray, args, m) ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.AccessRights)
 
         let argty = NewInferenceType ()
@@ -7608,6 +7610,12 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr 
     // it is an error or a computation expression or indexer or delegate invoke
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | ValueSome (domainTy, resultTy) ->
+        match synArg, atomicFlag with
+        // expr[idx]
+        | (SynExpr.ArrayOrList _ | SynExpr.ArrayOrListComputed _), ExprAtomicFlag.Atomic ->
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mExprAndArg))
+        | _ -> ()
+
         match expr with
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
@@ -8015,7 +8023,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.LongIdent _ -> true
 
             | SynExpr.Tuple (_, synExprs, _, _)
-            | SynExpr.ArrayOrListFixedSize (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
+            | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
             | SynExpr.Record (_, copyOpt, fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall (p23 >> Option.forall isSimpleArgument)
             | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
             | SynExpr.IfThenElse (synExpr, synExpr2, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt

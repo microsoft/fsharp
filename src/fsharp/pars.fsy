@@ -4175,12 +4175,12 @@ atomicExpr:
 
   | LBRACK error RBRACK 
       { // silent recovery 
-        SynExpr.ArrayOrListFixedSize (false, [ ], lhs parseState), false  } 
+        SynExpr.ArrayOrList (false, [ ], lhs parseState), false  } 
 
   | LBRACK recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()) 
         // silent recovery 
-        exprFromParseError (SynExpr.ArrayOrListFixedSize (false, [ ], rhs parseState 1)), false  } 
+        exprFromParseError (SynExpr.ArrayOrList (false, [ ], rhs parseState 1)), false  } 
 
   | STRUCT LPAREN tupleExpr rparen
       { let exprs, commas = $3
@@ -4325,12 +4325,12 @@ arrayExpr:
         exprFromParseError ($2 (rhs2 parseState 1 2)) }
 
   | LBRACK_BAR error BAR_RBRACK 
-      {  (* silent recovery *) SynExpr.ArrayOrListFixedSize (true, [ ], lhs parseState) }  
+      {  (* silent recovery *) SynExpr.ArrayOrList (true, [ ], lhs parseState) }  
 
   | LBRACK_BAR recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracketBar())  
         (* silent recovery *) 
-        exprFromParseError (SynExpr.ArrayOrListFixedSize (true, [ ], rhs parseState 1)) }  
+        exprFromParseError (SynExpr.ArrayOrList (true, [ ], rhs parseState 1)) }  
 
 parenExpr:
   | LPAREN rparen 
@@ -4442,14 +4442,14 @@ listExprElements:
      { (fun lhsm -> SynExpr.ArrayOrListComputed (false, $1, lhsm)) }
 
   | 
-     { (fun lhsm -> SynExpr.ArrayOrListFixedSize (false, [ ], lhsm)) }
+     { (fun lhsm -> SynExpr.ArrayOrList (false, [ ], lhsm)) }
 
 arrayExprElements: 
   | sequentialExpr
      { (fun lhsm -> SynExpr.ArrayOrListComputed (true, $1, lhsm)) }
 
   | 
-     { (fun lhsm -> SynExpr.ArrayOrListFixedSize (true, [ ], lhsm)) }
+     { (fun lhsm -> SynExpr.ArrayOrList (true, [ ], lhsm)) }
 
 computationExpr: 
   | sequentialExpr

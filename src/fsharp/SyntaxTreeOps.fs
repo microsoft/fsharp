@@ -675,7 +675,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.App (_, _, e1, e2, _) ->
               walkExpr e1 || walkExpr e2
 
-          | SynExpr.ArrayOrListFixedSize (_, es, _)
+          | SynExpr.ArrayOrList (_, es, _)
           | SynExpr.Tuple (_, es, _, _) ->
               walkExprs es
 

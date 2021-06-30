@@ -538,7 +538,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e1 
                       yield! walkExpr false e2
 
-                  | SynExpr.ArrayOrListFixedSize (_, es, _)
+                  | SynExpr.ArrayOrList (_, es, _)
                   | SynExpr.Tuple (_, es, _, _) -> 
                       yield! walkExprs es
 

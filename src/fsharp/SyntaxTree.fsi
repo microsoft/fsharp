@@ -581,7 +581,7 @@ type SynExpr =
         range: range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
-    | ArrayOrListFixedSize of
+    | ArrayOrList of
         isArray: bool *
         exprs: SynExpr list *
         range: range
