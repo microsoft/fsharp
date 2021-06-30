@@ -471,7 +471,6 @@
     IL_0038:  dup
     IL_0039:  stsfld     int32[] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array@6
     IL_003e:  stloc.1
-    .line 7,7 : 1,27 ''
     IL_003f:  ldc.i4.1
     IL_0040:  ldc.i4.1
     IL_0041:  ldc.i4.s   10

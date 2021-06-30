@@ -628,8 +628,12 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                       yield! walkExpr false e1 
                       yield! walkExpr false es
 
-                  | SynExpr.IndexerArg (es, _) -> 
-                      yield! walkExprs es.Exprs
+                  | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 
+                      match expr1 with Some e -> yield! walkExpr false e | None -> ()
+                      match expr2 with Some e -> yield! walkExpr false e | None -> ()
+
+                  | SynExpr.IndexFromEnd (e, _) -> 
+                      yield! walkExpr false e
 
                   | SynExpr.DotIndexedSet (e1, es, e2, _, _, _) ->
                       yield! walkExpr false e1 

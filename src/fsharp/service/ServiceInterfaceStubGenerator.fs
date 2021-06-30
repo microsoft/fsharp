@@ -53,11 +53,6 @@ module internal CodeGenerationUtils =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
 
-    let (|IndexerArg|) (e: SynIndexerArg) = e.Exprs
-
-    let (|IndexerArgList|) xs =
-        List.collect (|IndexerArg|) xs
-        
     /// An recursive pattern that collect all sequential expressions to avoid StackOverflowException
     let rec (|Sequentials|_|) = function
         | SynExpr.Sequential (_, _, e, Sequentials es, _) ->

@@ -823,9 +823,9 @@ module ParsedInput =
             | _ -> None
 
         // checks if we are in rhs of the range operator
-        let isInRhsOfRangeOp (p : SyntaxVisitorPath) = 
+        let isAtRangeOp (p : SyntaxVisitorPath) = 
             match p with
-            | SyntaxNode.SynExpr(Operator "op_Range" _) :: _ -> true
+            | SyntaxNode.SynExpr(SynExpr.IndexRange(Some _, _, None, _, _, _)) :: _ -> true
             | _ -> false
 
         let (|Setter|_|) e =
@@ -914,7 +914,7 @@ module ParsedInput =
                 new SyntaxVisitorBase<_>() with
                     member _.VisitExpr(path, _, defaultTraverse, expr) = 
 
-                        if isInRhsOfRangeOp path then
+                        if isAtRangeOp path then
                             match defaultTraverse expr with
                             | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
                             | x -> x // ok, we found something - return it
@@ -1228,8 +1228,6 @@ module ParsedInput =
     
         and walkInterfaceImpl (SynInterfaceImpl(_, bindings, _)) = List.iter walkBinding bindings
     
-        and walkIndexerArg (e: SynIndexerArg) = List.iter walkExpr e.Exprs
-    
         and walkType = function
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
@@ -1328,8 +1326,11 @@ module ParsedInput =
             | SynExpr.Set (e1, e2, _) ->
                 walkExpr e1
                 walkExpr e2
-            | SynExpr.IndexerArg (arg, _) ->
-                walkIndexerArg arg
+            | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 
+                match expr1 with Some e -> walkExpr e | None -> ()
+                match expr2 with Some e -> walkExpr e | None -> ()
+            | SynExpr.IndexFromEnd (e, _) -> 
+                walkExpr e
             | SynExpr.DotIndexedGet (e, args, _, _) ->
                 walkExpr e
                 walkExpr args

@@ -512,10 +512,13 @@ module SyntaxTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.IndexerArg (indexArg, _range) -> 
-                    [for x in indexArg.Exprs do 
-                             yield dive x x.Range traverseSynExpr]
+                | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 
+                    [ match expr1 with Some e -> dive e e.Range traverseSynExpr | None -> ()
+                      match expr2 with Some e -> dive e e.Range traverseSynExpr | None -> () ]
                     |> pick expr
+
+                | SynExpr.IndexFromEnd (e, _) -> 
+                    traverseSynExpr e
 
                 | SynExpr.DotIndexedGet (synExpr, indexArgs, _range, _range2) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr

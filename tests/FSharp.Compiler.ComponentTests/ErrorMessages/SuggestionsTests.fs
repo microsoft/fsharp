@@ -189,7 +189,6 @@ let a = (f())[1]
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 3217, Line 3, Col 9,  Line 3, Col 10, "This value is not a function and cannot be applied. Did you intend to access the indexer via d.[index] instead?")
             (Error 3,    Line 5, Col 9,  Line 5, Col 10, "This value is not a function and cannot be applied.")
             (Error 3217, Line 8, Col 10, Line 8, Col 13, "This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?")]
 

@@ -649,10 +649,20 @@ type SynExpr =
     /// F# syntax: expr..
     /// F# syntax: ..expr
     /// F# syntax: expr..expr
-    /// F# syntax: ^expr
     /// F# syntax: *
-    | IndexerArg of
-        indexArg: SynIndexerArg *
+    /// A two-element range indexer argument a..b, a.., ..b. Also used to represent
+    /// a range in a list, array or sequence expression.
+    | IndexRange of
+        expr1: SynExpr option *
+        opm: range *
+        expr2: SynExpr option*
+        range1: range *
+        range2: range *
+        range: range
+
+    /// F# syntax: ^expr
+    | IndexFromEnd of
+        expr: SynExpr *
         range: range
 
     /// F# syntax: { expr }
@@ -1032,29 +1042,6 @@ type SynExpr =
 type SynInterpolatedStringPart =
     | String of value: string * range: range
     | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
-
-/// Represents a syntax tree for an F# indexer expression argument
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynIndexerArg =
-    /// A two-element range indexer argument a..b, a.., ..b. Also used to represent
-    /// a range in a list, array or sequence expression.
-    | IndexRange of
-        expr1: SynExpr option *
-        opm: range *
-        expr2: SynExpr option*
-        range1: range *
-        range2: range
-
-    /// A from-end single indexer argument ^expr
-    | FromEnd of
-        expr: SynExpr *
-        range: range
-
-    /// Gets the syntax range of this construct
-    member Range: range
-
-    /// Get the one, two or three expressions as a list
-    member Exprs: SynExpr list
 
 /// Represents a syntax tree for simple F# patterns
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

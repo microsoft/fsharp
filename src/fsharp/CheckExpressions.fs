@@ -5439,7 +5439,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     match synExpr with
     // ( * )
-    | SynExpr.Paren(SynExpr.IndexerArg(SynIndexerArg.IndexRange (None, opm, None, _m1, _m2), _), _, _, _) ->
+    | SynExpr.Paren(SynExpr.IndexRange (None, opm, None, _m1, _m2, _), _, _, _) ->
         let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm))
         TcExpr cenv overallTy env tpenv replacementExpr
 
@@ -5849,7 +5849,8 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.MatchBang (_, _, _, m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
-    | SynExpr.IndexerArg (_, m) ->
+    | SynExpr.IndexFromEnd (range=m)
+    | SynExpr.IndexRange (range=m) ->
         error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
 
 // Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
@@ -5862,10 +5863,10 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 and RewriteRangeExpr expr = 
     match expr with
     // a..b..c (parsed as (a..b)..c )
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some (SynExpr.IndexerArg(SynIndexerArg.IndexRange(Some expr1, _, Some synStepExpr, _, _), _)), _, Some expr2, _m1, _m2), wholem) ->
+    | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some expr1, _, Some synStepExpr, _, _, _)), _, Some expr2, _m1, _m2, wholem) ->
         Some (mkSynTrifix wholem ".. .." expr1 synStepExpr expr2)
     // a..b
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (Some expr1, opm, Some expr2, _m1, _m2), wholem) ->
+    | SynExpr.IndexRange (Some expr1, opm, Some expr2, _m1, _m2, wholem) ->
         let otherExpr =
             match mkSynInfix opm expr1 ".." expr2 with
             | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
@@ -5895,12 +5896,12 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
 
 and (|IndexArgOptionalFromEnd|) indexArg = 
     match indexArg with
-    | SynExpr.IndexerArg(SynIndexerArg.FromEnd (a,b), _) -> (a, true, b)
+    | SynExpr.IndexFromEnd (a, m) -> (a, true, m)
     | expr -> (expr, false, expr.Range)
 
 and DecodeIndexArg indexArg = 
     match indexArg with
-    | SynExpr.IndexerArg(SynIndexerArg.IndexRange (info1, _opm, info2, m1, m2), _) ->
+    | SynExpr.IndexRange (info1, _opm, info2, m1, m2, _) ->
         let info1 = 
             match info1 with 
             | Some (IndexArgOptionalFromEnd (expr1, isFromEnd1, _)) -> Some (expr1, isFromEnd1)
@@ -5915,7 +5916,8 @@ and DecodeIndexArg indexArg =
 
 and (|IndexerArgs|) e =
     match e with 
-    | SynExpr.IndexerArg _ -> [e]
+    | SynExpr.IndexRange _ -> [e]
+    | SynExpr.IndexFromEnd _ -> [e]
     | SynExpr.Tuple (false, args, _, _) -> args
     | e -> [e]
 
@@ -8058,9 +8060,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.LetOrUseBang _
             | SynExpr.DoBang _
             | SynExpr.TraitCall _
-            | SynExpr.IndexerArg _
+            | SynExpr.IndexFromEnd _
+            | SynExpr.IndexRange _
                 -> false
-
 
         // Propagate the known application structure into function types
         Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) delayed

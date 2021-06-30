@@ -537,8 +537,16 @@ type SynExpr =
         expr: SynExpr *
         range: range
 
-    | IndexerArg of
-        indexArg: SynIndexerArg *
+    | IndexRange of
+        expr1: SynExpr option *
+        opm: range *
+        expr2: SynExpr option*
+        range1: range *
+        range2: range *
+        range: range
+
+    | IndexFromEnd of
+        expr: SynExpr *
         range: range
 
     | ComputationExpr of
@@ -872,7 +880,8 @@ type SynExpr =
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
         | SynExpr.LibraryOnlyILAssembly (range=m)
         | SynExpr.LibraryOnlyStaticOptimization (range=m)
-        | SynExpr.IndexerArg (range=m)
+        | SynExpr.IndexRange (range=m)
+        | SynExpr.IndexFromEnd (range=m)
         | SynExpr.TypeTest (range=m)
         | SynExpr.Upcast (range=m)
         | SynExpr.AddressOf (range=m)
@@ -927,31 +936,6 @@ type SynExpr =
 type SynInterpolatedStringPart =
     | String of value: string * range: range
     | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynIndexerArg =
-    | IndexRange of
-        expr1: SynExpr option *
-        opm: range *
-        expr2: SynExpr option*
-        range1: range *
-        range2: range
-
-    | FromEnd of
-        expr: SynExpr *
-        range: range
-
-    member x.Range =
-        match x with
-        | IndexRange (_, _, _, m1, m2) -> unionRanges m1 m2
-        | FromEnd (_, m) -> m
-
-    member x.Exprs = 
-        match x with
-        | IndexRange (e1, _, e2, _, _) -> 
-            [ match e1 with Some e -> yield e | None -> ()
-              match e2 with Some e -> yield e | None -> ()  ]
-        | FromEnd (e, _) -> [e]
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
