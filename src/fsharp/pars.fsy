@@ -4229,10 +4229,10 @@ atomicExprQualification:
             // Note that "*" is parsed as an expression (it is allowed in "foo.[3,*]")
             match $2 with
             | SynExpr.IndexRange (None, opm, None, _m1, _m2, _) ->
-                SynExpr.Ident(ident(CompileOpName "*", opm))
+                mkSynDot dotm lhsm e (ident(CompileOpName "*", opm))
             | _ ->
-              mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
-              mkSynDotParenGet lhsm dotm e $2) }
+                mlCompatWarning (FSComp.SR.parsParenFormIsForML()) (lhs parseState) 
+                mkSynDotParenGet lhsm dotm e $2) }
 
   | LBRACK  typedSequentialExpr RBRACK
       { (fun e lhsm dotm -> mkSynDotBrackGet lhsm dotm e $2) }
