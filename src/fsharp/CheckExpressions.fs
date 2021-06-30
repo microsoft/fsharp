@@ -5936,9 +5936,8 @@ and ExpandIndexArgs (synLeftExpr: SynExpr option) indexArgs =
         match synLeftExpr with 
         | None -> error(Error(FSComp.SR.tcInvalidUseOfReverseIndex(), range)) 
         | Some xsId -> 
-
             mkSynApp1
-                (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
+                (mkSynDot range range xsId (mkSynId (range.MakeSynthetic()) "GetReverseIndex"))
                 sliceArgs
                 range
 
@@ -5947,6 +5946,7 @@ and ExpandIndexArgs (synLeftExpr: SynExpr option) indexArgs =
         SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m FSharpLib.CorePath "Some", x, m)
 
     let mkSynNoneExpr (m: range) =
+        let m = m.MakeSynthetic()
         mkSynLidGet m FSharpLib.CorePath "None"
 
     let expandedIndexArgs =
@@ -6103,7 +6103,7 @@ and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr 
         match info with
             | None -> None
             | Some (path, functionName, indexArgs) ->
-                let operPath = mkSynLidGet mDot path (CompileOpName functionName)
+                let operPath = mkSynLidGet (mDot.MakeSynthetic()) path (CompileOpName functionName)
                 let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
                 let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
                 UnifyTypes cenv env mWholeExpr domainTy e1ty
