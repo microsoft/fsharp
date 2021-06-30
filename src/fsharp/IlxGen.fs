@@ -829,14 +829,14 @@ type ValStorage =
     | Method of ValReprInfo * ValRef * ILMethodSpec * ILMethodSpec * range * Typars * Typars * CurriedArgInfos * ArgReprInfo list * TraitWitnessInfos * TType list * ArgReprInfo
 
     /// Indicates the value is stored at the given position in the closure environment accessed via "ldarg 0"
-    | Env of ILType * ILFieldSpec * NamedLocalIlxClosureInfo ref option
+    | Env of ILType * ILFieldSpec * (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
     /// Indicates that the value is an argument of a method being generated
     | Arg of int
 
     /// Indicates that the value is stored in local of the method being generated. NamedLocalIlxClosureInfo is normally empty.
     /// It is non-empty for 'local type functions', see comments on definition of NamedLocalIlxClosureInfo.
-    | Local of idx: int * realloc: bool * NamedLocalIlxClosureInfo ref option
+    | Local of idx: int * realloc: bool * (FreeTyvars * NamedLocalIlxClosureInfo ref) option
 
 /// Indicates if there is a shadow local storage for a local, to make sure it gets a good name in debugging
 and OptionalShadowLocal =
@@ -3579,6 +3579,25 @@ and FreeVarStorageForWitnessInfos (cenv: cenv) (eenv: IlxGenEnv) takenNames ilCl
     |> List.unzip
 
 //--------------------------------------------------------------------------
+// Locally erased type functions
+//--------------------------------------------------------------------------
+
+/// Check for type lambda with entirely erased type arguments that is stored as
+/// local variable (not method or property). For example
+//      let foo() =
+//          let a = 0<_>
+//         ()
+//  in debug code , here `a` will be a TyLamba.  However the compiled representation of 
+// `a` is an integer.
+and IsLocalErasedTyLambda g eenv (v: Val) e =
+    match e with
+    | Expr.TyLambda (_, tyargs, body, _, _) when
+            tyargs |> List.forall (fun tp -> tp.IsErased) &&
+            (match StorageForVal g v.Range v eenv with Local _ -> true | _ -> false) ->
+        Some body
+    | _ -> None
+
+//--------------------------------------------------------------------------
 // Named local type functions
 //--------------------------------------------------------------------------
 
@@ -4756,9 +4775,9 @@ and GenGenericArgs m (tyenv: TypeReprEnv) tps =
     tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
 
 /// Generate a local type function contract class and implementation
-and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars expr m =
+and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
     let g = cenv.g
-    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m isLocalTypeFunc true thisVars eenv expr
+    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m true true thisVars eenv expr
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
     let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
     // Now generate the actual closure implementation w.r.t. eenvinner
@@ -4783,9 +4802,9 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFu
     let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef, cloinfo.cloILGenericParams, [], cloinfo.ilCloAllFreeVars, ilCloLambdas, ilCtorBody, cloMethods, [], g.ilg.typ_Object, [], Some cloinfo.cloSpec)
     cloinfo, ilCloTypeRef, cloTypeDefs
 
-and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars m expr =
+and GenClosureAsFirstClassFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars m expr =
     let g = cenv.g
-    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m isLocalTypeFunc true thisVars eenv expr
+    let cloinfo, body, eenvinner = GetIlxClosureInfo cenv m false true thisVars eenv expr
     let entryPointInfo = thisVars |> List.map (fun v -> (v, BranchCallClosure (cloinfo.cloArityInfo)))
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
 
@@ -4801,9 +4820,9 @@ and GenLambdaClosure cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars e
 
         let cloinfo, ilCloTypeRef, cloTypeDefs =
             if isLocalTypeFunc then
-                GenClosureAsLocalTypeFunction cenv cgbuf eenv isLocalTypeFunc thisVars expr m
+                GenClosureAsLocalTypeFunction cenv cgbuf eenv thisVars expr m
             else
-                GenClosureAsFirstClassFunction cenv cgbuf eenv isLocalTypeFunc thisVars m expr
+                GenClosureAsFirstClassFunction cenv cgbuf eenv thisVars m expr
 
         CountClosure()
         for cloTypeDef in cloTypeDefs do
@@ -4883,23 +4902,32 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
     // pointer which gives the current closure itself. This is in the case e.g. let rec f = ... f ...
+    let freeLocals = cloFreeVarResults.FreeLocals |> Zset.elements
     let cloFreeVars =
-        cloFreeVarResults.FreeLocals
-        |> Zset.elements
+        freeLocals
         |> List.filter (fun fv ->
             (thisVars |> List.forall (fun v -> not (valRefEq g (mkLocalValRef fv) v))) &&
             (match StorageForVal cenv.g m fv eenvouter with
              | (StaticField _ | StaticProperty _ | Method _ | Null) -> false
              | _ -> true))
 
-    let cloFreeTyvars = cloFreeVarResults.FreeTyvars.FreeTypars |> Zset.elements
+    // Any closure using values represented as local type functions also captures the type variables captured 
+    // by that local type function 
+    let cloFreeTyvars = 
+        (cloFreeVarResults.FreeTyvars, freeLocals) ||> List.fold (fun ftyvs fv ->
+            match StorageForVal cenv.g m fv eenvouter with
+            | Env (_, _, Some (moreFtyvs, _)) 
+            | Local (_, _, Some (moreFtyvs, _)) -> unionFreeTyvars ftyvs moreFtyvs
+            | _ -> ftyvs)
+
+    let cloFreeTypars = cloFreeTyvars.FreeTypars |> Zset.elements
 
     let cloAttribs = []
 
-    let eenvinner = eenvouter |> EnvForTypars cloFreeTyvars
+    let eenvinner = eenvouter |> EnvForTypars cloFreeTypars
 
     let ilCloTyInner =
-        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
+        let ilCloGenericParams = GenGenericParams cenv eenvinner cloFreeTypars
         mkILFormalBoxedTy ilCloTypeRef ilCloGenericParams
 
     // If generating a named closure, add the closure itself as a var, available via "arg0" .
@@ -4912,7 +4940,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
         let generateWitnesses = ComputeGenerateWitnesses g eenvinner
         if generateWitnesses then
             // The 0 here represents that a closure doesn't reside within a generic class - there are no "enclosing class type parameters" to lop off.
-            GetTraitWitnessInfosOfTypars g 0 cloFreeTyvars
+            GetTraitWitnessInfosOfTypars g 0 cloFreeTypars
         else
             []
 
@@ -4948,7 +4976,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) eenvouter takenNames ex
     let eenvinner = eenvinner |> AddStorageForLocalVals g ilCloFreeVarStorage
 
     // Return a various results
-    (cloAttribs, cloFreeTyvars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
+    (cloAttribs, cloFreeTypars, cloWitnessInfos, cloFreeVars, ilCloTypeRef, ilCloAllFreeVars, eenvinner)
 
 and GetIlxClosureInfo cenv m isLocalTypeFunc canUseStaticField thisVars eenvouter expr =
     let g = cenv.g
@@ -6564,26 +6592,20 @@ and GenGetVal cenv cgbuf eenv (v: ValRef, m) sequel =
     GenGetValRefAndSequel cenv cgbuf eenv m v None
     GenSequel cenv eenv.cloc cgbuf sequel
 
-and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) e =
+and GenBindingRhs cenv cgbuf eenv sp (vspec: Val) expr =
     let g = cenv.g
-    match e with
+    match expr with
     | Expr.TyLambda _ | Expr.Lambda _ ->
-        let isLocalTypeFunc = IsNamedLocalTypeFuncVal g vspec e
 
-        match e with
-        | Expr.TyLambda (_, tyargs, body, _, ttype) when
-            (
-                tyargs |> List.forall (fun tp -> tp.IsErased) &&
-                (match StorageForVal g vspec.Range vspec eenv with Local _ -> true | _ -> false) &&
-                (isLocalTypeFunc || isStructOrEnumTyconTy g ttype)
-            ) ->
-            // type lambda with erased type arguments that is stored as local variable (not method or property)- inline body
+        match IsLocalErasedTyLambda g eenv vspec expr with
+        | Some body ->
             GenExpr cenv cgbuf eenv sp body Continue
-        | _ ->
+        | None ->
+            let isLocalTypeFunc = IsNamedLocalTypeFuncVal g vspec expr
             let thisVars = if isLocalTypeFunc then [] else [ mkLocalValRef vspec ]
-            GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars e Continue
+            GenLambda cenv cgbuf eenv isLocalTypeFunc thisVars expr Continue
     | _ ->
-        GenExpr cenv cgbuf eenv sp e Continue
+        GenExpr cenv cgbuf eenv sp expr Continue
 
 and CommitStartScope cgbuf startScopeMarkOpt =
     match startScopeMarkOpt with
@@ -6629,10 +6651,10 @@ and GenSetStorage m cgbuf storage =
 
 and CommitGetStorageSequel cenv cgbuf eenv m ty localCloInfo storeSequel =
     match localCloInfo, storeSequel with
-    | Some {contents =NamedLocalIlxClosureInfoGenerator _cloinfo}, _ ->
+    | Some (_, {contents =NamedLocalIlxClosureInfoGenerator _cloinfo}), _ ->
         error(InternalError("Unexpected generator", m))
 
-    | Some {contents =NamedLocalIlxClosureInfoGenerated cloinfo}, Some (tyargs, args, m, sequel) when not (isNil tyargs) ->
+    | Some (_, {contents =NamedLocalIlxClosureInfoGenerated cloinfo}), Some (tyargs, args, m, sequel) when not (isNil tyargs) ->
         let actualRetTy = GenNamedLocalTyFuncCall cenv cgbuf eenv ty cloinfo tyargs m
         CommitGetStorageSequel cenv cgbuf eenv m actualRetTy None (Some ([], args, m, sequel))
 
@@ -6728,17 +6750,18 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
         if isUnitTy g ty && not v.IsMutable then Null, eenv
         else
             match repr with
-            | Some r when IsNamedLocalTypeFuncVal g v r ->
+            | Some repr when IsNamedLocalTypeFuncVal g v repr ->
+                let ftyvs = (freeInExpr CollectTypars repr).FreeTyvars
                 // known, named, non-escaping type functions
                 let cloinfoGenerate eenv =
                     let eenvinner =
                         {eenv with
                              letBoundVars=(mkLocalValRef v) :: eenv.letBoundVars}
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true true [] eenvinner (Option.get repr)
+                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range true true [] eenvinner repr
                     cloinfo
 
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, g.ilg.typ_Object, false) scopeMarks
-                Local (idx, realloc, Some(ref (NamedLocalIlxClosureInfoGenerator cloinfoGenerate))), eenv
+                Local (idx, realloc, Some(ftyvs, ref (NamedLocalIlxClosureInfoGenerator cloinfoGenerate))), eenv
             | _ ->
                 // normal local
                 let idx, realloc, eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName g.CompilerGlobalState, GenTypeOfVal cenv eenv v, v.IsFixed) scopeMarks
@@ -6759,8 +6782,8 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
        match reprOpt with
        | Some repr ->
            match repr with
-           | Local(_, _, Some g)
-           | Env(_, _, Some g) ->
+           | Local(_, _, Some (_, g))
+           | Env(_, _, Some (_, g)) ->
                match !g with
                | NamedLocalIlxClosureInfoGenerator f -> g := NamedLocalIlxClosureInfoGenerated (f eenv)
                | NamedLocalIlxClosureInfoGenerated _ -> ()

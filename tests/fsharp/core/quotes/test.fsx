@@ -2912,7 +2912,7 @@ module ReflectionOverTypeInstantiations =
 
     let notRequired opname item = 
         let msg = sprintf "The operation '%s' on item '%s' should not be called on provided type, member or parameter" opname item
-        System.Diagnostics.Debug.Assert (false, msg)
+        //System.Diagnostics.Debug.Assert (false, msg)
         raise (System.NotSupportedException msg)
 
     /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
