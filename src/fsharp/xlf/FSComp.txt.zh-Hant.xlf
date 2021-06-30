@@ -412,6 +412,11 @@
         <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated2">
+        <source>The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'.</source>
+        <target state="new">The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">插補字串不相符。除非每個插補字串都有一個運算式，否則不可使用 '%' 格式指定名稱，例如 '%d{{1+1}}'</target>
