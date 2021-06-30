@@ -928,6 +928,10 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
 
 
         | SynExpr.ForEach (spForLoop, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _) -> 
+            let sourceExpr =
+                match RewriteRangeExpr sourceExpr with
+                | Some e -> e
+                | None -> sourceExpr
             let wrappedSourceExpr = mkSourceExprConditional isFromSource sourceExpr
             let mFor = match spForLoop with DebugPointAtFor.Yes m -> m | _ -> pat.Range
             let mPat = pat.Range
@@ -1723,6 +1727,10 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
     let rec tryTcSequenceExprBody env genOuterTy tpenv comp =
         match comp with 
         | SynExpr.ForEach (spFor, SeqExprOnly _seqExprOnly, _isFromSource, pat, pseudoEnumExpr, innerComp, m) -> 
+            let pseudoEnumExpr =
+                match RewriteRangeExpr pseudoEnumExpr with
+                | Some e -> e
+                | None -> pseudoEnumExpr
             // This expression is not checked with the knowledge it is an IEnumerable, since we permit other enumerable types with GetEnumerator/MoveNext methods, as does C# 
             let pseudoEnumExpr, arb_ty, tpenv = TcExprOfUnknownType cenv env tpenv pseudoEnumExpr
             let enumExpr, enumElemTy = ConvertArbitraryExprToEnumerable cenv arb_ty env pseudoEnumExpr
@@ -1961,9 +1969,9 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
 
         UnifyTypes cenv env m overallTy genCollTy
 
-        let exprty = mkSeqTy cenv.g genCollElemTy
+        let exprTy = mkSeqTy cenv.g genCollElemTy
 
-        let expr, tpenv = TcExpr cenv exprty env tpenv replacementExpr
+        let expr, tpenv = TcExpr cenv exprTy env tpenv replacementExpr
         let expr = 
             if cenv.g.compilingFslib then 
                 //warning(Error(FSComp.SR.fslibUsingComputedListOrArray(), expr.Range))
@@ -1973,7 +1981,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
                 // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
                 mkCallSeq cenv.g m genCollElemTy expr
                    
-        let expr = mkCoerceExpr(expr, exprty, expr.Range, overallTy)
+        let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy)
 
         let expr = 
             if isArray then 
@@ -2019,12 +2027,12 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
 
         UnifyTypes cenv env m overallTy genCollTy
 
-        let exprty = mkSeqTy cenv.g genCollElemTy
+        let exprTy = mkSeqTy cenv.g genCollElemTy
 
-        // Check the comprehension
-        let expr, tpenv = TcExpr cenv exprty env tpenv comp
+        // Check the comprehension as a sequence
+        let expr, tpenv = TcSequenceExpression cenv env tpenv comp exprTy m
 
-        let expr = mkCoerceIfNeeded cenv.g exprty (tyOfExpr cenv.g expr) expr
+        let expr = mkCoerceIfNeeded cenv.g exprTy (tyOfExpr cenv.g expr) expr
 
         let expr = 
             if cenv.g.compilingFslib then 
@@ -2035,7 +2043,7 @@ let TcArrayOrListComputedExpression (cenv: cenv) env overallTy tpenv (isArray, c
                 // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
                 mkCallSeq cenv.g m genCollElemTy expr
                    
-        let expr = mkCoerceExpr(expr, exprty, expr.Range, overallTy)
+        let expr = mkCoerceExpr(expr, exprTy, expr.Range, overallTy)
 
         let expr = 
             if isArray then 

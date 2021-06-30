@@ -5650,6 +5650,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
         cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
     | SynExpr.ArrayOrListComputed (isArray, comp, m) ->
+        let env = ExitFamilyRegion env
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
         cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
 
