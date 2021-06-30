@@ -1536,7 +1536,7 @@ featureInterfacesWithMultipleGenericInstantiation,"interfaces with multiple gene
 3363,tcLiteralFieldAssignmentNoArg,"Cannot assign a value to another value marked literal"
 3364,tcInvalidUseOfReverseIndex,"Invalid use of reverse index in list expression."
 3365,tcIndexNotationDeprecated,"The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code."
-3365,tcIndexNotationDeprecated,"The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'."
+3365,tcIndexNotationDeprecated2,"The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'."
 forFormatInvalidForInterpolated,"Interpolated strings may not use '%%' format specifiers unless each is given an expression, e.g. '%%d{{1+1}}'."
 forFormatInvalidForInterpolated2,".NET-style format specifiers such as '{{x,3}}' or '{{x:N5}}' may not be mixed with '%%' format specifiers."
 forFormatInvalidForInterpolated3,"The '%%P' specifier may not be used explicitly."

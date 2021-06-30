@@ -7613,7 +7613,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr 
         match synArg, atomicFlag with
         // expr[idx]
         | (SynExpr.ArrayOrList _ | SynExpr.ArrayOrListComputed _), ExprAtomicFlag.Atomic ->
-            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mExprAndArg))
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated2(), mExprAndArg))
         | _ -> ()
 
         match expr with
