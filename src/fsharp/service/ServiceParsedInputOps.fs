@@ -474,6 +474,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsReferenceType(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsUnmanaged(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparSupportsNull (t, _) -> walkTypar t
+            | SynTypeConstraint.WhereTyparNotSupportsNull (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsComparable(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsEquatable(t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparSubtypeOfType(t, ty, _) -> walkTypar t |> Option.orElse (walkType ty)
@@ -1189,6 +1190,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsReferenceType (t, _)
             | SynTypeConstraint.WhereTyparIsUnmanaged (t, _)
             | SynTypeConstraint.WhereTyparSupportsNull (t, _)
+            | SynTypeConstraint.WhereTyparNotSupportsNull (t, _)
             | SynTypeConstraint.WhereTyparIsComparable (t, _)
             | SynTypeConstraint.WhereTyparIsEquatable (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparDefaultsToType (t, ty, _)

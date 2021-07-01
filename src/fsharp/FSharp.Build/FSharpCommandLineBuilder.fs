@@ -32,7 +32,7 @@ type FSharpCommandLineBuilder () =
     /// Return a full command line (with quoting for the cmd.exe shell)
     override x.ToString() = builder.ToString()
 
-    member x.AppendFileNamesIfNotNull(filenames:ITaskItem array, sep:string) =
+    member x.AppendFileNamesIfNotNull(filenames:ITaskItem[], sep:string) =
         builder.AppendFileNamesIfNotNull(filenames, sep)
         // do not update "args", not used
         for item in filenames do
@@ -42,7 +42,7 @@ type FSharpCommandLineBuilder () =
             if s <> String.Empty then
                 srcs <- tmp.ToString() :: srcs
 
-    member x.AppendSwitchIfNotNull(switch:string, values:string array, sep:string) =
+    member x.AppendSwitchesIfNotNull(switch:string, values:string[], sep:string) =
         builder.AppendSwitchIfNotNull(switch, values, sep)
         let tmp = new CommandLineBuilder()
         tmp.AppendSwitchUnquotedIfNotNull(switch, values, sep)
@@ -50,7 +50,11 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
-    member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string array) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+    member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string[]) =
+#else
+    member x.AppendSwitchIfNotNull(switch:string, value:string?, ?metadataNames:string[]) =
+#endif
         let metadataNames = defaultArg metadataNames [||]
         builder.AppendSwitchIfNotNull(switch, value)
         let tmp = new CommandLineBuilder()
@@ -65,7 +69,11 @@ type FSharpCommandLineBuilder () =
         if s <> String.Empty then
             args <- s :: args
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string) =
+#else
+    member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string?) =
+#endif
         assert(switch = "")  // we only call this method for "OtherFlags"
         // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
         let ParseCommandLineArgs(commandLine:string) = // returns list in reverse order

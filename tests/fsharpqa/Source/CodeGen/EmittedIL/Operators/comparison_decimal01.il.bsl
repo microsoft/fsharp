@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.comparison_decimal01
 {
-  // Offset: 0x00000000 Length: 0x00000170
+  // Offset: 0x00000000 Length: 0x00000172
 }
 .mresource public FSharpOptimizationData.comparison_decimal01
 {
   // Offset: 0x00000178 Length: 0x0000005B
 }
 .module comparison_decimal01.exe
-// MVID: {5F1FA087-76D8-7EE3-A745-038387A01F5F}
+// MVID: {5F972A55-76D8-7EE3-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BE0000
+// Image base: 0x08E40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -71,7 +71,7 @@
     // Code size       228 (0xe4)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 9,20 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
+    .line 4,4 : 9,20 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Operators\\comparison_decimal01.fs'
     IL_0000:  ldc.i4.s   10
     IL_0002:  ldc.i4.0
     IL_0003:  ldc.i4.0

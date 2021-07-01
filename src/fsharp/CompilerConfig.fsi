@@ -8,17 +8,17 @@ open FSharp.Compiler.IO
 open Internal.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler
-open FSharp.Compiler.Xml
-open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.AbstractIL.ILPdbWriter
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
+open FSharp.Compiler.Xml
 open FSharp.Compiler.BuildGraph
 
 exception FileNameNotResolved of (*filename*) string * (*description of searched locations*) string * range
@@ -43,10 +43,10 @@ type IRawFSharpAssemblyData =
     abstract HasMatchingFSharpSignatureDataAttribute: bool
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -170,6 +170,7 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpDiagnosticOptions
       mutable mlCompatibility:bool
+      mutable checkNullness: bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
       mutable outputDir: string option
@@ -362,6 +363,7 @@ type TcConfig =
     member embedResources: string list
     member errorSeverityOptions: FSharpDiagnosticOptions
     member mlCompatibility:bool
+    member checkNullness: bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
     member outputDir: string option

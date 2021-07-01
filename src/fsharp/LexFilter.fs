@@ -924,6 +924,7 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             if isAdjacent tokenTup lookaheadTokenTup then 
                 let mutable stack = []
                 let rec scanAhead nParen = 
+                    assert (nParen >= 0)
                     let lookaheadTokenTup = popNextTokenTup()
                     let lookaheadToken = lookaheadTokenTup.Token
                     stack <- (lookaheadTokenTup, true) :: stack
@@ -937,6 +938,26 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                             scanAhead nParen 
                         else 
                             false
+                    | INFIX_COMPARE_OP "?>" -> 
+                        // just smash the token immediately
+                        stack <- stack.Tail
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, GREATER false, 1, 0))
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, QMARK, 0, -1))
+                        scanAhead nParen 
+                    | INFIX_COMPARE_OP ">?>" -> 
+                        // just smash the token immediately
+                        stack <- stack.Tail
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, GREATER false, 2, 0))
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, QMARK, 1, -1))
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, GREATER false, 0, -2))
+                        scanAhead nParen 
+                    | INFIX_COMPARE_OP "?>>" -> 
+                        // just smash the token immediately
+                        stack <- stack.Tail
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, GREATER false, 2, 0)) 
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, GREATER false, 1, -1)) 
+                        delayToken (pool.UseShiftedLocation(lookaheadTokenTup, QMARK, 0, -2)) 
+                        scanAhead nParen 
                     | GREATER _ | GREATER_RBRACK | GREATER_BAR_RBRACK -> 
                         let nParen = nParen - 1
                         let hasAfterOp = (match lookaheadToken with GREATER _ -> false | _ -> true)
@@ -982,7 +1003,9 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
                     //      f<{| C : int |}>x
                     //      f<x # x>x
                     //      f<x ' x>x
+                    //      f<x?>x
                     | DEFAULT | COLON | COLON_GREATER | STRUCT | NULL | DELEGATE | AND | WHEN 
+                    | QMARK | AMBIVALENT
                     | DOT_DOT
                     | NEW
                     | LBRACE_BAR

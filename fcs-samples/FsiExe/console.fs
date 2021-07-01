@@ -21,12 +21,12 @@ type internal History() =
     member x.Clear() = list.Clear(); current <- -1
     member x.Add line = 
         match line with 
-        | null | "" -> ()
+        | Null | "" -> ()
         | _ -> list.Add(line)
 
     member x.AddLast line = 
         match line with 
-        | null | "" -> ()
+        | Null | "" -> ()
         | _ -> list.Add(line); current <- list.Count
 
     // Dead code   

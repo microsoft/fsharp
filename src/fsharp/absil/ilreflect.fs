@@ -390,10 +390,15 @@ let emEnv0 =
       emEntryPts = []
       delayedFieldInits = [] }
 
-let envBindTypeRef emEnv (tref: ILTypeRef) (typT, typB, typeDef) =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type, typB, typeDef) =
+#else
+let envBindTypeRef emEnv (tref: ILTypeRef) (typT: System.Type?, typB, typeDef) =
+#endif
     match typT with
-    | null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
-    | _ -> {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
+    | Null -> failwithf "binding null type in envBindTypeRef: %s\n" tref.Name
+    | NonNull typT ->
+        {emEnv with emTypMap = Zmap.add tref (typT, typB, typeDef, None) emEnv.emTypMap}
 
 let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
     // The tref's TypeBuilder has been created, so we have a Type proper.
@@ -422,14 +427,10 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
         emEnv
 
 let convTypeRef cenv emEnv preferCreated (tref: ILTypeRef) =
-    let res =
-        match Zmap.tryFind tref emEnv.emTypMap with
-        | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy
-        | Some (typT, _typB, _typeDef, _) -> typT
-        | None -> convTypeRefAux cenv tref
-    match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tref.QualifiedName, tref.Scope.QualifiedName), range0))
-    | _ -> res
+    match Zmap.tryFind tref emEnv.emTypMap with
+    | Some (_typT, _typB, _typeDef, Some createdTy) when preferCreated -> createdTy
+    | Some (typT, _typB, _typeDef, _) -> typT
+    | None -> convTypeRefAux cenv tref
 
 let envBindConsRef emEnv (mref: ILMethodRef) consB =
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
@@ -530,8 +531,8 @@ let rec convTypeSpec cenv emEnv preferCreated (tspec: ILTypeSpec) =
         | true, false -> typT
         | _, false -> null
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+    | NonNull res -> res
 
 and convTypeAux cenv emEnv preferCreated ty =
     match ty with
@@ -647,19 +648,18 @@ let typeIsNotQueryable (ty: Type) =
 let queryableTypeGetField _emEnv (parentT: Type) (fref: ILFieldRef) =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
+    | NonNull res -> res
 
 let nonQueryableTypeGetField (parentTI: Type) (fieldInfo: FieldInfo) : FieldInfo =
     let res =
         if parentTI.IsGenericType then TypeBuilder.GetField(parentTI, fieldInfo)
         else fieldInfo
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
+    | NonNull res -> res
 
-
-let convFieldSpec cenv emEnv fspec =
+let convFieldSpec cenv emEnv fspec : FieldInfo =
     let fref = fspec.FieldRef
     let tref = fref.DeclaringTypeRef
     let parentTI = convType cenv emEnv fspec.DeclaringType
@@ -751,8 +751,8 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
             failwithf "convMethodRef: could not bind to method '%A' of type '%s'" (System.String.Join(", ", methNames)) parentT.AssemblyQualifiedName
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
 
-let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
-    assert(not (typeIsNotQueryable parentT))
+let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
+    assert(not (typeIsNotQueryable(parentT)))
     if mref.GenericArity = 0 then
         let tyargTs = getGenericArgumentsOfType parentT
         let argTs, resT =
@@ -767,7 +767,11 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
               parentT.GetMethod(mref.Name, cconv ||| BindingFlags.Public ||| BindingFlags.NonPublic,
                                 null,
                                 argTs,
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
                                 (null: ParameterModifier[]))
+#else
+                                (null:ParameterModifier[]?))
+#endif
             // This can fail if there is an ambiguity w.r.t. return type
             with _ -> null
         if (isNonNull methInfo && equalTypes resT methInfo.ReturnType) then
@@ -777,13 +781,17 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) =
     else
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
-let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo =
+#else
+let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodInfo? =
+#endif
     if (parentTI.IsGenericType &&
         not (equalTypes parentTI (getTypeConstructor parentTI)))
     then TypeBuilder.GetMethod(parentTI, methInfo )
     else methInfo
 
-let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
+let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) : MethodInfo =
     let parent = mref.DeclaringTypeRef
     let res =
         if isEmittedTypeRef emEnv parent then
@@ -800,8 +808,8 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
             else
                 queryableTypeGetMethod cenv emEnv parentTI mref
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | NonNull res -> res
 
 //----------------------------------------------------------------------------
 // convMethodSpec
@@ -819,19 +827,25 @@ let convMethodSpec cenv emEnv (mspec: ILMethodSpec) =
             methInfo
     methInfo
 
-/// Get a constructor on a non-TypeBuilder type
-let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) =
-    let tyargTs = getGenericArgumentsOfType parentT
-    let reqArgTs =
+//----------------------------------------------------------------------------
+// - QueryableTypeGetConstructors: get a constructor on a non-TypeBuilder type
+//----------------------------------------------------------------------------
+
+let queryableTypeGetConstructor cenv emEnv (parentT: Type) (mref: ILMethodRef) : ConstructorInfo =
+    let tyargTs  = getGenericArgumentsOfType parentT
+    let reqArgTs  =
         let emEnv = envPushTyvars emEnv tyargTs
         convTypesToArray cenv emEnv mref.ArgTypes
     let res = parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, null, reqArgTs, null)
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
+    | NonNull res -> res
 
-
-let nonQueryableTypeGetConstructor (parentTI: Type) (consInfo: ConstructorInfo) : ConstructorInfo =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo =
+#else
+let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo? =
+#endif
     if parentTI.IsGenericType then TypeBuilder.GetConstructor(parentTI, consInfo) else consInfo
 
 /// convConstructorSpec (like convMethodSpec)
@@ -851,8 +865,8 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
             else
                 queryableTypeGetConstructor cenv emEnv parentTI mref
     match res with
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
-    | _ -> res
+    | Null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | NonNull res -> res
 
 let emitLabelMark emEnv (ilG: ILGenerator) (label: ILCodeLabel) =
     let lab = envGetLabel emEnv label
@@ -925,18 +939,17 @@ let getGenericMethodDefinition q (ty: Type) =
 
 let getArrayMethInfo n ty =
     match n with
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray2D<int> null 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray3D<int> null 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray4D<int> null 0 0 0 0 @@> ty
+    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray2D<int> Unchecked.defaultof<_> 0 0 @@> ty
+    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray3D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
+    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.GetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
     | _ -> invalidArg "n" "not expecting array dimension > 4"
 
 let setArrayMethInfo n ty =
     match n with
-    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> null 0 0 0 @@> ty
-    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> null 0 0 0 0 @@> ty
-    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> null 0 0 0 0 0 @@> ty
-    | _ -> invalidArg "n" "not expecting array dimension > 4"
-
+    | 2 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray2D<int> Unchecked.defaultof<_> 0 0 0 @@> ty
+    | 3 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray3D<int> Unchecked.defaultof<_> 0 0 0 0 @@> ty
+    | 4 -> getGenericMethodDefinition <@@ LanguagePrimitives.IntrinsicFunctions.SetArray4D<int> Unchecked.defaultof<_> 0 0 0 0 0 @@> ty
+    | _ -> invalidArg "n"  "not expecting array dimension > 4"
 
 //----------------------------------------------------------------------------
 // emitInstr cenv
@@ -1241,15 +1254,15 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
                     setArrayMethInfo shape.Rank ety
                 else
 #endif
-                    modB.GetArrayMethodAndLog (aty, "Set", System.Reflection.CallingConventions.HasThis, (null: Type), Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ]))
+                    modB.GetArrayMethodAndLog(aty, "Set", System.Reflection.CallingConventions.HasThis, null, Array.append (Array.create shape.Rank (typeof<int>)) (Array.ofList [ ety ]))
             ilG.EmitAndLog (OpCodes.Call, meth)
 
     | I_newarr (shape, ty) ->
         if (shape = ILArrayShape.SingleDimensional)
         then ilG.EmitAndLog (OpCodes.Newarr, convType cenv emEnv ty)
         else
-            let aty = convType cenv emEnv (ILType.Array(shape, ty))
-            let meth = modB.GetArrayMethodAndLog (aty, ".ctor", System.Reflection.CallingConventions.HasThis, (null: Type), Array.create shape.Rank (typeof<int>))
+            let aty = convType cenv emEnv  (ILType.Array(shape, ty))
+            let meth = modB.GetArrayMethodAndLog(aty, ".ctor", System.Reflection.CallingConventions.HasThis, null, Array.create shape.Rank (typeof<int>))
             ilG.EmitAndLog (OpCodes.Newobj, meth)
 
     | I_ldlen -> ilG.EmitAndLog OpCodes.Ldlen
@@ -1380,10 +1393,7 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: MethodBody) =
     | MethodBody.NotAvailable -> failwith "emitMethodBody: metadata only"
 
 let convCustomAttr cenv emEnv (cattr: ILAttribute) =
-    let methInfo =
-       match convConstructorSpec cenv emEnv cattr.Method with
-       | null -> failwithf "convCustomAttr: %+A" cattr.Method
-       | res -> res
+    let methInfo = convConstructorSpec cenv emEnv cattr.Method
     let data = getCustomAttrData cattr
     (methInfo, data)
 

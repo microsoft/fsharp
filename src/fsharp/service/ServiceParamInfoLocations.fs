@@ -36,7 +36,10 @@ module internal ParameterLocationsImpl =
 
     let isStaticArg (StripParenTypes synType) =
         match synType with
-        | SynType.StaticConstant _ | SynType.StaticConstantExpr _ | SynType.StaticConstantNamed _ -> true
+        | SynType.StaticConstant _ 
+        | SynType.StaticConstantNull _ 
+        | SynType.StaticConstantExpr _ 
+        | SynType.StaticConstantNamed _ -> true
         | SynType.LongIdent _ -> true // NOTE: this is not a static constant, but it is a prefix of incomplete code, e.g. "TP<42, Arg3" is a prefix of "TP<42, Arg3=6>" and Arg3 shows up as a LongId
         | _ -> false
 

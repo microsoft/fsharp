@@ -31,7 +31,17 @@
   // Offset: 0x00000000 Length: 0x00000274
   // WARNING: managed resource file FSharpSignatureData.test created
 }
+.mresource public FSharpSignatureDataB.test
+{
+  // Offset: 0x00000000 Length: 0x00000274
+  // WARNING: managed resource file FSharpSignatureDataB.test created
+}
 .mresource public FSharpOptimizationData.test
+{
+  // Offset: 0x00000278 Length: 0x0000006F
+  // WARNING: managed resource file FSharpOptimizationData.test created
+}
+.mresource public FSharpOptimizationDataB.test
 {
   // Offset: 0x00000278 Length: 0x0000006F
   // WARNING: managed resource file FSharpOptimizationData.test created

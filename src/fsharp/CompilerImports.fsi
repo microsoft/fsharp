@@ -36,6 +36,9 @@ exception MSBuildReferenceResolutionError of (*MSBuild warning code*)string * (*
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource: ILResource -> bool
 
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource (data stream B)
+val IsSignatureDataResourceB: ILResource -> bool
+
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource: ILResource -> bool
 

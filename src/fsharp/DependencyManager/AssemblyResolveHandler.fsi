@@ -12,6 +12,6 @@ type AssemblyResolutionProbe = delegate of Unit -> seq<string>
 type AssemblyResolveHandler =
 
     /// Construct a new DependencyProvider
-    new: assemblyProbingPaths: AssemblyResolutionProbe -> AssemblyResolveHandler
+    new: assemblyProbingPaths: AssemblyResolutionProbe option -> AssemblyResolveHandler
 
     interface IDisposable

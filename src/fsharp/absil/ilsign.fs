@@ -150,10 +150,18 @@ module internal FSharp.Compiler.AbstractIL.StrongNameSign
         key.D <- reader.ReadBigInteger byteLen
         key
 
-    let toCLRKeyBlob (rsaParameters:RSAParameters) (algId:int) : byte[] =
-        let validateRSAField (field:byte[]) expected (name:string) =
-            if field <> null && field.Length <> expected then
-                raise (CryptographicException(String.Format(getResourceString(FSComp.SR.ilSignInvalidRSAParams()), name)))
+    let toCLRKeyBlob (rsaParameters: RSAParameters) (algId: int) : byte[] = 
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+        let validateRSAField (field: byte[]) expected (name: string) =
+#else
+        let validateRSAField (field: byte[]?) expected (name: string) =
+#endif
+            match field with 
+            | Null -> ()
+            | NonNull field ->
+                if field.Length <> expected then 
+                    raise (CryptographicException(String.Format(getResourceString(FSComp.SR.ilSignInvalidRSAParams()), name)))
 
         // The original FCall this helper emulates supports other algId's - however, the only algid we need to support is CALG_RSA_KEYX. We will not port the codepaths dealing with other algid's.
         if algId <> CALG_RSA_KEYX then raise (CryptographicException(getResourceString(FSComp.SR.ilSignInvalidAlgId())))

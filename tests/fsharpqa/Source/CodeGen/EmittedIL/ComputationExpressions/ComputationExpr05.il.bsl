@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly extern ComputationExprLibrary
 {
@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureData.ComputationExpr05
 {
-  // Offset: 0x00000000 Length: 0x000001F8
+  // Offset: 0x00000000 Length: 0x0000020E
 }
 .mresource public FSharpOptimizationData.ComputationExpr05
 {
-  // Offset: 0x00000200 Length: 0x0000007D
+  // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr05.exe
-// MVID: {5A1F62A7-3687-E566-A745-0383A7621F5A}
+// MVID: {5F972A55-3687-E566-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x039D0000
+// Image base: 0x07140000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -79,7 +79,7 @@
       // Code size       1 (0x1)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 9,9 : 68,70 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
+      .line 9,9 : 68,70 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
       IL_0000:  ret
     } // end of method 'res5@9-1'::System.IDisposable.Dispose
 

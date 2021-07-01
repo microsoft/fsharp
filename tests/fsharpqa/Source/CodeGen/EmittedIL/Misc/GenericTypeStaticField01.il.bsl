@@ -31,12 +31,20 @@
 {
   // Offset: 0x00000000 Length: 0x00000604
 }
+.mresource public FSharpSignatureDataB.GenericTypeStaticField01
+{
+  // Offset: 0x00000608 Length: 0x00000015
+}
 .mresource public FSharpOptimizationData.GenericTypeStaticField01
 {
-  // Offset: 0x00000608 Length: 0x000001E1
+  // Offset: 0x00000628 Length: 0x000001E1
+}
+.mresource public FSharpOptimizationDataB.GenericTypeStaticField01
+{
+  // Offset: 0x00000810 Length: 0x00000006
 }
 .module GenericTypeStaticField01.exe
-// MVID: {60B68B7F-1E75-7E6B-A745-03837F8BB660}
+// MVID: {5F972A55-1E75-7E6B-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

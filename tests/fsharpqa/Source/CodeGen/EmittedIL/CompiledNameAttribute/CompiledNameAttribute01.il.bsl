@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly CompiledNameAttribute01
 {
@@ -29,20 +29,24 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute01
 {
-  // Offset: 0x00000000 Length: 0x00000272
+  // Offset: 0x00000000 Length: 0x00000266
+}
+.mresource public FSharpSignatureDataB.CompiledNameAttribute01
+{
+  // Offset: 0x00000270 Length: 0x00000001
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute01
 {
   // Offset: 0x00000278 Length: 0x00000086
 }
 .module CompiledNameAttribute01.exe
-// MVID: {59B1923F-EF5A-FC2A-A745-03833F92B159}
+// MVID: {5F972A55-EF5A-FC2A-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00ED0000
+// Image base: 0x06C20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,7 +61,7 @@
     // Code size       2 (0x2)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 11,12 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute01.fs'
+    .line 4,4 : 11,12 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute01.fs'
     IL_0000:  ldarg.0
     IL_0001:  ret
   } // end of method CompiledNameAttribute01::SomeCompiledName

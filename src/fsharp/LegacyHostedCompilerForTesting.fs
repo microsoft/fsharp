@@ -140,8 +140,11 @@ type internal FscCompiler(legacyReferenceResolver) =
         // args.[0] is later discarded, assuming it is just the path to fsc.
         // compensate for this in case caller didn't know
         let args =
+            match box args with
+            | Null -> [|"fsc"|]
+            | _ -> 
             match args with
-            | [||] | null -> [|"fsc"|]
+            | [||] -> [|"fsc"|]
             | a when not <| fscExeArg a.[0] -> Array.append [|"fsc"|] a
             | _ -> args
 

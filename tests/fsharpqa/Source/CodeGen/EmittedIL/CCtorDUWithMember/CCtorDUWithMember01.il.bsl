@@ -31,18 +31,22 @@
 {
   // Offset: 0x00000000 Length: 0x0000077A
 }
+.mresource public FSharpSignatureDataB.CCtorDUWithMember01
+{
+  // Offset: 0x00000780 Length: 0x00000002
+}
 .mresource public FSharpOptimizationData.CCtorDUWithMember01
 {
-  // Offset: 0x00000780 Length: 0x00000227
+  // Offset: 0x00000788 Length: 0x00000227
 }
 .module CCtorDUWithMember01.exe
-// MVID: {60B68B7E-26F1-14EE-A745-03837E8BB660}
+// MVID: {5F972A55-26F1-14EE-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06D80000
+// Image base: 0x06E20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

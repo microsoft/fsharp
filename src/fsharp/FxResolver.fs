@@ -48,12 +48,24 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             let outputList = ResizeArray()
             let mutable errorslock = obj
             let mutable outputlock = obj
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
             let outputDataReceived (message: string) =
-                if not (isNull message) then
+#else
+            let outputDataReceived (message: string?) =
+#endif
+                match message with
+                | Null -> ()
+                | NonNull message ->
                     lock outputlock (fun () -> outputList.Add(message))
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
             let errorDataReceived (message: string) =
-                if not (isNull message) then
+#else
+            let errorDataReceived (message: string?) =
+#endif
+                match message with
+                | Null -> ()
+                | NonNull message ->
                     lock errorslock (fun () -> errorsList.Add(message))
 
             let psi = ProcessStartInfo()
@@ -329,8 +341,8 @@ type internal FxResolver(assumeDotNetFramework: bool, projectDir: string, useSdk
             try
                 let asm = Assembly.GetEntryAssembly()
                 match asm with
-                | null -> ""
-                | asm ->
+                | Null -> ""
+                | NonNull asm ->
                     let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
                     if FileSystem.FileExistsShim(depsJsonPath) then
                         use stream = FileSystem.OpenFileForReadShim(depsJsonPath)

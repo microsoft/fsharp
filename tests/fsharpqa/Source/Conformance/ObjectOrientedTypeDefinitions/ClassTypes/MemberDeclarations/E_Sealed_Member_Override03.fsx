@@ -14,5 +14,5 @@ type T2() =
     override x.M(o : obj) = 12
     override x.M(i : int) = 2     // ERROR {expected}
 
-//<Expects status="error" span="(9,16-9,17)" id="FS3070">Cannot override inherited member 'B1::M' because it is sealed$</Expects>
-//<Expects status="error" span="(15,16-15,17)" id="FS3070">Cannot override inherited member 'B1::M' because it is sealed$</Expects>
+//<Expects status="error" span="(9,16-9,17)" id="FS3070">Cannot override inherited member 'CSLib.B1::M' because it is sealed$</Expects>
+//<Expects status="error" span="(15,16-15,17)" id="FS3070">Cannot override inherited member 'CSLib2.B1::M' because it is sealed$</Expects>

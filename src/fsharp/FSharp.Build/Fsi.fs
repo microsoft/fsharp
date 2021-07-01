@@ -11,6 +11,13 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+[<AutoOpen>]
+// Shim to match nullness checking library support in preview
+module UtilsFsi = 
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
+
 //There are a lot of flags on fsi.exe.
 //For now, not all of them are represented in the "Fsi class" object model.
 //The goal is to have the most common/important flags available via the Fsi class, and the
@@ -23,28 +30,19 @@ type public Fsi () as this =
 
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
-    let mutable codePage : string = null
     let mutable commandLineArgs : ITaskItem list = []
     let mutable defineConstants : ITaskItem[] = [||]
-    let mutable disabledWarnings : string = null
-    let mutable dotnetFsiCompilerPath : string = null
     let mutable fsiExec = false
-    let mutable langVersion : string = null
     let mutable noFramework = false
     let mutable optimize = true
-    let mutable otherFlags : string = null
-    let mutable preferredUILang = null
     let mutable provideCommandLineArgs = false
     let mutable references : ITaskItem[] = [||]
-    let mutable referencePath : string = null
     let mutable resources : ITaskItem[] = [||]
     let mutable skipCompilerExecution = false
     let mutable sources : ITaskItem[] = [||]
     let mutable loadSources : ITaskItem[] = [||]
     let mutable useSources : ITaskItem[] = [||]
     let mutable tailcalls : bool = true
-    let mutable targetProfile : string = null
-    let mutable targetType : string = null
     let mutable toolExe : string = "fsi.exe"
     let mutable toolPath : string =
         let locationOfThisDll =
@@ -54,11 +52,37 @@ type public Fsi () as this =
         | Some s -> s
         | None -> ""
     let mutable treatWarningsAsErrors : bool = false
+    let mutable utf8output : bool = false
+
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+    let mutable codePage : string = null
+    let mutable disabledWarnings : string = null
+    let mutable dotnetFsiCompilerPath : string = null
+    let mutable otherFlags : string = null
+    let mutable langVersion : string = null
+    let mutable preferredUILang : string = null
+    let mutable targetProfile : string = null
+    let mutable targetType : string = null
+    let mutable referencePath : string = null
     let mutable warningsAsErrors : string = null
     let mutable warningsNotAsErrors : string = null
     let mutable warningLevel : string = null
     let mutable vslcid : string = null
-    let mutable utf8output : bool = false
+#else
+    let mutable codePage : string? = null
+    let mutable disabledWarnings : string? = null
+    let mutable dotnetFsiCompilerPath : string? = null
+    let mutable otherFlags : string? = null
+    let mutable langVersion : string? = null
+    let mutable preferredUILang : string? = null
+    let mutable targetProfile : string? = null
+    let mutable targetType : string? = null
+    let mutable referencePath : string? = null
+    let mutable warningsAsErrors : string? = null
+    let mutable warningsNotAsErrors : string? = null
+    let mutable warningLevel : string? = null
+    let mutable vslcid : string? = null
+#endif
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
@@ -71,9 +95,8 @@ type public Fsi () as this =
         builder.AppendSwitchIfNotNull("--langversion:", langVersion)
         if noFramework then builder.AppendSwitch("--noframework")
 
-        if defineConstants <> null then
-            for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
+        for item in defineConstants do
+            builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
 
         if optimize then builder.AppendSwitch("--optimize+")
         else builder.AppendSwitch("--optimize-")
@@ -81,19 +104,18 @@ type public Fsi () as this =
         if not tailcalls then
             builder.AppendSwitch("--tailcalls-")
 
-        if references <> null then 
-            for item in references do
-                builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
+        for item in references do
+            builder.AppendSwitchIfNotNull("-r:", item.ItemSpec)
 
         let referencePathArray = // create a array of strings
             match referencePath with
-            | null -> null
-            | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | Null -> null
+            | NonNull referencePath -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         // NoWarn
         match disabledWarnings with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | Null -> ()
+        | NonNull disabledWarnings -> builder.AppendSwitchesIfNotNull("--nowarn:", disabledWarnings.Split([|' '; ';'; ','; '\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--warn:", warningLevel)
 
@@ -102,14 +124,14 @@ type public Fsi () as this =
         // Change warning 76, HashReferenceNotAllowedInNonScript/HashDirectiveNotAllowedInNonScript/HashIncludeNotAllowedInNonScript, into an error
         let warningsAsErrorsArray =
             match warningsAsErrors with
-            | null -> [| "76" |]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
+            | Null -> [| "76" |]
+            | NonNull warningsAsErrors -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+        builder.AppendSwitchesIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         match warningsNotAsErrors with
-        | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | Null -> ()
+        | NonNull warningsNotAsErrors -> builder.AppendSwitchesIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
 
@@ -122,13 +144,11 @@ type public Fsi () as this =
 
         builder.AppendSwitchIfNotNull("--targetprofile:", targetProfile)
 
-        if loadSources <> null then
-            for item in loadSources do
-                builder.AppendSwitchIfNotNull("--load:", item.ItemSpec)
+        for item in loadSources do
+            builder.AppendSwitchIfNotNull("--load:", item.ItemSpec)
 
-        if useSources <> null then 
-            for item in useSources do
-                builder.AppendSwitchIfNotNull("--use:", item.ItemSpec)
+        for item in useSources do
+            builder.AppendSwitchIfNotNull("--use:", item.ItemSpec)
 
         // OtherFlags - must be second-to-last
         builder.AppendSwitchUnquotedIfNotNull("", otherFlags)
@@ -266,15 +286,20 @@ type public Fsi () as this =
 
     // ToolTask methods
     override fsi.ToolName = "fsi.exe" 
+
     override fsi.StandardErrorEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardErrorEncoding
+
     override fsi.StandardOutputEncoding = if utf8output then System.Text.Encoding.UTF8 else base.StandardOutputEncoding
+
     override fsi.GenerateFullPathToTool() = 
         if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsi.ToolExe)
+
     override fsi.LogToolCommand (message:string) =
         fsi.Log.LogMessageFromText(message, MessageImportance.Normal) |>ignore
 
     member internal fsi.InternalGenerateFullPathToTool() = fsi.GenerateFullPathToTool()             // expose for unit testing
+
     member internal fsi.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
@@ -291,7 +316,7 @@ type public Fsi () as this =
         else
             let host = box fsi.HostObject
             match host with
-            | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+            | Null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
                 let sources = sources|>Array.map(fun i->i.ItemSpec)
                 let invokeCompiler baseCallDelegate =
@@ -319,7 +344,10 @@ type public Fsi () as this =
 
     override fsi.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()
-        if not (String.IsNullOrEmpty(dotnetFsiCompilerPath)) then builder.AppendSwitch(dotnetFsiCompilerPath)
+        match dotnetFsiCompilerPath with
+        | Null | "" -> ()
+        | NonNull dotnetFsiCompilerPath ->
+            builder.AppendSwitch(dotnetFsiCompilerPath)
         builder.ToString()
 
     override fsi.GenerateResponseFileCommands() =

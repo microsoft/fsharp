@@ -71,8 +71,15 @@ module QuickParse =
       | true, _, true when name.Length > 2 -> isValidStrippedName (name.AsSpan(1, name.Length - 2)) 0
       | _ -> false
     
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let GetCompleteIdentifierIslandImpl (lineStr: string) (index: int) : (string * int * bool) option =
-        if index < 0 || isNull lineStr || index >= lineStr.Length then None 
+#else
+    let GetCompleteIdentifierIslandImpl (lineStr: string?) (index: int) : (string * int * bool) option =
+#endif
+        match lineStr with 
+        | Null -> None
+        | NonNull lineStr -> 
+        if index < 0 || index >= lineStr.Length then None 
         else
             let fixup =
                 match () with
@@ -167,21 +174,27 @@ module QuickParse =
     /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
     /// allow us to use find the correct qualified items rather than resorting
     /// to the more expensive and less accurate environment lookup.
-    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (tokenText: string) (index: int) : (string * int * bool) option =
-        if String.IsNullOrEmpty tokenText then None
+    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string) (index: int) : (string * int * bool) option =
+        if String.IsNullOrEmpty lineStr then None
         else     
-            let directResult = GetCompleteIdentifierIslandImpl tokenText index
+            let directResult = GetCompleteIdentifierIslandImpl lineStr index
             if tolerateJustAfter && directResult = None then 
-                GetCompleteIdentifierIslandImpl tokenText (index - 1)
+                GetCompleteIdentifierIslandImpl lineStr (index - 1)
             else 
                 directResult
 
     let private defaultName = [], ""
 
     /// Get the partial long name of the identifier to the left of index.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let GetPartialLongName(lineStr: string, index: int) =
-        if isNull lineStr then defaultName
-        elif index < 0 then defaultName
+#else
+    let GetPartialLongName(lineStr: string?, index: int) =
+#endif
+        match lineStr with
+        | Null -> defaultName
+        | NonNull lineStr ->
+        if index < 0 then defaultName
         elif index >= lineStr.Length then defaultName
         else
             let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter lineStr.[pos]
@@ -218,9 +231,15 @@ module QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let GetPartialLongNameEx(lineStr: string, index: int) : PartialLongName =
-        if isNull lineStr then PartialLongName.Empty(index)
-        elif index < 0 then PartialLongName.Empty(index)
+#else
+    let GetPartialLongNameEx(lineStr: string?, index: int) : PartialLongName =
+#endif
+        match lineStr with
+        | Null -> PartialLongName.Empty(index)
+        | NonNull lineStr ->
+        if index < 0 then PartialLongName.Empty(index)
         elif index >= lineStr.Length then PartialLongName.Empty(index)
         else
             let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter lineStr.[pos]

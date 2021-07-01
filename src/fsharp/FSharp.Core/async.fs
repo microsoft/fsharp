@@ -1774,7 +1774,7 @@ namespace Microsoft.FSharp.Control
                                 event.RemoveHandler handle
                                 if args.Cancelled then
                                     ccont (OperationCanceledException())
-                                elif isNotNull args.Error then
+                                elif isNonNull args.Error then
                                     econt args.Error
                                 else
                                     cont (result args)

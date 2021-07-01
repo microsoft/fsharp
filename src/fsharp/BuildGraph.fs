@@ -206,6 +206,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
     let gate = obj ()
     let mutable computation = computation
     let mutable requestCount = 0
+
     let mutable cachedResult: Task<'T> = Unchecked.defaultof<_>
     let mutable cachedResultNode: NodeCode<'T> = Unchecked.defaultof<_>
 
@@ -213,7 +214,7 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
         not (obj.ReferenceEquals(cachedResultNode, null))
 
     let isCachedResultNotNull() =
-        cachedResult <> null
+        not (obj.ReferenceEquals(cachedResult, null))
 
     // retryCompute indicates that we abandon computations when the originator is
     // cancelled. 
@@ -381,11 +382,11 @@ type GraphNode<'T> (retryCompute: bool, computation: NodeCode<'T>) =
             }
 
         member _.TryPeekValue() = 
-            match cachedResult with
+            match box cachedResult with
             | null -> ValueNone
             | _ -> ValueSome cachedResult.Result
 
-        member _.HasValue = cachedResult <> null
+        member _.HasValue = isCachedResultNotNull()
 
         member _.IsComputing = requestCount > 0
 

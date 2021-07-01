@@ -35,7 +35,12 @@ module internal PervasiveAutoOpens =
 
     let inline isNonNull x = not (isNull x)
 
-    let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+    // Shim to match nullness checking library support in preview
+    let inline (|NonNullQuick|) x = match x with null -> raise (NullReferenceException()) | v -> v
+    let inline nonNull<'T when 'T : null> (x: 'T) = x
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
 
     let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
@@ -91,14 +96,17 @@ module internal PervasiveAutoOpens =
 type InlineDelayInit<'T when 'T : not struct> = 
     new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     val mutable func : Func<'T>
-
+#else
+    val mutable func : Func<'T> ?
+#endif
     member x.Value = 
         match x.func with 
         | null -> x.store 
         | _ -> 
         let res = LazyInitializer.EnsureInitialized(&x.store, x.func) 
-        x.func <- Unchecked.defaultof<_>
+        x.func <- null
         res
 
 //-------------------------------------------------------------------------
@@ -218,9 +226,7 @@ module Array =
     /// ~0.8x slower for ints
     let inline areEqual (xs: 'T []) (ys: 'T []) =
         match xs, ys with
-        | null, null -> true
         | [||], [||] -> true
-        | null, _ | _, null -> false
         | _ when xs.Length <> ys.Length -> false
         | _ ->
             let mutable break' = false
@@ -244,8 +250,7 @@ module Array =
     /// check if subArray is found in the wholeArray starting 
     /// at the provided index
     let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
+        if subArray.Length = 0 then true
         elif subArray.Length > wholeArray.Length then false
         elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
         let rec loop subidx idx =
@@ -556,9 +561,6 @@ module String =
             String strArr
 
     let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
             let charr = str.ToCharArray() 
             Array.revInPlace charr
             let digits = Array.takeWhile Char.IsDigit charr
@@ -568,13 +570,9 @@ module String =
                | "" -> str, None
                | index -> str.Substring (0, str.Length - index.Length), Some (int index)
 
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
     /// Splits a string into substrings based on the strings in the array separators
     let split options (separator: string []) (value: string) = 
-        if isNull value then null else value.Split(separator, options)
+        value.Split(separator, options)
 
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
@@ -896,7 +894,7 @@ type LazyWithContext<'T, 'ctxt> =
 
       /// This field holds either the function to run or a LazyWithContextFailure object recording the exception raised 
       /// from running the function. It is null if the thunk has been evaluated successfully.
-      mutable funcOrException: obj
+      mutable funcOrException: obj 
 
       /// A helper to ensure we rethrow the "original" exception
       findOriginalException : exn -> exn }

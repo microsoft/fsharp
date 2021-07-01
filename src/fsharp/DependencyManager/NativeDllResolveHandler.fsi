@@ -12,7 +12,7 @@ type NativeResolutionProbe = delegate of Unit -> seq<string>
 type NativeDllResolveHandler =
 
     /// Construct a new NativeDllResolveHandler
-    new: nativeProbingRoots: NativeResolutionProbe -> NativeDllResolveHandler
+    new: nativeProbingRoots: NativeResolutionProbe option -> NativeDllResolveHandler
 
     member internal RefreshPathsInEnvironment: string seq -> unit
 

@@ -359,6 +359,13 @@ module MemoryMappedFileExtensions =
                     stream.Position <- stream.Position + length
                 )
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+[<AutoOpen>]
+module internal FileSystemHelpers =
+    // Shim to match nullness checking library support in preview
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit,'T> = match x with null -> Null | v -> NonNull v
+#endif
+
 [<RequireQualifiedAccess>]
 module internal FileSystemUtils =
     let checkPathForIllegalChars  =
@@ -525,14 +532,32 @@ type DefaultFileSystem() as this =
 
     abstract IsInvalidPathShim: path: string -> bool
     default _.IsInvalidPathShim(path: string) =
-        let isInvalidPath(p: string) =
-            String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+        let isInvalidPath(p: string) = 
+#else
+        let isInvalidPath(p: string?) = 
+#endif
+            match p with
+            | Null | "" -> true
+            | NonNull p -> p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
-        let isInvalidFilename(p: string) =
-            String.IsNullOrEmpty p || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+        let isInvalidFilename(p: string) = 
+#else
+        let isInvalidFilename(p: string?) = 
+#endif
+            match p with
+            | Null | "" -> true
+            | NonNull p -> p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
-        let isInvalidDirectory(d: string) =
-            d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
+        let isInvalidDirectory(d: string) = 
+#else
+        let isInvalidDirectory(d: string?) = 
+#endif
+            match d with
+            | Null -> true
+            | NonNull d -> d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
         isInvalidPath path ||
         let directory = Path.GetDirectoryName path
@@ -744,6 +769,9 @@ type internal ByteStream =
     { bytes: ReadOnlyByteMemory
       mutable pos: int
       max: int }
+
+    member b.IsEOF = (b.pos >= b.max)
+
     member b.ReadByte() =
         if b.pos >= b.max then failwith "end of stream"
         let res = b.bytes.[b.pos]
@@ -908,7 +936,7 @@ type ByteStorage(getByteMemory: unit -> ReadOnlyByteMemory) =
         byteMemory
 
     member _.GetByteMemory() =
-        match cached with
+        match box cached with
         | null -> getAndCache ()
         | _ ->
             match cached.TryGetTarget() with

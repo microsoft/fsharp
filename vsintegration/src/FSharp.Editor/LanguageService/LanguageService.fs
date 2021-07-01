@@ -32,11 +32,11 @@ open Microsoft.CodeAnalysis.Host.Mef
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
     
-    member _.GetKeyNameForLanguage(languageName: string) =
+    member _.GetKeyNameForLanguage(languageName: string?) =
         let unsubstitutedKeyName = keyName
         match languageName with
-        | null -> unsubstitutedKeyName
-        | _ ->
+        | Null -> unsubstitutedKeyName
+        | NonNull languageName ->
             let substituteLanguageName = if languageName = FSharpConstants.FSharpLanguageName then "FSharp" else languageName
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
  

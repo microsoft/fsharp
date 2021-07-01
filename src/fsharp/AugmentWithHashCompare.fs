@@ -45,21 +45,21 @@ let mkEqualsSlotSig (g: TcGlobals) =
 
 let mkThisTy  g ty = if isStructTy g ty then mkByrefTy g ty else ty 
 
-let mkCompareObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.int_ty)
+let mkCompareObjTy          g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.obj_ty g.int_ty)
 
-let mkCompareTy             g ty = (mkThisTy g ty) --> (ty --> g.int_ty)
+let mkCompareTy             g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g ty g.int_ty)
 
-let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]) --> g.int_ty)
+let mkCompareWithComparerTy g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]) g.int_ty)
 
-let mkEqualsObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.bool_ty)
+let mkEqualsObjTy          g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.obj_ty g.bool_ty)
 
-let mkEqualsTy             g ty = (mkThisTy g ty) --> (ty --> g.bool_ty)
+let mkEqualsTy             g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g ty g.bool_ty)
 
-let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]) --> g.bool_ty)
+let mkEqualsWithComparerTy g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]) g.bool_ty)
 
-let mkHashTy             g ty = (mkThisTy g ty) --> (g.unit_ty --> g.int_ty)
+let mkHashTy             g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.int_ty)
 
-let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.IEqualityComparer_ty --> g.int_ty)
+let mkHashWithComparerTy g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.IEqualityComparer_ty g.int_ty)
 
 //-------------------------------------------------------------------------
 // Polymorphic comparison
@@ -176,7 +176,7 @@ let mkEqualsTestConjuncts g m exprs =
 
 let mkMinimalTy (g: TcGlobals) (tcref: TyconRef) = 
     if tcref.Deref.IsExceptionDecl then [], g.exn_ty 
-    else generalizeTyconRef tcref
+    else generalizeTyconRef g tcref
 
 // check for nulls
 let mkBindNullComparison g m thise thate expr = 
@@ -781,7 +781,7 @@ let CheckAugmentationAttribs isImplementation g amap (tycon: Tycon) =
         errorR(Error(FSComp.SR.augInvalidAttrs(), m))
     
     let hasNominalInterface tcref =
-        let ty = generalizedTyconRef (mkLocalTyconRef tycon)
+        let ty = generalizedTyconRef g (mkLocalTyconRef tycon)
         ExistsHeadTypeInEntireHierarchy g amap tycon.Range ty tcref
 
     let hasExplicitICompare = 
@@ -952,10 +952,10 @@ let MakeBindingsForCompareAugmentation g (tycon: Tycon) =
 
                   mkApps g ((exprForValRef m vref2, vref2.Type), (if isNil tinst then [] else [tinst]), [thise;thate], m)
               
-              mkLambdas m tps [thisv;thatobjv] (comparee, g.int_ty)  
+              mkLambdas g m tps [thisv; thatobjv] (comparee, g.int_ty)  
             let rhs2 = 
               let thisv, thatv, comparee = comparef g tcref tycon 
-              mkLambdas m tps [thisv;thatv] (comparee, g.int_ty)  
+              mkLambdas g m tps [thisv; thatv] (comparee, g.int_ty)  
             [ // This one must come first because it may be inlined into the second
               mkCompGenBind vspec2 rhs2
               mkCompGenBind vspec1 rhs1; ] 
@@ -983,7 +983,7 @@ let MakeBindingsForCompareWithComparerAugmentation g (tycon: Tycon) =
             let rhs =
                 let comparee = comparef g tcref tycon (thisv, thise) (thatobjv, thate) compe
                 let comparee = if isUnitTy g ty then mkZero g m else comparee
-                mkMultiLambdas m tps [[thisv];[thatobjv;compv]] (comparee, g.int_ty)
+                mkMultiLambdas g m tps [[thisv]; [thatobjv; compv]] (comparee, g.int_ty)
             [mkCompGenBind vspec rhs]
     if tycon.IsUnionTycon then mkCompare mkUnionCompareWithComparer
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkCompare mkRecdCompareWithComparer
@@ -1002,7 +1002,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
             let withcGetHashCodeExpr =
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
                 let thisv, hashe = hashf g tcref tycon compe
-                mkLambdas m tps [thisv;compv] (hashe, g.int_ty)
+                mkLambdas g m tps [thisv; compv] (hashe, g.int_ty)
                 
             // build the equals rhs
             let withcEqualsExpr =
@@ -1012,8 +1012,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
                 let thatv, thate = mkCompGenLocal m "that" ty  
                 let compv, compe = mkCompGenLocal m "comp" g.IEqualityComparer_ty
                 let equalse = equalsf g tcref tycon (thisv, thise) thatobje (thatv, thate) compe
-                mkMultiLambdas m tps [[thisv];[thatobjv;compv]] (equalse, g.bool_ty)
-
+                mkMultiLambdas g m tps [[thisv];[thatobjv; compv]] (equalse, g.bool_ty)
 
             let objGetHashCodeExpr = 
                 let tinst, ty = mkMinimalTy g tcref
@@ -1026,7 +1025,7 @@ let MakeBindingsForEqualityWithComparerAugmentation (g: TcGlobals) (tycon: Tycon
                     let compe = mkILCallGetEqualityComparer g m
                     mkApps g ((exprForValRef m withcGetHashCodeVal, withcGetHashCodeVal.Type), (if isNil tinst then [] else [tinst]), [thise; compe], m)
                 
-                mkLambdas m tps [thisv; unitv] (hashe, g.int_ty)  
+                mkLambdas g m tps [thisv; unitv] (hashe, g.int_ty)  
                   
             [(mkCompGenBind withcGetHashCodeVal.Deref withcGetHashCodeExpr)  
              (mkCompGenBind objGetHashCodeVal.Deref objGetHashCodeExpr)  
@@ -1047,7 +1046,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
           // this is the body of the real strongly typed implementation 
           let nocEqualsExpr = 
               let thisv, thatv, equalse = equalsf g tcref tycon 
-              mkLambdas m tps [thisv;thatv] (equalse, g.bool_ty)  
+              mkLambdas g m tps [thisv;thatv] (equalse, g.bool_ty)  
 
           // this is the body of the override 
           let objEqualsExpr = 
@@ -1063,7 +1062,7 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon: Tycon) =
                     (mkApps g ((exprForValRef m nocEqualsVal, nocEqualsVal.Type), (if isNil tinst then [] else [tinst]), [thise;thate], m))
                     (mkFalse g m)
             
-            mkLambdas m tps [thisv;thatobjv] (equalse, g.bool_ty)  
+            mkLambdas g m tps [thisv;thatobjv] (equalse, g.bool_ty)  
 
 
           [ mkCompGenBind nocEqualsVal.Deref nocEqualsExpr

@@ -762,6 +762,9 @@ let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
 
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
+let FSharpOptimizationDataResourceNameB = "FSharpOptimizationDataB."
+let FSharpSignatureDataResourceNameB = "FSharpSignatureDataB."
+
 // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
 // don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
 // or 'FSharpSignatureData'

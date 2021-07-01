@@ -6,6 +6,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FSharp.Compiler.Server.Shared</AssemblyName>
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
+    <CheckNulls>true</CheckNulls>
   </PropertyGroup>
 
   <ItemGroup>

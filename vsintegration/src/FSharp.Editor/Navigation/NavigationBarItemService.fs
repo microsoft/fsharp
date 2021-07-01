@@ -10,7 +10,7 @@ open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler.EditorServices
 
-type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
+type internal NavigationBarSymbolItem(text, glyph, spans, childItems: FSharpNavigationBarItem[]?) =
     inherit FSharpNavigationBarItem(text, glyph, spans, childItems)
 
 [<Export(typeof<IFSharpNavigationBarItemService>)>]

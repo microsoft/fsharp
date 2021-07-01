@@ -425,14 +425,14 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   checkOtherFlags ch
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, fragLine, fragCol+1) fragments
+                  parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, fragCol+1) fragments
 
               // residue of hole "...{n}..." in interpolated strings become %P(...) 
               | 'P' when isInterpolated ->
                   checkOtherFlags ch
                   let i = requireAndSkipInterpolationHoleFormat (i+1)
                   // Note, the fragCol doesn't advance at all as these are magically inserted.  
-                  parseLoop ((posi, NewInferenceType ()) :: acc) (i, fragLine, startFragCol) fragments
+                  parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, startFragCol) fragments
 
               | 'A' ->
                   match info.numPrefixIfPos with
@@ -440,15 +440,15 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   | Some '+' -> 
                       collectSpecifierLocation fragLine fragCol 1
                       let i = skipPossibleInterpolationHole (i+1)
-                      let xty = NewInferenceType ()
+                      let xty = NewInferenceType g
                       percentATys.Add(xty)
                       parseLoop ((posi, xty) :: acc)  (i, fragLine, fragCol+1) fragments
                   | Some n -> failwithf "%s" <| FSComp.SR.forDoesNotSupportPrefixFlag(ch.ToString(), n.ToString())
 
               | 'a' ->
                   checkOtherFlags ch
-                  let xty = NewInferenceType () 
-                  let fty = printerArgTy --> (xty --> printerResidueTy)
+                  let xty = NewInferenceType g 
+                  let fty = mkFunTy g printerArgTy (mkFunTy g xty printerResidueTy)
                   collectSpecifierLocation fragLine fragCol 2
                   let i = skipPossibleInterpolationHole (i+1)
                   parseLoop ((Option.map ((+)1) posi, xty) ::  (posi, fty) :: acc) (i, fragLine, fragCol+1) fragments
@@ -457,7 +457,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   checkOtherFlags ch
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
-                  parseLoop ((posi, printerArgTy --> printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
+                  parseLoop ((posi, mkFunTy g printerArgTy printerResidueTy) :: acc)  (i, fragLine, fragCol+1) fragments
 
               | c -> failwithf "%s" <| FSComp.SR.forBadFormatSpecifierGeneral(String.make 1 c)
           
@@ -473,7 +473,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
 
 let ParseFormatString m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy printerResultTy = 
     let argTys, specifierLocations, dotnetFormatString, percentATys = parseFormatStringInternal m fragmentRanges g isInterpolated isFormattableString formatStringCheckContext fmt printerArgTy printerResidueTy
-    let printerTy = List.foldBack (-->) argTys printerResultTy
+    let printerTy = List.foldBack (mkFunTy g) argTys printerResultTy
     let printerTupleTy = mkRefTupledTy g argTys
     argTys, printerTy, printerTupleTy, percentATys, specifierLocations, dotnetFormatString
 

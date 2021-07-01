@@ -203,10 +203,10 @@ type internal FSharpAsyncQuickInfoSource
 
         // This method can be called from the background thread.
         // Do not call IServiceProvider.GetService here.
-        override _.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
+        override _.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem?> =
             let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
             match triggerPoint.HasValue with
-            | false -> Task.FromResult<QuickInfoItem>(null)
+            | false -> Task.FromResult<QuickInfoItem?>(null)
             | true ->
                 let triggerPoint = triggerPoint.GetValueOrDefault()
                 asyncMaybe {
@@ -225,7 +225,7 @@ type internal FSharpAsyncQuickInfoSource
                         let navigation = QuickInfoNavigation(statusBar, metadataAsSource, document, symbolUseRange)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
-                        return QuickInfoItem(span, content)
+                        return (QuickInfoItem(span, content) : QuickInfoItem?)
 
                     | Some sigQuickInfo, Some targetQuickInfo ->
                         let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()

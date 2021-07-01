@@ -50,7 +50,7 @@ module internal Misc =
     let isEmpty s = s = ExpectedStackState.Empty
     let isAddress s = s = ExpectedStackState.Address
 
-    let nonNull str x = if x=null then failwith ("Null in " + str) else x
+    let failIfNull str x = if x=null then failwith ("Null in " + str) else x
     
     let notRequired opname item = 
         let msg = sprintf "The operation '%s' on item '%s' should not be called on provided type, member or parameter" opname item
@@ -651,7 +651,7 @@ type ProvidedConstructor(parameters : ProvidedParameter list) =
     override _.GetParameters() = parameters |> List.toArray 
     override _.Attributes = ctorAttributes
     override _.Name = if isStatic() then ".cctor" else ".ctor"
-    override _.DeclaringType = declaringType |> nonNull "ProvidedConstructor.DeclaringType"                                   
+    override _.DeclaringType = declaringType |> failIfNull "ProvidedConstructor.DeclaringType"                                   
     override _.IsDefined(_attributeType, _inherit) = true 
 
     override _.Invoke(_invokeAttr, _binder, _parameters, _culture)      = notRequired "Invoke" (nameText())
@@ -737,7 +737,7 @@ type ProvidedMethod(methodName: string, parameters: ProvidedParameter list, retu
     override _.GetParameters() = argParams |> Array.ofList
     override _.Attributes = methodAttrs
     override _.Name = methodName
-    override _.DeclaringType = declaringType |> nonNull "ProvidedMethod.DeclaringType"                                   
+    override _.DeclaringType = declaringType |> failIfNull "ProvidedMethod.DeclaringType"                                   
     override _.IsDefined(_attributeType, _inherit) : bool = true
     override _.MemberType = MemberTypes.Method
     override _.CallingConvention = 
@@ -820,7 +820,7 @@ type ProvidedProperty(propertyName: string, propertyType: Type, ?parameters: Pro
     override _.CanWrite = hasSetter()
     override _.GetValue(_obj, _invokeAttr, _binder, _index, _culture) : obj = notRequired "GetValue" propertyName
     override _.Name = propertyName
-    override _.DeclaringType = declaringType |> nonNull "ProvidedProperty.DeclaringType"
+    override _.DeclaringType = declaringType |> failIfNull "ProvidedProperty.DeclaringType"
     override _.MemberType : MemberTypes = MemberTypes.Property
 
     override _.ReflectedType                                     = notRequired "ReflectedType" propertyName
@@ -874,7 +874,7 @@ type ProvidedEvent(eventName:string,eventHandlerType:Type) =
     override _.GetRemoveMethod _nonPublic = remover.Force() :> MethodInfo
     override _.Attributes = EventAttributes.None
     override _.Name = eventName
-    override _.DeclaringType = declaringType |> nonNull "ProvidedEvent.DeclaringType"
+    override _.DeclaringType = declaringType |> failIfNull "ProvidedEvent.DeclaringType"
     override _.MemberType : MemberTypes = MemberTypes.Event
 
     override _.GetRaiseMethod _nonPublic                      = notRequired "GetRaiseMethod" eventName
@@ -909,7 +909,7 @@ type ProvidedLiteralField(fieldName:string,fieldType:Type,literalValue:obj) =
     override _.GetRawConstantValue()  = literalValue
     override _.Attributes = FieldAttributes.Static ||| FieldAttributes.Literal ||| FieldAttributes.Public
     override _.Name = fieldName
-    override _.DeclaringType = declaringType |> nonNull "ProvidedLiteralField.DeclaringType"
+    override _.DeclaringType = declaringType |> failIfNull "ProvidedLiteralField.DeclaringType"
     override _.MemberType : MemberTypes = MemberTypes.Field
 
     override _.ReflectedType                                     = notRequired "ReflectedType" fieldName
@@ -948,7 +948,7 @@ type ProvidedField(fieldName:string,fieldType:Type) =
     override _.GetRawConstantValue()  = null
     override _.Attributes = fieldAttrs
     override _.Name = fieldName
-    override _.DeclaringType = declaringType |> nonNull "ProvidedField.DeclaringType"
+    override _.DeclaringType = declaringType |> failIfNull "ProvidedField.DeclaringType"
     override _.MemberType : MemberTypes = MemberTypes.Field
 
     override _.ReflectedType                                     = notRequired "ReflectedType" fieldName

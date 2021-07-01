@@ -359,7 +359,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     type ITypeProvider =
         inherit System.IDisposable
         abstract GetNamespaces : unit -> IProvidedNamespace[] 
-        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[] 
+        abstract GetStaticParameters : typeWithoutArguments:Type -> ParameterInfo[]
         abstract ApplyStaticArguments : typeWithoutArguments:Type * typePathWithArguments:string[] * staticArguments:obj[] -> Type 
         abstract GetInvokerExpression : syntheticMethodBase:MethodBase * parameters:Microsoft.FSharp.Quotations.Expr[] -> Microsoft.FSharp.Quotations.Expr
 

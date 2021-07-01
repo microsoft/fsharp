@@ -1024,7 +1024,13 @@ type FSharpType =
 
     /// Get the type definition for a type 
     member TypeDefinition: FSharpEntity 
-
+    
+    /// Indicates this type is known to have a null annotation
+    member HasNullAnnotation: bool
+    
+    /// Indicates this type is assumed to support the null value
+    member IsNullAmbivalent: bool
+    
     /// Get the generic arguments for a tuple type, a function type or a type constructed using a named entity
     member GenericArguments: IList<FSharpType>
     

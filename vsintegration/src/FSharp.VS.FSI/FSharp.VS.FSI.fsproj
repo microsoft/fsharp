@@ -7,6 +7,7 @@
     <NoWarn>$(NoWarn);47;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --subsystemversion:6.00</OtherFlags>
+    <OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags> <!-- note checknulls is not yet enabled for this assembly -->
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 

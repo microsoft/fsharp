@@ -130,7 +130,7 @@ type OptionModule() =
     member this.OfToObj() =
         Assert.True( Option.toObj (Some "3") = "3")
         Assert.True( Option.toObj (Some "") = "")
-        Assert.True( Option.toObj (Some null) = null)
+        Assert.True( Option.toObj<obj> (Some null) = null) // TODO NULLNESS: this type annotation should not be needed 
         Assert.True( Option.toObj None = null)     
      
         Assert.True( Option.ofObj "3" = Some "3")
@@ -368,7 +368,7 @@ type ValueOptionTests() =
     member this.OfToObj() =
         Assert.True(ValueOption.toObj (ValueSome "3") = "3")
         Assert.True(ValueOption.toObj (ValueSome "") = "")
-        Assert.True(ValueOption.toObj (ValueSome null) = null)
+        Assert.True(ValueOption.toObj<obj> (ValueSome null) = null)  // TODO NULLNESS: this type annotation should not be needed
         Assert.True(ValueOption.toObj ValueNone = null)     
      
         Assert.True(ValueOption.ofObj "3" = ValueSome "3")

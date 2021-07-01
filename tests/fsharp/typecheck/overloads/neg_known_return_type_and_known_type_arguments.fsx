@@ -13,7 +13,7 @@ type Plus =
     inherit Default1
     static member inline ``+`` (x: 'Plus             , y: 'Plus             ,             _mthd: Default2) = (^Plus :  (static member (<|>) : _*_ -> _) x, y) : ^Plus
     static member inline ``+`` (x: 'Plus             , y: 'Plus             , [<Optional>]_mthd: Default1) = x + y : ^Plus
-    static member inline ``+`` (_: ^t when ^t: null and ^t: struct, _: ^t   , [<Optional>]_mthd: Default1) = id
+
     
     static member inline Invoke (x: 'Plus) (y: 'Plus) : 'Plus =
         let inline call (mthd : ^M, input1 : ^I, input2 : ^I) = ((^M or ^I) : (static member ``+`` : _*_*_ -> _) input1, input2, mthd)
@@ -49,9 +49,9 @@ type Zero =
   inherit Default1
   static member inline Zero (_: 't                             , _: Default3) = (^t : (static member Empty : ^t) ()) : 't
   static member inline Zero (_: 't                             , _: Default2) = FromInt32.Invoke 0             : 't
-  static member inline Zero (_: ^t when ^t: null and ^t: struct, _: Default2) = id
+
   static member inline Zero (_: 't                             , _: Default1) = LanguagePrimitives.GenericZero : 't
-  static member inline Zero (_: ^t when ^t: null and ^t: struct, _: Default1) = id
+
   static member        Zero (_: System.TimeSpan                , _: Zero    ) = System.TimeSpan ()
   static member        Zero (_: list<'a>                       , _: Zero    ) = []   :   list<'a>
   static member        Zero (_: option<'a>                     , _: Zero    ) = None : option<'a>

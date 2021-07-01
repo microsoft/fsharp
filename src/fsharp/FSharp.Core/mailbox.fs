@@ -312,7 +312,7 @@ namespace Microsoft.FSharp.Control
 
         interface System.IDisposable with
             member _.Dispose() =
-                if isNotNull pulse then (pulse :> IDisposable).Dispose()
+                if isNonNull pulse then (pulse :> IDisposable).Dispose()
 
 #if DEBUG
         member x.UnsafeContents =

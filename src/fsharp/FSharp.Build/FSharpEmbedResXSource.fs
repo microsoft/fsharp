@@ -13,8 +13,13 @@ open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
 type FSharpEmbedResXSource() =
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     let mutable _buildEngine : IBuildEngine = null
     let mutable _hostObject : ITaskHost = null
+#else
+    let mutable _buildEngine : IBuildEngine? = null
+    let mutable _hostObject : ITaskHost? = null
+#endif
     let mutable _embeddedText : ITaskItem[] = [||]
     let mutable _generatedSource : ITaskItem[] = [||]
     let mutable _outputPath : string = ""
@@ -27,9 +32,9 @@ namespace {0}
 open System.Reflection
 
 module internal {1} =
-    type private C (_dummy:System.Object) = class end
+    type private C (_dummy:System.Int32) = class end
     let mutable Culture = System.Globalization.CultureInfo.CurrentUICulture
-    let ResourceManager = new System.Resources.ResourceManager(""{2}"", C(null).GetType().GetTypeInfo().Assembly)
+    let ResourceManager = new System.Resources.ResourceManager(""{2}"", C(0).GetType().GetTypeInfo().Assembly)
     let GetString(name:System.String) : System.String = ResourceManager.GetString(name, Culture)"
 
     let boilerplateGetObject = "    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, Culture)"

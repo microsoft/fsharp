@@ -318,6 +318,69 @@ module CoreTests =
     [<Test>]
     let ``test int32-FSI_BASIC`` () = singleTestBuildAndRun "core/int32" FSI_BASIC
 
+
+#if !NETCOREAPP
+    [<Test>]
+    let ``subtype-langversion-50-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-50-no-checknulls`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --checknulls-" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``subtype-langversion-45`` () =
+        let cfg = testConfig "core/subtype"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-46.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let nullness_no_checknulls () =
+        let cfg = testConfig "core/nullness"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-no-checknulls.exe -g --langversion:preview --define:NO_CHECKNULLS" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-no-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let nullness_checknulls () =
+        let cfg = testConfig "core/nullness"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --checknulls --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+#endif
+
     [<Test>]
     let ``quotes-FSC-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC_OPT_MINUS
 
@@ -662,7 +725,7 @@ module CoreTests =
     //    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
     //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")
     //    let ``shadowcopy disabled`` (flags: string) =
-    //        let cfg = testConfig' ()
+    //        let cfg = testConfig ()
     //
     //
     //
@@ -683,7 +746,7 @@ module CoreTests =
     //    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
     //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")
     //    let ``shadowcopy enabled`` (flags: string) =
-    //        let cfg = testConfig' ()
+    //        let cfg = testConfig ()
     //
     //
     //
@@ -1264,6 +1327,31 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
+
+    [<Test>]
+    let ``libtest-langversion-preview-checknulls`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-checknulls.exe -g --langversion:preview --checknulls" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-checknulls.exe") ""
+
+        testOkFile.CheckExists()
+
+ 
+    [<Test>]
+    let ``libtest-langversion-45`` () =
+        let cfg = testConfig "core/libtest"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test-langversion-46.exe -g --langversion:4.6" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test-langversion-46.exe") ""
+
+        testOkFile.CheckExists()
 
     [<Test>]
     let ``no-warn-2003-tests`` () =

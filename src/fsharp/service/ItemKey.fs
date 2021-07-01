@@ -218,7 +218,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         match stripTyparEqns ty with
         | TType_forall (_, ty) ->
             writeType false ty
-        | TType_app (tcref, _) ->
+        | TType_app (tcref, _, _) ->
             writeEntityRef tcref
         | TType_tuple (_, tinst) ->
             writeString ItemKeyTags.typeTuple
@@ -227,7 +227,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.typeAnonymousRecord
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
-        | TType_fun (d, r) ->
+        | TType_fun (d, r, _) ->
             writeString ItemKeyTags.typeFunction
             writeType false d
             writeType false r
@@ -235,7 +235,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             if isStandalone then
                 writeString ItemKeyTags.typeMeasure
                 writeMeasure isStandalone ms
-        | TType_var tp ->
+        | TType_var (tp, _) ->
             writeTypar isStandalone tp
         | TType_ucase (uc, _) ->
             match uc with

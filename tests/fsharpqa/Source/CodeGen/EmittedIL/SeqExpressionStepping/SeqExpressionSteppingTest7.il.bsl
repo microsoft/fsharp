@@ -31,18 +31,22 @@
 {
   // Offset: 0x00000000 Length: 0x00000266
 }
+.mresource public FSharpSignatureDataB.SeqExpressionSteppingTest7
+{
+  // Offset: 0x00000270 Length: 0x00000001
+}
 .mresource public FSharpOptimizationData.SeqExpressionSteppingTest7
 {
-  // Offset: 0x00000270 Length: 0x00000098
+  // Offset: 0x00000278 Length: 0x00000098
 }
 .module SeqExpressionSteppingTest7.exe
-// MVID: {60B78A59-2432-93C3-A745-0383598AB760}
+// MVID: {60B8D5B9-2432-93C3-A745-0383B9D5B860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x054A0000
+// Image base: 0x051C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

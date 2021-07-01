@@ -159,10 +159,10 @@ type IRawFSharpAssemblyData =
     abstract TryGetILModuleDef: unit -> ILModuleDef option
 
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The raw F# optimization data in the assembly, if any
-    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> ReadOnlyByteMemory)) list
+    abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * ((unit -> ReadOnlyByteMemory) * (unit -> ReadOnlyByteMemory) option)) list
 
     ///  The table of type forwarders in the assembly
     abstract GetRawTypeForwarders: unit -> ILExportedTypesAndForwarders
@@ -354,6 +354,7 @@ type TcConfigBuilder =
       mutable embedResources: string list
       mutable errorSeverityOptions: FSharpDiagnosticOptions
       mutable mlCompatibility: bool
+      mutable checkNullness: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions: bool
       mutable outputDir : string option
@@ -498,7 +499,6 @@ type TcConfigBuilder =
       mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
       }
 
-
     // Directories to start probing in
     // Algorithm:
     //  Search for native libraries using:
@@ -559,6 +559,7 @@ type TcConfigBuilder =
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
           mlCompatibility = false
+          checkNullness = false
           checkOverflow = false
           showReferenceResolutions = false
           outputDir = None
@@ -813,21 +814,24 @@ type TcConfigBuilder =
                 | ErrorReportType.Warning -> warning(Error(error, m))
                 | ErrorReportType.Error -> errorR(Error(error, m)))
 
-        let dm = dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, output , reportError, path)
+        let dm = dependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, output, reportError, path)
 
         match dm with
-        | _, dependencyManager when not(isNull dependencyManager) ->
+        // #r "Assembly"
+        | NonNull path, Null ->
+            tcConfigB.AddReferencedAssemblyByPath (m, path)
+
+        | _, NonNull dependencyManager ->
             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
                 tcConfigB.AddDependencyManagerText (dependencyManager, directive, m, path)
             else
                 errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
 
-        | _, _ when directive = Directive.Include ->
+        | Null, Null when directive = Directive.Include ->
             errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
 
-        // #r "Assembly"
-        | path, _ ->
-            tcConfigB.AddReferencedAssemblyByPath (m, path)
+        | Null, Null ->
+           errorR(Error(FSComp.SR.buildInvalidHashrDirective(), m))
 
     member tcConfigB.RemoveReferencedAssemblyByPath (m, path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar -> not (Range.equals ar.Range m) || ar.Text <> path)
@@ -947,6 +951,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.embedResources = data.embedResources
     member x.errorSeverityOptions = data.errorSeverityOptions
     member x.mlCompatibility = data.mlCompatibility
+    member x.checkNullness = data.checkNullness
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
     member x.outputDir = data.outputDir

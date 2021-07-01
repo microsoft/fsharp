@@ -57,6 +57,10 @@ type UsingMSBuild() as this =
         let ok = errors |> List.exists (fun err -> err.Message = text)
         Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
 
+    let assertContainsContains (errors : list<Error>) text = 
+        let ok = errors |> List.exists (fun err -> err.Message.Contains(text))
+        Assert.IsTrue(ok, sprintf "Error list should contain '%s' message" text)
+
     let assertExpectedErrorMessages expected (actual: list<Error>) =
         let normalizeCR input = System.Text.RegularExpressions.Regex.Replace(input, @"\r\n|\n\r|\n|\r", "\r\n")
         let actual = 

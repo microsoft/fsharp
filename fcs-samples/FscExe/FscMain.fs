@@ -168,13 +168,13 @@ module FSharpResidentCompiler =
                         if runningOnMono then
                             let shellName, useShellExecute = 
                                 match System.Environment.GetEnvironmentVariable("FSC_MONO") with 
-                                | null -> 
+                                | Null -> 
                                     if onWindows then 
                                         // e.g. "C:\Program Files\Mono-2.6.1\lib\mono\2.0\mscorlib.dll" --> "C:\Program Files\Mono-2.6.1\bin\mono.exe"
                                         Path.Combine(Path.GetDirectoryName (typeof<Object>.Assembly.Location), @"..\..\..\bin\mono.exe"), false
                                     else
                                         "mono-sgen", true
-                                | path -> path, true
+                                | NonNull path -> path, true
                                      
                             ProcessStartInfo(FileName = shellName,
                                              Arguments = fscServerExe + " /server",

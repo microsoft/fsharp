@@ -1919,7 +1919,7 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                 let resultExprAfterConvertToResultTy = 
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
-                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [])) resultExpr
+                    | Some resultElemTy, None -> mkCallGetQuerySourceAsEnumerable cenv.g expr.Range resultElemTy (TType_app(cenv.g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)) resultExpr
                     | None, Some (resultElemTy, qTy) -> mkCallNewQuerySource cenv.g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
             | None -> 
@@ -2005,7 +2005,7 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
-        let ty = mkMultiLambdaTy m argvs rty
+        let ty = mkMultiLambdaTy cenv.g m argvs rty
         OptimizeLambdas None cenv env topValInfo expr ty
 
     | Expr.TyLambda (_lambdaId, tps, _body, _m, rty) -> 
@@ -3051,7 +3051,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
-        let exprR = mkMemberLambdas m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
+        let exprR = mkMemberLambdas cenv.g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -3092,7 +3092,7 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
-                  let expr2 = mkMemberLambdas m tps ctorThisValOpt None vsl (bodyR, bodyty)
+                  let expr2 = mkMemberLambdas cenv.g m tps ctorThisValOpt None vsl (bodyR, bodyty)
                   CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
                   
         let estimatedSize = 
@@ -3176,9 +3176,9 @@ and ConsiderSplitToMethod flag threshold cenv env (e, einfo) =
             match env.latestBoundId with 
             | Some id -> id.idText+suffixForVariablesThatMayNotBeEliminated 
             | None -> suffixForVariablesThatMayNotBeEliminated 
-        let fv, fe = mkCompGenLocal m nm (cenv.g.unit_ty --> ty)
+        let fv, fe = mkCompGenLocal m nm (mkFunTy cenv.g cenv.g.unit_ty ty)
         mkInvisibleLet m fv (mkLambda m uv (e, ty)) 
-          (primMkApp (fe, (cenv.g.unit_ty --> ty)) [] [mkUnit cenv.g m] m), 
+          (primMkApp (fe, (mkFunTy cenv.g cenv.g.unit_ty ty)) [] [mkUnit cenv.g m] m), 
         {einfo with FunctionSize=callSize }
     else
         e, einfo 
@@ -3363,7 +3363,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
-                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_ty.Value
+                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef cenv.g tcref) cenv.g.system_MarshalByRefObject_ty.Value
                     else 
                         false
                 | ParentNone -> false) ||

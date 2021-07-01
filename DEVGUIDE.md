@@ -114,6 +114,17 @@ If your changes involve modifying the list of language keywords in any way, (e.g
 
 This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
 
+## Updating baselines in tests
+
+Some tests use "baseline" files.  There is sometimes a way to update these baselines en-masse in your local build,
+useful when some change affects many baselines.  For example, in the 'fsharpqa' tests the baselines
+are updated using scripts or utilities that allow the following environment variable to be set:
+
+```
+set TEST_UPDATE_BSL=1
+```
+
+
 ## Developing the F# tools for Visual Studio
 
 As you would expect, doing this requires both Windows and Visual Studio are installed.

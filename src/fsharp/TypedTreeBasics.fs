@@ -187,9 +187,15 @@ let ccuOfTyconRef eref =
 // Type parameters and inference unknowns
 //-------------------------------------------------------------------------
 
-let mkTyparTy (tp: Typar) = 
+let NewNullnessVar() = Nullness.Variable (NullnessVar()) // we don't known (and if we never find out then it's non-null)
+
+let KnownAmbivalentToNull = Nullness.Known NullnessInfo.AmbivalentToNull
+let KnownWithNull = Nullness.Known NullnessInfo.WithNull
+let KnownWithoutNull = Nullness.Known NullnessInfo.WithoutNull
+
+let mkTyparTy (tp:Typar) = 
     match tp.Kind with 
-    | TyparKind.Type -> tp.AsType 
+    | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 let copyTypar (tp: Typar) = 
@@ -229,9 +235,49 @@ let rec stripUnitEqnsAux canShortcut unt =
     | Measure.Var r when r.IsSolved -> stripUnitEqnsAux canShortcut (tryShortcutSolvedUnitPar canShortcut r)
     | _ -> unt
 
-let rec stripTyparEqnsAux canShortcut ty = 
+let combineNullness (nullnessOrig: Nullness) (nullnessNew: Nullness) = 
+    match nullnessOrig.Evaluate() with
+    | NullnessInfo.WithoutNull -> nullnessNew
+    | NullnessInfo.AmbivalentToNull -> nullnessOrig
+    | NullnessInfo.WithNull -> 
+        match nullnessNew.Evaluate() with
+        | NullnessInfo.WithoutNull -> nullnessOrig
+        | NullnessInfo.AmbivalentToNull -> nullnessNew
+        | NullnessInfo.WithNull -> nullnessOrig
+
+let tryAddNullnessToTy nullnessNew (ty:TType) = 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> 
+        // TODO NULLNESS: make this avoid allocation if no change
+        Some (TType_var (tp, combineNullness nullnessOrig nullnessNew))
+    | TType_app (tcr, tinst, nullnessOrig) -> 
+        // TODO NULLNESS: make this avoid allocation if no change
+        Some (TType_app (tcr, tinst, combineNullness nullnessOrig nullnessNew))
+    | TType_ucase _ -> None // TODO NULLNESS
+    | TType_tuple _ -> None // TODO NULLNESS
+    | TType_anon _ -> None // TODO NULLNESS
+    | TType_fun (d, r, nullnessOrig) ->
+        // TODO NULLNESS: make this avoid allocation if no change
+        Some (TType_fun (d, r, combineNullness nullnessOrig nullnessNew))
+    | TType_forall _ -> None
+    | TType_measure _ -> None
+
+let addNullnessToTy (nullness: Nullness) (ty:TType) =
+    match nullness.Evaluate() with
+    | NullnessInfo.WithoutNull -> ty
+    | _ -> 
+    match ty with
+    | TType_var (tp, nullnessOrig) -> TType_var (tp, combineNullness nullnessOrig nullness)
+    | TType_app (tcr, tinst, nullnessOrig) -> TType_app (tcr, tinst, combineNullness nullnessOrig nullness)
+    | TType_fun (d, r, nullnessOrig) -> TType_fun (d, r, combineNullness nullnessOrig nullness)
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
+    | _ -> ty
+
+let rec stripTyparEqnsAux nullness0 canShortcut ty = 
     match ty with 
-    | TType_var r -> 
+    | TType_var (r, nullness) -> 
         match r.Solution with
         | Some soln -> 
             if canShortcut then 
@@ -240,22 +286,35 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var r2 when r2.Constraints.IsEmpty -> 
-                   match r2.Solution with
-                   | None -> ()
-                   | Some _ as soln2 -> 
-                      r.typar_solution <- soln2
+                | TType_var (r2, nullness2) when r2.Constraints.IsEmpty -> 
+                   match nullness2.Evaluate() with 
+                   | NullnessInfo.WithoutNull -> 
+                       match r2.Solution with
+                       | None -> ()
+                       | Some _ as soln2 -> 
+                          r.typar_solution <- soln2
+                   | _ -> ()
                 | _ -> () 
-            stripTyparEqnsAux canShortcut soln
+            stripTyparEqnsAux (combineNullness nullness0 nullness) canShortcut soln
         | None -> 
-            ty
+            addNullnessToTy nullness0 ty
     | TType_measure unt -> 
         TType_measure (stripUnitEqnsAux canShortcut unt)
     | _ -> ty
 
-let stripTyparEqns ty = stripTyparEqnsAux false ty
+let stripTyparEqns ty = stripTyparEqnsAux KnownWithoutNull false ty
 
 let stripUnitEqns unt = stripUnitEqnsAux false unt
+
+let replaceNullnessOfTy nullness (ty:TType) =
+    match stripTyparEqns ty with
+    | TType_var (tp, _nullnessOrig) -> TType_var (tp, nullness)
+    | TType_app (tcr, tinst, _nullnessOrig) -> TType_app (tcr, tinst, nullness)
+    | TType_fun (d, r, _nullnessOrig) -> TType_fun (d, r, nullness)
+    //| TType_ucase _ -> None // TODO NULLNESS
+    //| TType_tuple _ -> None // TODOTODO NULLNESS
+    //| TType_anon _ -> None // TODO NULLNESS
+    | sty -> sty
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether

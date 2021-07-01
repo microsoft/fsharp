@@ -77,12 +77,12 @@ type internal CodeLensProvider
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
       Order(Before = PredefinedAdornmentLayers.Text);
       TextViewRole(PredefinedTextViewRoles.Document)>]
-    member val CodeLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
+    member val CodeLensAdornmentLayerDefinition : AdornmentLayerDefinition? = null with get, set
     
     [<Export(typeof<AdornmentLayerDefinition>); Name("LineLens");
       Order(Before = PredefinedAdornmentLayers.Text);
       TextViewRole(PredefinedTextViewRoles.Document)>]
-    member val LineLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
+    member val LineLensAdornmentLayerDefinition : AdornmentLayerDefinition? = null with get, set
 
     interface IViewTaggerProvider with
         override _.CreateTagger(view, buffer) =

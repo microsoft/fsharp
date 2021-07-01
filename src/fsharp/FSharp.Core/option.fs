@@ -85,11 +85,21 @@ module Option =
     [<CompiledName("OfNullable")>]
     let ofNullable (value:System.Nullable<'T>) = if value.HasValue then Some value.Value else None
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompiledName("OfObj")>]
     let ofObj value = match value with null -> None | _ -> Some value
 
     [<CompiledName("ToObj")>]
     let toObj value = match value with None -> null | Some x -> x
+#else
+    [<CompiledName("OfObj")>]
+    let ofObj (value: 'T?) : 'T option when 'T: not struct and 'T : not null = 
+        match value with null -> None | _ -> Some value
+
+    [<CompiledName("ToObj")>]
+    let toObj (value: 'T option) : 'T? when 'T: not struct (* and 'T : not null *)  =
+        match value with None -> null | Some x -> x
+#endif
 
 module ValueOption =
 
@@ -171,8 +181,18 @@ module ValueOption =
     [<CompiledName("OfNullable")>]
     let ofNullable (value:System.Nullable<'T>) = if value.HasValue then ValueSome value.Value else ValueNone
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompiledName("OfObj")>]
     let ofObj value = match value with null -> ValueNone | _ -> ValueSome value
 
     [<CompiledName("ToObj")>]
     let toObj value = match value with ValueNone -> null | ValueSome x -> x
+#else
+    [<CompiledName("OfObj")>]
+    let ofObj (value: 'T?) : 'T voption when 'T: not struct and 'T : not null  = 
+        match value with null -> ValueNone | _ -> ValueSome value
+
+    [<CompiledName("ToObj")>]
+    let toObj (value : 'T voption) : 'T? when 'T: not struct (* and 'T : not null *) = 
+        match value with ValueNone -> null | ValueSome x -> x
+#endif

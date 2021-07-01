@@ -36,9 +36,13 @@
 {
   // Offset: 0x00000000 Length: 0x000007A1
 }
+.mresource public FSharpSignatureDataB.StaticInit_Struct01
+{
+  // Offset: 0x000007A8 Length: 0x00000002
+}
 .mresource public FSharpOptimizationData.StaticInit_Struct01
 {
-  // Offset: 0x000007A8 Length: 0x0000021F
+  // Offset: 0x000007B0 Length: 0x0000021F
 }
 .module StaticInit_Struct01.dll
 // MVID: {60B68B90-05F6-D6CB-A745-0383908BB660}

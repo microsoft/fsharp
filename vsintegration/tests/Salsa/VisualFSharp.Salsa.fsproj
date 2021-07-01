@@ -8,6 +8,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <OtherFlags Condition="'$(Configuration)' != 'Proto'">$(OtherFlags) --langversion:preview</OtherFlags> <!-- note checknulls not yet enabled for this assembly but it includes some code that uses nullness annotations -->
   </PropertyGroup>
 
   <ItemGroup>

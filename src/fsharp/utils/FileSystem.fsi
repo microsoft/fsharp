@@ -323,8 +323,12 @@ type internal ByteMemory with
     /// Creates a ByteMemory object that is backed by a byte array.
     static member FromArray: bytes: byte[] -> ByteMemory
 
+    /// Gets a ByteMemory object that is empty
+    static member Empty: ByteMemory
+
 [<Sealed>]
 type internal ByteStream =
+    member IsEOF : bool
     member ReadByte : unit -> byte
     member ReadBytes : int -> ReadOnlyByteMemory
     member ReadUtf8String : int -> string

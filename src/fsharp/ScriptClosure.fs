@@ -252,10 +252,10 @@ module ScriptPreprocessClosure =
                         | _ ->
                             let outputDir =  tcConfig.outputDir |> Option.defaultValue ""
                             match dependencyProvider.TryFindDependencyManagerByKey(tcConfig.compilerToolPaths, outputDir, reportError, packageManagerKey) with
-                            | null ->
+                            | Null ->
                                 errorR(Error(dependencyProvider.CreatePackageManagerUnknownError(tcConfig.compilerToolPaths, outputDir, packageManagerKey, reportError), m))
 
-                            | dependencyManager ->
+                            | NonNull dependencyManager ->
                                 let directive d =
                                     match d with
                                     | Directive.Resolution -> "r"

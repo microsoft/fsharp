@@ -36,7 +36,7 @@ type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
     member val TaggedText: Async<(ResizeArray<TaggedText> * QuickInfoNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FullTypeSignature: string = fullTypeSignature 
-    member val UiElement: UIElement = uiElement with get, set
+    member val UiElement: UIElement? = uiElement with get, set
 
 type internal FSharpCodeLensService
     (
@@ -331,7 +331,10 @@ type internal FSharpCodeLensService
 #if DEBUG
                             logInfof "Adding ui element for %A" (codeLens.TaggedText)
 #endif
-                            let uiElement = codeLens.UiElement
+                            // TODO NULLNESS - check that doing nothing when codeLens.UiElement is null is ok
+                            match codeLens.UiElement with 
+                            | Null -> ()
+                            | NonNull uiElement ->
                             let animation = 
                                 DoubleAnimation(
                                     To = Nullable 0.8,
@@ -355,23 +358,26 @@ type internal FSharpCodeLensService
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
                 lineLens.RemoveCodeLens trackingSpan |> ignore
-                let Grid = lineLens.AddCodeLens newTrackingSpan
-                if codeLens.Computed && (isNull codeLens.UiElement |> not) then
-                    let uiElement = codeLens.UiElement
-                    lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
+                let grid = lineLens.AddCodeLens newTrackingSpan
+                // logInfof "Trackingspan %A is being added." trackingSpan 
+                if codeLens.Computed then 
+                    match codeLens.UiElement with 
+                    | Null -> ()
+                    | NonNull uiElement ->
+                        lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
                 else
-                    Grid.IsVisibleChanged
+                    grid.IsVisibleChanged
                     |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
                     |> Event.add (createCodeLensUIElement codeLens newTrackingSpan)
 
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
-                let Grid = lineLens.AddCodeLens trackingSpan
+                let grid = lineLens.AddCodeLens trackingSpan
 #if DEBUG
                 logInfof "Trackingspan %A is being added." trackingSpan
 #endif
                 
-                Grid.IsVisibleChanged
+                grid.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
                 |> Event.add (createCodeLensUIElement codeLens trackingSpan)
 

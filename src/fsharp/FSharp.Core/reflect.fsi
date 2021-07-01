@@ -20,12 +20,14 @@ open Microsoft.FSharp.Collections
 type UnionCaseInfo =
     /// <summary>The name of the case.</summary>
     member Name : string
+
     /// <summary>The type in which the case occurs.</summary>
     member DeclaringType: Type
     
     /// <summary>Returns the custom attributes associated with the case.</summary>
     /// <returns>An array of custom attributes.</returns>
     member GetCustomAttributes: unit -> obj[]
+
     /// <summary>Returns the custom attributes associated with the case matching the given attribute type.</summary>
     /// <param name="attributeType">The type of attributes to return.</param>
     ///
@@ -458,6 +460,7 @@ module FSharpReflectionExtensions =
         ///
         /// <returns>The created record.</returns>
         static member MakeRecord: recordType:Type * values:obj [] * ?allowAccessToPrivateRepresentation : bool -> obj
+
         /// <summary>Reads all the fields from a record value.</summary>
         ///
         /// <remarks>Assumes the given input is a record value. If not, <see cref="T:System.ArgumentException" /> is raised.</remarks>
@@ -488,6 +491,7 @@ module FSharpReflectionExtensions =
         ///
         /// <returns>An optimized reader for the given record type.</returns>
         static member PreComputeRecordReader : recordType:Type * ?allowAccessToPrivateRepresentation : bool -> (obj -> obj[])
+
         /// <summary>Precompute a function for constructing a record value. </summary>
         ///
         /// <remarks>Assumes the given type is a RecordType.

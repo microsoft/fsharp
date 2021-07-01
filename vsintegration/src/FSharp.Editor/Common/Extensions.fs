@@ -276,10 +276,10 @@ module Exception =
     /// messages recursively.
     let flattenMessage (root: System.Exception) =
 
-        let rec flattenInner (exc: System.Exception) =
+        let rec flattenInner (exc: System.Exception?) =
             match exc with
-            | null -> []
-            | _ -> [exc.Message] @ (flattenInner exc.InnerException)
+            | Null -> []
+            | NonNull exc -> [exc.Message] @ (flattenInner exc.InnerException)
         
         // If an aggregate exception only has a single inner exception, use that as the root
         match root with

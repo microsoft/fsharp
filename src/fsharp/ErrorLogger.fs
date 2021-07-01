@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.ErrorLogger
 
+open Internal.Utilities.Library
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text.Range
@@ -228,7 +229,6 @@ type PhasedDiagnostic =
         | BuildPhaseSubcategory.Parameter 
         | BuildPhaseSubcategory.Parse 
         | BuildPhaseSubcategory.TypeCheck -> true
-        | null 
         | BuildPhaseSubcategory.DefaultPhase 
         | BuildPhaseSubcategory.CodeGen 
         | BuildPhaseSubcategory.Optimize 
@@ -315,14 +315,14 @@ type internal CompileThreadStatic =
         with get() = 
             match box CompileThreadStatic.buildPhase with
             // FUTURE: reenable these asserts, which have historically fired in some compiler service scenarios
-            | null -> (* assert false; *) BuildPhase.DefaultPhase
+            | Null -> (* assert false; *) BuildPhase.DefaultPhase
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             
     static member ErrorLogger
         with get() = 
             match box CompileThreadStatic.errorLogger with
-            | null -> AssertFalseErrorLogger
+            | Null -> AssertFalseErrorLogger
             | _ -> CompileThreadStatic.errorLogger
         and set v = CompileThreadStatic.errorLogger <- v
 
@@ -633,8 +633,14 @@ let NewlineifyErrorString (message:string) = message.Replace(stringThatIsAProxyF
 /// fixes given string by replacing all control chars with spaces.
 /// NOTE: newlines are recognized and replaced with stringThatIsAProxyForANewlineInFlatErrors (ASCII 29, the 'group separator'), 
 /// which is decoded by the IDE with 'NewlineifyErrorString' back into newlines, so that multi-line errors can be displayed in QuickInfo
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
 let NormalizeErrorString (text : string) =
     if isNull text then nullArg "text"
+#else
+let NormalizeErrorString (text : string?) =
+    let text = nullArgCheck "text" text
+#endif
+
     let text = text.Trim()
 
     let buf = System.Text.StringBuilder()

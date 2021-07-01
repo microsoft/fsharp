@@ -680,9 +680,22 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-        [ for r in sigDataResources  do
-            let ccuName = GetSignatureDataResourceName r
-            yield (ccuName, (fun () -> r.GetBytes())) ]
+        let sigDataReaders = 
+            [ for iresource in sigDataResources do
+                if IsSignatureDataResource iresource then 
+                    let ccuName = GetSignatureDataResourceName iresource
+                    let readerA = fun () -> iresource.GetBytes()
+                    let readerB = 
+                        sigDataResources |> List.tryPick (fun iresourceB -> 
+                            if IsSignatureDataResourceB iresourceB then 
+                                let ccuNameB = GetSignatureDataResourceName iresourceB
+                                if ccuName = ccuNameB then
+                                    Some (fun () -> iresourceB.GetBytes() )
+                                else None
+                            else None)
+                    yield (ccuName, (readerA, readerB)) ]
+
+        sigDataReaders
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
 

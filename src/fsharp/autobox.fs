@@ -76,7 +76,7 @@ let DecideExpr cenv exprF noInterceptF z expr  =
     match expr with 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
+        let ty = mkMultiLambdaTy cenv.g m argvs rty 
         DecideLambda (Some exprF)  cenv topValInfo expr ty z
 
     | Expr.TyLambda (_, tps, _, _m, rty)  -> 

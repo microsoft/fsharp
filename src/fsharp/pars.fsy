@@ -254,6 +254,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token GREATER_RBRACK STRUCT SIG 
 %token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT 
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
+%token AMBIVALENT
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
@@ -1530,13 +1531,13 @@ tyconDefn:
   | typeNameInfo 
      { SynTypeDefn($1, SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range), $1.Range), [], None, $1.Range) }
 
-  | typeNameInfo opt_equals tyconDefnRhsBlock 
-     { if not $2 then (
-            let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
-            // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
-            let typeNameId = List.last lid
-            raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
-       )
+  | typeNameInfo EQUALS tyconDefnRhsBlock 
+     { //if not $2 then (
+       //     let (SynComponentInfo(_, _, _, lid, _, _, _, _)) = $1 
+       //     // While the spec doesn't allow long idents here, the parser doesn't enforce this, so take one ident
+       //     let typeNameId = List.last lid
+       //     raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsEqualsMissingInTypeDefinition(typeNameId.ToString()))
+       //)
        let nameRange = rhs parseState 1
        let (tcDefRepr:SynTypeDefnRepr), members = $3 nameRange
        let declRange = unionRanges (rhs parseState 1) tcDefRepr.Range
@@ -2389,6 +2390,10 @@ typeConstraint:
   | typar COLON NULL 
      { SynTypeConstraint.WhereTyparSupportsNull($1, lhs parseState) }
 
+  | typar COLON IDENT NULL
+      { if $3 <> "not" then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier($3))  
+        SynTypeConstraint.WhereTyparNotSupportsNull($1, lhs parseState) }
+
   | typar COLON LPAREN classMemberSpfn rparen 
      { let tp = $1
        SynTypeConstraint.WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ], $4, lhs parseState) }
@@ -2753,6 +2758,9 @@ cType:
   | cType STAR 
      { let m = lhs parseState 
        SynType.App(SynType.LongIdent(LongIdentWithDots([ident("nativeptr", m)], [])), None, [$1], [], None, true, m) } 
+
+  | cType QMARK
+    { SynType.WithNull($1, false, lhs parseState) }
 
   | cType AMP  
      { let m = lhs parseState 
@@ -4998,6 +5006,12 @@ appTypeConPower:
     { $1 }
 
 appType:
+  | appType AMBIVALENT
+    { SynType.WithNull($1, true, lhs parseState) }
+
+  | appType QMARK
+    { SynType.WithNull($1, false, lhs parseState) }
+
   | appType arrayTypeSuffix 
       {  SynType.Array($2, $1, lhs parseState) }
 
@@ -5130,7 +5144,7 @@ atomType:
 
   | NULL
      { let m = rhs parseState 1
-       SynType.StaticConstant(SynConst.String (null, SynStringKind.Regular, m), m) }
+       SynType.StaticConstantNull(m) }
 
   | CONST atomicExpr
      {  let e, _ = $2
@@ -5534,10 +5548,6 @@ opt_ODECLEND:
 deprecated_opt_equals: 
   | EQUALS      { deprecatedWithError (FSComp.SR.parsNoEqualShouldFollowNamespace()) (lhs parseState); () } 
   | /* EMPTY */ {  }
-
-opt_equals:
-  | EQUALS      { true }
-  | /* EMPTY */ { false } 
 
 opt_OBLOCKSEP: 
   | OBLOCKSEP   { }

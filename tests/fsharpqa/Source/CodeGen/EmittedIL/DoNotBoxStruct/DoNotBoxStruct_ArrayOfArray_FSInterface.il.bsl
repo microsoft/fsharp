@@ -31,9 +31,13 @@
 {
   // Offset: 0x00000000 Length: 0x0000026E
 }
+.mresource public FSharpSignatureDataB.DoNotBoxStruct_ArrayOfArray_FSInterface
+{
+  // Offset: 0x00000278 Length: 0x00000001
+}
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ArrayOfArray_FSInterface
 {
-  // Offset: 0x00000278 Length: 0x000000A6
+  // Offset: 0x00000280 Length: 0x000000A6
 }
 .module DoNotBoxStruct_ArrayOfArray_FSInterface.exe
 // MVID: {5FCFFD0B-8A45-C8A0-A745-03830BFDCF5F}

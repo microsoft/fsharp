@@ -2955,7 +2955,7 @@ let ``Test Operator Declarations for String`` () =
         [], "let testStringToStringOperator(e1) = Operators.ToString<Microsoft.FSharp.Core.string> (e1) @ (56,47--56,56)"
       ]
     let expectedOptimized = [
-        [], "type OperatorTestsString"
+        [], "type OperatorTestsString";
         [], "let testStringEqualsOperator(e1) (e2) = String.Equals (e1,e2) @ (4,69--4,78)"
         [], "let testStringNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (String.Equals (e1,e2),False) @ (5,69--5,79)"
         [], "let testStringLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<Microsoft.FSharp.Core.string> (e1,e2) @ (6,69--6,78)"
@@ -2982,8 +2982,14 @@ let ``Test Operator Declarations for String`` () =
         [], "let testStringToUInt32Operator(e1) = LanguagePrimitives.ParseUInt32 (e1) @ (47,47--47,56)"
         [], "let testStringToInt64Operator(e1) = LanguagePrimitives.ParseInt64 (e1) @ (48,47--48,55)"
         [], "let testStringToUInt64Operator(e1) = LanguagePrimitives.ParseUInt64 (e1) @ (49,47--49,56)"
+#if USES_FSHARP_CORE_45_PACKAGE
+        // the definition of these operators has changed slightly in latest FSharp.Core
         [], "let testStringToSingleOperator(e1) = Single.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (52,47--52,57)"
         [], "let testStringToDoubleOperator(e1) = Double.Parse ((if Operators.op_Equality<Microsoft.FSharp.Core.string> (e1,dflt) then dflt else e1.Replace(\"_\",\"\")),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (53,47--53,55)"
+#else
+        [FC47; FC50], "let testStringToSingleOperator(e1) = ((if Object.ReferenceEquals (e1 :> Microsoft.FSharp.Core.obj,dflt) then Operators.Raise<Microsoft.FSharp.Core.unit> (new ArgumentNullException(\"s\") :> System.Exception) else ()); Single.Parse (e1.Replace(\"_\",\"\"),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider)) @ (52,47--52,57)"
+        [FC47; FC50], "let testStringToDoubleOperator(e1) = ((if Object.ReferenceEquals (e1 :> Microsoft.FSharp.Core.obj,dflt) then Operators.Raise<Microsoft.FSharp.Core.unit> (new ArgumentNullException(\"s\") :> System.Exception) else ()); Double.Parse (e1.Replace(\"_\",\"\"),167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider)) @ (53,47--53,55)"
+#endif
         [], "let testStringToDecimalOperator(e1) = Decimal.Parse (e1,167,CultureInfo.get_InvariantCulture () :> System.IFormatProvider) @ (54,47--54,57)"
         [], "let testStringToCharOperator(e1) = Char.Parse (e1) @ (55,47--55,54)"
         [FC47; FC50], """let testStringToStringOperator(e1) = (if String.Equals (e1,dflt) then "" else e1) @ (56,47--56,56)"""
@@ -3538,7 +3544,7 @@ let isNullQuoted (ts : 't[]) =
 
     let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
 
-[<Test>]
+[<Test; Ignore("See https://github.com/dotnet/fsharp/pull/6804#issuecomment-847236717")>]
 let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses4.createOptions()
     use _holder = cleanup

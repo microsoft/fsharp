@@ -168,7 +168,7 @@ type MapSourceRoots () =
     /// </list>
     /// </summary>
     [<Required>]
-    member val SourceRoots: ITaskItem[] = null with get, set
+    member val SourceRoots: ITaskItem[] = [| |] with get, set
 
     /// <summary>
     /// True if the mapped paths should be deterministic.
@@ -180,7 +180,7 @@ type MapSourceRoots () =
     /// Items listed in <see cref="SourceRoots"/> that have the same ItemSpec will be merged into a single item in this list.
     /// </summary>
     [<Output>]
-    member val MappedSourceRoots: ITaskItem[] = null with get, set
+    member val MappedSourceRoots: ITaskItem[] = [| |] with get, set
 
     override this.Execute() =
         match MapSourceRoots.PerformMapping this.Log this.SourceRoots this.Deterministic with

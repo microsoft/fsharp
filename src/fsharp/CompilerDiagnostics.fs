@@ -172,6 +172,10 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | ConstraintSolverTupleDiffLengths(_, _, _, m, _)
       | ConstraintSolverInfiniteTypes(_, _, _, _, m, _)
       | ConstraintSolverMissingConstraint(_, _, _, m, _)
+      | ConstraintSolverNullnessWarningEquivWithTypes(_, _, _, _, _, m, _)
+      | ConstraintSolverNullnessWarningWithTypes(_, _, _, _, _, m, _)
+      | ConstraintSolverNullnessWarningWithType(_, _, _, m, _)
+      | ConstraintSolverNonNullnessWarningWithType(_, _, _, m, _)
       | ConstraintSolverTypesNotInEqualityRelation(_, _, _, m, _, _)
       | ConstraintSolverError(_, m, _)
       | ConstraintSolverTypesNotInSubsumptionRelation(_, _, _, m, _)
@@ -347,6 +351,10 @@ let GetDiagnosticNumber(err: PhasedDiagnostic) =
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
+      | ConstraintSolverNullnessWarningEquivWithTypes _ -> 3261
+      | ConstraintSolverNullnessWarningWithTypes _ -> 3262
+      | ConstraintSolverNullnessWarningWithType _ -> 3263
+      | ConstraintSolverNonNullnessWarningWithType _ -> 3264
       | _ -> 193
     GetFromException err.Exception
 
@@ -413,6 +421,10 @@ let ConstraintSolverTupleDiffLengthsE() = DeclareResourceString("ConstraintSolve
 let ConstraintSolverInfiniteTypesE() = DeclareResourceString("ConstraintSolverInfiniteTypes", "%s%s")
 let ConstraintSolverMissingConstraintE() = DeclareResourceString("ConstraintSolverMissingConstraint", "%s")
 let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
+let ConstraintSolverNullnessWarningEquivWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningEquivWithTypes", "%s%s%s%s")
+let ConstraintSolverNullnessWarningWithTypesE() = DeclareResourceString("ConstraintSolverNullnessWarningWithTypes", "%s%s%s%s")
+let ConstraintSolverNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNullnessWarningWithType", "%s")
+let ConstraintSolverNonNullnessWarningWithTypeE() = DeclareResourceString("ConstraintSolverNonNullnessWarningWithType", "%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
 let ErrorFromAddingTypeEquation1E() = DeclareResourceString("ErrorFromAddingTypeEquation1", "%s%s%s")
@@ -617,6 +629,40 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
+      | ConstraintSolverNullnessWarningEquivWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+          os.Append(ConstraintSolverNullnessWarningEquivWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarningWithTypes(denv, ty1, ty2, nullness1, nullness2, m, m2) ->
+
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+          os.Append(ConstraintSolverNullnessWarningWithTypesE().Format t1 t2 (nullness1.ToString()) (nullness2.ToString())) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+
+          let t = NicePrint.minimalStringOfType denv ty
+          os.Append(ConstraintSolverNullnessWarningWithTypeE().Format (t)) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
+      | ConstraintSolverNonNullnessWarningWithType(denv, ty, _nullness, m, m2) ->
+
+          let t = NicePrint.minimalStringOfType denv ty
+          os.Append(ConstraintSolverNonNullnessWarningWithTypeE().Format (t)) |> ignore
+
+          if m.StartLine <> m2.StartLine then
+             os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
+
       | ConstraintSolverTypesNotInEqualityRelation(denv, (TType_measure _ as t1), (TType_measure _ as t2), m, m2, _) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
@@ -758,7 +804,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
 
               let retTy =
                   knownReturnType
-                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked()))
+                  |> Option.defaultValue (TType.TType_var (Typar.NewUnlinked(), KnownAmbivalentToNull))
 
               let argRepr =
                   callerArgs.ArgumentNamesAndTypes
@@ -1322,7 +1368,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
               // we need to check if unit was used as a type argument
               let rec hasUnitTType_app (types: TType list) =
                   match types with
-                  | TType_app (maybeUnit, []) :: ts ->
+                  | TType_app (maybeUnit, [], _) :: ts ->
                       match maybeUnit.TypeAbbrev with
                       | Some ttype when isUnitTy g ttype -> true
                       | _ -> hasUnitTType_app ts
@@ -1330,7 +1376,7 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
                   | [] -> false
 
               match minfoVirt.ApparentEnclosingType with
-              | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
+              | TType_app (t, types, _) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
               | _ ->

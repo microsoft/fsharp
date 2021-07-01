@@ -60,7 +60,7 @@ module internal Hooks =
     let private withFSIToolWindow (this:Package) f =
         queryFSIToolWindow true this f ()
 
-    let OnMLSend (this:Package) (action : FsiEditorSendAction) (sender:obj) (e:EventArgs) =
+    let OnMLSend (this:Package) (action : FsiEditorSendAction) (sender:obj) (e:EventArgs?) =
         withFSIToolWindow this (fun window ->
             match action with
             | ExecuteSelection -> window.MLSendSelection(sender, e)

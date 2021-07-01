@@ -36,13 +36,13 @@
   // Offset: 0x00000160 Length: 0x0000005F
 }
 .module TryWith_NoFilterBlocks01.exe
-// MVID: {60B68B7F-3DEF-9A40-A745-03837F8BB660}
+// MVID: {5F972A55-3DEF-9A40-A745-0383552A975F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F10000
+// Image base: 0x08D00000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

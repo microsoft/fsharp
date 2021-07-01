@@ -5,10 +5,11 @@ namespace FSharp.Compiler.UnitTests
 open NUnit.Framework
 open FSharp.Test.Utilities.Compiler
 
-[<TestFixture()>]
+[<TestFixture>]
 module NullableOptionalRegressionTests =
 
-    [<Test>]
+    //Disabled, see RFC for nullable
+    //[<Test(Enabled=false)>]
     let ``Should compile with generic overloaded nullable methods``() =
         Fsx """
 open System

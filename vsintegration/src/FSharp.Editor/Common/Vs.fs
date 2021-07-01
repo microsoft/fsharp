@@ -65,14 +65,14 @@ module internal VsTextLines =
         dataBuffer.CurrentSnapshot.GetText()
 
 module internal VsRunningDocumentTable = 
-    let FindDocumentWithoutLocking(rdt:IVsRunningDocumentTable, url:string) : (IVsHierarchy * IVsTextLines) option =
-        let (hr:int, hier:IVsHierarchy, _itemid:uint32, unkData:IntPtr, _cookie:uint32) = rdt.FindAndLockDocument(uint32 _VSRDTFLAGS.RDT_NoLock, url)
+    let FindDocumentWithoutLocking(rdt:IVsRunningDocumentTable, url:string) : (IVsHierarchy? * IVsTextLines?) option =
+        let (hr:int, hier:IVsHierarchy?, _itemid:uint32, unkData:IntPtr, _cookie:uint32) = rdt.FindAndLockDocument(uint32 _VSRDTFLAGS.RDT_NoLock, url)
         try
             if Com.Succeeded(hr) then 
                 let bufferObject = 
                     if unkData=IntPtr.Zero then null
                     else Marshal.GetObjectForIUnknown(unkData)
-                let buffer = 
+                let buffer : IVsTextLines? = 
                     match bufferObject with 
                     | :? IVsTextLines as tl -> tl
                     | _ -> null

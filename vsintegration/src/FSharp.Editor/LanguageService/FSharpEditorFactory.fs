@@ -32,10 +32,8 @@ module Constants =
 [<Guid(Constants.FSharpEditorFactoryIdString)>]
 type FSharpEditorFactory(parentPackage: ShellPackage) =
 
-    let serviceProvider = 
-        if parentPackage = null then
-            nullArg "parentPackage"
-        parentPackage :> IServiceProvider
+    let parentPackage = nullArgCheck "parentPackage" parentPackage 
+    let serviceProvider = parentPackage :> IServiceProvider
     let componentModel = serviceProvider.GetService(typeof<SComponentModel>) :?> IComponentModel
     let editorAdaptersFactoryService = componentModel.GetService<IVsEditorAdaptersFactoryService>()
     let contentTypeRegistryService = componentModel.GetService<IContentTypeRegistryService>()

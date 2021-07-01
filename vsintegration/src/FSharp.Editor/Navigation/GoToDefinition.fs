@@ -26,16 +26,16 @@ open FSharp.Compiler.Symbols
 
 module private Symbol =
     let fullName (root: ISymbol) : string =
-        let rec inner parts (sym: ISymbol) =
+        let rec inner parts (sym: ISymbol?) =
             match sym with
-            | null ->
+            | Null ->
                 parts
             // TODO: do we have any other terminating cases?
-            | sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly ->
+            | NonNull sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly ->
                 parts
-            | sym when sym.MetadataName <> "" ->
+            | NonNull sym when sym.MetadataName <> "" ->
                 inner (sym.MetadataName :: parts) sym.ContainingSymbol
-            | sym ->
+            | NonNull sym ->
                 inner parts sym.ContainingSymbol
 
         inner [] root |> String.concat "."

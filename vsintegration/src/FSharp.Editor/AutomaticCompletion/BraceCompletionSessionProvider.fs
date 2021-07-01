@@ -42,7 +42,6 @@ module BraceCompletionSessionProviderHelpers =
     [<Literal>] 
     let BraceCompletion = "Brace_Completion"
 
-[<AllowNullLiteral>]
 type IEditorBraceCompletionSession =
     inherit ILanguageService
 
@@ -58,7 +57,7 @@ type IEditorBraceCompletionSession =
 type IEditorBraceCompletionSessionFactory =
     inherit ILanguageService
 
-    abstract TryCreateSession : Document * openingPosition: int * openingBrace: char * CancellationToken -> IEditorBraceCompletionSession
+    abstract TryCreateSession : Document * openingPosition: int * openingBrace: char * CancellationToken -> IEditorBraceCompletionSession?
 
 type BraceCompletionSession 
     (
@@ -73,7 +72,7 @@ type BraceCompletionSession
     ) =
 
     let mutable closingPoint = subjectBuffer.CurrentSnapshot.CreateTrackingPoint(openingPoint.Position, PointTrackingMode.Positive)
-    let mutable openingPoint : ITrackingPoint = null
+    let mutable openingPoint : ITrackingPoint? = null
     let editorOperations = editorOperationsFactoryService.GetEditorOperations(textView)
 
     member _.EndSession() =
@@ -193,6 +192,9 @@ type BraceCompletionSession
                         
         member this.PreBackspace handledCommand =
             handledCommand <- false
+            match openingPoint with 
+            | Null -> ()
+            | NonNull openingPoint -> 
 
             let caretPos = tryGetCaretPosition this
             let snapshot = subjectBuffer.CurrentSnapshot
@@ -504,20 +506,20 @@ type EditorBraceCompletionSessionFactory() =
             //    classifiedSpan.TextSpan.IntersectsWith position &&
             //    not (spanIsString classifiedSpan)))))
 
-    member _.CreateEditorSession(_document, _openingPosition, openingBrace, _cancellationToken) =
+    member _.CreateEditorSession(_document, _openingPosition, openingBrace, _cancellationToken) : IEditorBraceCompletionSession? =
         match openingBrace with
-        | Parenthesis.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
-        | CurlyBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
-        | SquareBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
-        | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> IEditorBraceCompletionSession
-        | AngleBrackets.OpenCharacter -> AngleBracketCompletionSession() :> IEditorBraceCompletionSession
-        | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession
-        | Asterisk.OpenCharacter -> AsteriskCompletionSession() :> IEditorBraceCompletionSession
+        | Parenthesis.OpenCharacter -> ParenthesisCompletionSession() :> _
+        | CurlyBrackets.OpenCharacter -> ParenthesisCompletionSession() :> _
+        | SquareBrackets.OpenCharacter -> ParenthesisCompletionSession() :> _
+        | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> _
+        | AngleBrackets.OpenCharacter -> AngleBracketCompletionSession() :> _
+        | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> _
+        | Asterisk.OpenCharacter -> AsteriskCompletionSession() :> _
         | _ -> null
 
     interface IEditorBraceCompletionSessionFactory with
 
-        member this.TryCreateSession(document, openingPosition, openingBrace, cancellationToken) = 
+        member this.TryCreateSession(document, openingPosition, openingBrace, cancellationToken) : IEditorBraceCompletionSession? = 
             if this.IsSupportedOpeningBrace(openingBrace) && this.CheckCodeContext(document, openingPosition, openingBrace, cancellationToken) then
                 this.CreateEditorSession(document, openingPosition, openingBrace, cancellationToken)
             else
@@ -546,7 +548,9 @@ type BraceCompletionSessionProvider
                 maybe {
                     let! document =       openingPoint.Snapshot.GetOpenDocumentInCurrentContextWithChanges() |> Option.ofObj
                     let! sessionFactory = document.TryGetLanguageService<IEditorBraceCompletionSessionFactory>()
-                    let! session =        sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None) |> Option.ofObj
+                    let! session =
+                        sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None)
+                        |> Option.ofObj
 
                     let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
                     return BraceCompletionSession(

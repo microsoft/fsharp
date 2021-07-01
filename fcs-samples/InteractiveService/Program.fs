@@ -33,7 +33,7 @@ let main (argv) =
                 printfn "Ok"
         with e -> 
             match e.InnerException with
-            | null -> printfn "Error evaluating expression (%s)" e.Message
-            | err -> printfn "Error evaluating expression (%s)" err.Message
+            | Null -> printfn "Error evaluating expression (%s)" e.Message
+            | NonNull err -> printfn "Error evaluating expression (%s)" err.Message
     // | _ -> printfn "Error evaluating expression (%s)" e.Message
     0

@@ -129,6 +129,18 @@
   <data name="ConstraintSolverMissingConstraint" xml:space="preserve">
     <value>A type parameter is missing a constraint '{0}'</value>
   </data>
+  <data name="ConstraintSolverNullnessWarningEquivWithTypes" xml:space="preserve">
+    <value>Nullness warning: The types '{0}' and '{1}' do not have equivalent nullability '{2}' and '{3}'.</value>
+  </data>
+  <data name="ConstraintSolverNullnessWarningWithTypes" xml:space="preserve">
+    <value>Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</value>
+  </data>
+  <data name="ConstraintSolverNullnessWarningWithType" xml:space="preserve">
+    <value>Nullness warning: The type '{0}' does not support nullness.</value>
+  </data>
+  <data name="ConstraintSolverNonNullnessWarningWithType" xml:space="preserve">
+    <value>Nullness warning: The type '{0}' supports a null value but a constraint requires the type to be non-null.</value>
+  </data>
   <data name="ConstraintSolverTypesNotInEqualityRelation1" xml:space="preserve">
     <value>The unit of measure '{0}' does not match the unit of measure '{1}'</value>
   </data>

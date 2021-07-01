@@ -14,10 +14,8 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\GeneratedIterators
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\InequalityComparison
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ListExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\LiteralValue
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Misc
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
 Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
 Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping

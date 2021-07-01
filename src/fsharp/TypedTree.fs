@@ -2206,14 +2206,18 @@ type Typar =
         | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
-    member x.AsType = 
-        let ty = x.typar_astype
-        match box ty with 
-        | null -> 
-            let ty2 = TType_var x
-            x.typar_astype <- ty2
-            ty2
-        | _ -> ty
+    member x.AsType nullness = 
+        match nullness with 
+        | Nullness.Known NullnessInfo.AmbivalentToNull -> 
+            let ty = x.typar_astype
+            match box ty with 
+            | null -> 
+                let ty2 = TType_var (x, Nullness.Known NullnessInfo.AmbivalentToNull)
+                x.typar_astype <- ty2
+                ty2
+            | _ -> ty
+        | _ -> 
+            TType_var (x, nullness)
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
     member x.IsLinked = x.typar_stamp <> -1L
@@ -2262,6 +2266,9 @@ type TyparConstraint =
     
     /// A constraint that a type has a 'null' value 
     | SupportsNull of range: range 
+    
+    /// A constraint that a type doesn't support nullness
+    | NotSupportsNull            of range 
     
     /// A constraint that a type has a member with the given signature 
     | MayResolveMember of constraintInfo: TraitConstraintInfo * range: range
@@ -3084,7 +3091,7 @@ type NonLocalEntityRef =
             let rec tryResolveNestedTypeOf(parentEntity: Entity, resolutionEnvironment, st: Tainted<ProvidedType>, i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]), m) with
                 | Tainted.Null -> ValueNone
-                | st -> 
+                | Tainted.NonNull st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
                     if i = path.Length-1 then ValueSome newEntity
@@ -3114,13 +3121,16 @@ type NonLocalEntityRef =
                 assert (j >= 0)
                 assert (j <= path.Length - 1)
                 let matched = 
-                    [ for resolver in resolvers do
-                        let moduleOrNamespace = if j = 0 then null else path.[0..j-1]
+                    [ for resolver in resolvers  do
+                        let moduleOrNamespace = if j = 0 then [| |] else path.[0..j-1]
                         let typename = path.[j]
                         let resolution = ExtensionTyping.TryLinkProvidedType(resolver, moduleOrNamespace, typename, m)
                         match resolution with
-                        | None | Some (Tainted.Null) -> ()
-                        | Some st -> yield (resolver, st) ]
+                        | None -> ()
+                        | Some st -> 
+                            match st with
+                            | Tainted.Null -> ()
+                            | Tainted.NonNull st -> yield (resolver, st) ]
                 match matched with
                 | [(_, st)] ->
                     // 'entity' is at position i in the dereference chain. We resolved to position 'j'.
@@ -3925,6 +3935,63 @@ type RecdFieldRef =
 
     override x.ToString() = x.FieldName
 
+[<RequireQualifiedAccess>]
+type Nullness = 
+   | Known of NullnessInfo
+   | Variable of NullnessVar
+
+   member n.Evaluate() = 
+       match n with 
+       | Known info -> info
+       | Variable v -> v.Evaluate()
+
+   member n.TryEvaluate() = 
+       match n with 
+       | Known info -> ValueSome info
+       | Variable v -> v.TryEvaluate()
+
+   override n.ToString() = match n.Evaluate() with NullnessInfo.WithNull -> "?"  | NullnessInfo.WithoutNull -> "" | NullnessInfo.AmbivalentToNull -> "%"
+
+// Note, nullness variables are only created if the nullness checking feature is on
+type NullnessVar() = 
+    let mutable solution: Nullness option = None
+
+    member nv.Evaluate() = 
+       match solution with 
+       | None -> NullnessInfo.WithoutNull
+       | Some soln -> soln.Evaluate()
+
+    member nv.TryEvaluate() = 
+       match solution with 
+       | None -> ValueNone
+       | Some soln -> soln.TryEvaluate()
+
+    member nv.IsSolved = solution.IsSome
+
+    member nv.Set(nullness) = 
+       assert (not nv.IsSolved) 
+       solution <- Some nullness
+
+    member nv.Unset() = 
+       assert nv.IsSolved
+       solution <- None
+
+    member nv.Solution = 
+       assert nv.IsSolved
+       solution.Value
+
+[<RequireQualifiedAccess>]
+type NullnessInfo = 
+
+    /// we know that there is an extra null value in the type
+    | WithNull
+
+    /// we know that there is no extra null value in the type
+    | WithoutNull
+
+    /// we know we don't care
+    | AmbivalentToNull
+
 /// Represents a type in the typed abstract syntax
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TType =
@@ -3934,10 +4001,10 @@ type TType =
     /// Indicates the type is a universal type, only used for types of values and members 
     | TType_forall of typars: Typars * bodyTy: TType
 
-    /// TType_app(tyconRef, typeInstantiation).
+    /// TType_app(tyconRef, typeInstantiation, nullness).
     ///
     /// Indicates the type is built from a named type and a number of type arguments
-    | TType_app of tyconRef: TyconRef * typeInstantiation: TypeInst
+    | TType_app of TyconRef * typeInstantiation: TypeInst * nullness: Nullness
 
     /// TType_anon
     ///
@@ -3949,10 +4016,10 @@ type TType =
     /// Indicates the type is a tuple type. elementTypes must be of length 2 or greater.
     | TType_tuple of tupInfo: TupInfo * elementTypes: TTypes
 
-    /// TType_fun(domainType, rangeType).
+    /// TType_fun(domainType, rangeType, nullness).
     ///
     /// Indicates the type is a function type 
-    | TType_fun of domainType: TType * rangeType: TType
+    | TType_fun of domainType: TType * rangeType: TType * nullness: Nullness
 
     /// TType_ucase(unionCaseRef, typeInstantiation)
     ///
@@ -3962,22 +4029,23 @@ type TType =
     | TType_ucase of unionCaseRef: UnionCaseRef * typeInstantiation: TypeInst
 
     /// Indicates the type is a variable type, whether declared, generalized or an inference type parameter  
-    | TType_var of typar: Typar 
+    | TType_var of Typar * nullness: Nullness
 
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of measure: Measure
+
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
         match x with
-        | TType_forall (_tps, ty) -> ty.GetAssemblyName()
-        | TType_app (tcref, _tinst) -> tcref.CompilationPath.ILScopeRef.QualifiedName
-        | TType_tuple (_tupInfo, _tinst) -> ""
+        | TType_forall (_tps, ty)        -> ty.GetAssemblyName()
+        | TType_app (tcref, _tinst, _) -> tcref.CompilationPath.ILScopeRef.QualifiedName
+        | TType_tuple _ -> ""
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
-        | TType_fun (_d, _r) -> ""
-        | TType_measure _ms -> ""
-        | TType_var tp -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_fun _ -> ""
+        | TType_measure _ -> ""
+        | TType_var (tp, _nullness) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -3987,21 +4055,21 @@ type TType =
 
     override x.ToString() =  
         match x with 
-        | TType_forall (_tps, ty) -> "forall ... " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_forall (_tps, ty) -> "forall ...  " + ty.ToString()
+        | TType_app (tcref, tinst, nullness) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">") + nullness.ToString() 
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) 
+             + String.concat "," (List.map string tinst) + ")"
+        | TType_fun (d,r,nullness) -> "(" + string d + " -> " + string r + ")" + nullness.ToString()
         | TType_anon (anonInfo, tinst) -> 
             (match anonInfo.TupInfo with 
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
-        | TType_fun (d, r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> 
+        | TType_var (tp, _nullness) -> 
             match tp.Solution with 
             | None -> tp.DisplayName
             | Some _ -> tp.DisplayName + " (solved)"
@@ -4061,7 +4129,7 @@ type AnonRecdTypeInfo =
         x.Stamp <- d.Stamp
         x.SortedNames <- sortedNames
 
-    member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
+    member x.IsLinked = (match box x.SortedIds with null -> true | _ -> false)
     
 [<RequireQualifiedAccess>] 
 type TupInfo = 
@@ -5133,19 +5201,32 @@ type CcuThunk =
     {
       /// ccu.target is null when a reference is missing in the transitive closure of static references that
       /// may potentially be required for the metadata of referenced DLLs.
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
       mutable target: CcuData
+#else
+      mutable target: CcuData?
+#endif
       name: CcuReference
     }
 
+#if BUILDING_WITH_LKG || BUILD_FROM_SOURCE || NO_CHECKNULLS
     /// Dereference the asssembly reference 
     member ccu.Deref = 
-        if isNull (ccu.target :> obj) then 
+        if isNull (box ccu.target) then 
             raise(UnresolvedReferenceNoRange ccu.name)
         ccu.target
    
     /// Indicates if this assembly reference is unresolved
-    member ccu.IsUnresolvedReference = isNull (ccu.target :> obj)
+    member ccu.IsUnresolvedReference = isNull (box ccu.target)
+#else
+    member ccu.Deref = 
+        match ccu.target with 
+        | null -> raise(UnresolvedReferenceNoRange ccu.name)
+        | NonNullQuick tg -> tg
 
+    member ccu.IsUnresolvedReference = isNull ccu.target
+#endif
+   
     /// Ensure the ccu is derefable in advance. Supply a path to attach to any resulting error message.
     member ccu.EnsureDerefable(requiringPath: string[]) = 
         if ccu.IsUnresolvedReference then 
@@ -5401,7 +5482,7 @@ type Construct() =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m, objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some (nonNull ty)), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t),
@@ -5415,7 +5496,9 @@ type Construct() =
               IsDelegate = (fun () -> st.PUntaint((fun st -> 
                                    let baseType = st.BaseType 
                                    match baseType with 
-                                   | null -> false
+                                   | Null -> false
+                                   | NonNull x -> 
+                                   match x with 
                                    | x when x.IsGenericType -> false
                                    | x when x.DeclaringType <> null -> false
                                    | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
@@ -5685,8 +5768,8 @@ type Construct() =
     static member ComputeDefinitionLocationOfProvidedItem<'T when 'T :> IProvidedCustomAttributeProvider> (p: Tainted<'T>) : range option =
         let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure id))
         match attrs with
-        | None | Some (null, _, _) -> None
-        | Some (filePath, line, column) -> 
+        | None | Some (Null, _, _) -> None
+        | Some (NonNull filePath, line, column) -> 
             // Coordinates from type provider are 1-based for lines and columns
             // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
             let pos = Position.mkPos line (max 0 (column - 1)) 

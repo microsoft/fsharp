@@ -841,7 +841,7 @@ let CompilePatternBasic
 
                 | ThrowIncompleteMatchException ->
                     mkThrow matchm resultTy
-                        (mkExnExpr(mk_MFCore_tcref g.fslibCcu "MatchFailureException",
+                        (mkExnExpr(g.MatchFailureException_tcr, 
                                    [ mkString g matchm matchm.FileName
                                      mkInt g matchm matchm.StartLine
                                      mkInt g matchm matchm.StartColumn], matchm))

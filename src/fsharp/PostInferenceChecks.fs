@@ -328,7 +328,7 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
     // In an ideal world we would, instead, record the solutions to these constraints as "witness variables" in expressions, 
     // rather than solely in types. 
     match ty with 
-    | TType_var tp when tp.Solution.IsSome ->
+    | TType_var (tp, _nullness) when tp.Solution.IsSome ->
         for cx in tp.Constraints do
             match cx with 
             | TyparConstraint.MayResolveMember((TTrait(_, _, _, _, _, soln)), _) -> 
@@ -342,7 +342,7 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
         if g.compilingFslib then
             match stripTyparEqns ty with
             // When compiling FSharp.Core, do not strip type equations at this point if we can't dereference a tycon.
-            | TType_app (tcref, _) when not tcref.CanDeref -> ty
+            | TType_app (tcref, _, _) when not tcref.CanDeref -> ty
             | _ -> stripTyEqns g ty
         else 
             stripTyEqns g ty
@@ -355,7 +355,7 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
         tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
     | TType_measure _          -> ()
-    | TType_app (tcref, tinst) -> 
+    | TType_app (tcref, tinst, _nullness) -> 
         match visitTyconRefOpt with 
         | Some visitTyconRef -> visitTyconRef isInner tcref 
         | None -> ()
@@ -370,14 +370,15 @@ let rec CheckTypeDeep (cenv: cenv) ((visitTy, visitTyconRefOpt, visitAppTyOpt, v
         match visitAppTyOpt with 
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
+
     | TType_anon (anonInfo, tys) -> 
         RecordAnonRecdInfo cenv anonInfo
         CheckTypesDeep cenv f g env tys
 
     | TType_ucase (_, tinst) -> CheckTypesDeep cenv f g env tinst
     | TType_tuple (_, tys) -> CheckTypesDeep cenv f g env tys
-    | TType_fun (s, t) -> CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
-    | TType_var tp -> 
+    | TType_fun (s, t, _nullness) -> CheckTypeDeep cenv f g env true s; CheckTypeDeep cenv f g env true t
+    | TType_var (tp, _nullness) -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
               | None -> ()
@@ -403,6 +404,7 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.SupportsComparison _ 
      | TyparConstraint.SupportsEquality _ 
      | TyparConstraint.SupportsNull _ 
+     | TyparConstraint.NotSupportsNull _ 
      | TyparConstraint.IsNonNullableStruct _ 
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _ 
@@ -1137,7 +1139,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (context: PermitByRefExpr) : Limi
 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty in 
+        let ty = mkMultiLambdaTy cenv.g m argvs rty
         CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
 
     | Expr.TyLambda (_, tps, _, m, rty)  -> 
@@ -1945,8 +1947,8 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
             if v.IsExtensionMember then 
                 tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
-                        let minfo1 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
-                        let minfo2 =  FSMeth(g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
+                        let minfo1 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v, Some 0UL)
+                        let minfo2 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v2, Some 0UL)
                         if tyconRefEq g v.MemberApparentEntity v2.MemberApparentEntity && 
                            MethInfosEquivByNameAndSig EraseAll true g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind, v.DisplayName, v.Range)))
@@ -2006,7 +2008,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     let g = cenv.g
     let m = tycon.Range 
     let tcref = mkLocalTyconRef tycon
-    let ty = generalizedTyconRef tcref
+    let ty = generalizedTyconRef g tcref
 
     let env = { env with reflect = env.reflect || HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute tycon.Attribs }
     let env = BindTypars g env (tycon.Typars m)
@@ -2282,15 +2284,37 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 |> List.filter (isInterfaceTy g)
             CheckMultipleInterfaceInstantiations cenv ty interfaces false m
         
-        // Check struct fields. We check these late because we have to have first checked that the structs are
+        // Check fields. We check these late because we have to have first checked that the structs are
         // free of cycles
-        if tycon.IsStructOrEnumTycon then 
+        if g.langFeatureNullness then 
             for f in tycon.AllInstanceFieldsAsList do
+                let m = f.Range
                 // Check if it's marked unsafe 
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
                 if zeroInitUnsafe = Some true then
-                   if not (TypeHasDefaultValue g m ty) then 
-                       errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                    let ty = f.FormalType
+                    if not (TypeHasDefaultValueNew g m ty) && not (TypeHasDefaultValueOld g m ty) then 
+                        if tycon.IsStructOrEnumTycon then 
+                            // Under F# 4.5 we gave a hard error for this case so we can give it now
+                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+                        else
+                            if g.checkNullness then
+                                // Under F# 5.0 rules with checkNullness we can now give a warning for this case 
+                                warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
+
+                    elif g.checkNullness && not (TypeHasDefaultValueNew g m ty) then 
+                        // Under F# 5.0 rules with checkNullness we can now give a warning for this case 
+                        warning(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValueNulls(), m))
+        else
+            // These are the F# 4.5 rules, mistakenly only applied to structs
+            if tycon.IsStructOrEnumTycon then 
+                for f in tycon.AllInstanceFieldsAsList do
+                    let m = f.Range
+                    // Check if it's marked unsafe 
+                    let zeroInitUnsafe = TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute f.FieldAttribs
+                    if zeroInitUnsafe = Some true then
+                        if not (TypeHasDefaultValueOld g m ty) then 
+                            errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))
 
         // Check type abbreviations
         match tycon.TypeAbbrev with                          

@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project>
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' == 'true'">
+	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
+	<OtherFlags>$(OtherFlags) /checknulls</OtherFlags>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(CheckNulls)' != 'true'">
+	<OtherFlags>$(OtherFlags) /langversion:preview</OtherFlags>
+    <!-- 3271: warning nullness annotations being ignored -->
+    <NoWarn>$(NoWarn);3271</NoWarn>
+    <DefineConstants>$(DefineConstants);NO_CHECKNULLS</DefineConstants>
+  </PropertyGroup>
 
   <Choose>
     <When Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">

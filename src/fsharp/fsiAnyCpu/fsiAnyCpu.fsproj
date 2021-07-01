@@ -10,6 +10,7 @@
     <NoWarn>$(NoWarn);44;45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags)  --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <CheckNulls>true</CheckNulls>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
     <NGenBinary>true</NGenBinary>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>

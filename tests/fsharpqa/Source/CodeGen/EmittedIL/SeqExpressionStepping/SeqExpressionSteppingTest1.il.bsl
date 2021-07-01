@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest1.exe
-// MVID: {60B78A59-2432-947D-A745-0383598AB760}
+// MVID: {60B8D5B9-2432-947D-A745-0383B9D5B860}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06A30000
+// Image base: 0x071D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

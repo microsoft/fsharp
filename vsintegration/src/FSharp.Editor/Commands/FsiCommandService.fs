@@ -17,13 +17,12 @@ open Microsoft.VisualStudio.FSharp.Interactive
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
-    let loadPackage (guidString: string) =
+    let loadPackage (guidString: string) : Lazy<Package?> =
       lazy(
         let shell = serviceProvider.GetService(typeof<SVsShell>) :?> IVsShell
         let packageToBeLoadedGuid = ref (Guid(guidString))       
         match shell.LoadPackage packageToBeLoadedGuid with
-        | VSConstants.S_OK, pkg ->
-            pkg :?> Package
+        | VSConstants.S_OK, pkg -> unbox pkg 
         | _ -> null)
 
     let fsiPackage = loadPackage FSharpConstants.fsiPackageGuidString
