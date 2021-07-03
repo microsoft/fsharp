@@ -7,6 +7,7 @@ open System.ComponentModel.Design
 open System.Runtime.InteropServices
 open System.Threading
 open System.IO
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Options
@@ -26,8 +27,32 @@ open Microsoft.VisualStudio.Text.Outlining
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
+open System.Runtime.CompilerServices
+open Microsoft.VisualStudio.Threading
 
 #nowarn "9" // NativePtr.toNativeInt
+
+[<RequireQualifiedAccess>]
+module FSharpProjectCaches =
+
+    // This is used to not constantly emit the same compilation.
+    let weakPEReferences = ConditionalWeakTable<Compilation, FSharpReferencedProject>()
+    let lastSuccessfulCompilations = ConcurrentDictionary<ProjectId, Compilation>()
+
+    /// This is a cache to maintain a FSharpProject per Roslyn Project.
+    /// The Roslyn Project is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
+    let Projects = ConditionalWeakTable<Project, AsyncLazy<FSharpProject>>()
+    let CurrentProjects = ConcurrentDictionary<ProjectId, Project * FSharpProject>()
+
+    /// This is a cache to maintain a script or misc file as a FSharpProject per Roslyn Document.
+    /// The Roslyn Document is held weakly meaning when it is cleaned up by the GC, the FSharpProject will be cleaned up by the GC.
+    let ScriptOrSingleFiles = ConditionalWeakTable<Document, AsyncLazy<FSharpProject>>()
+    let CurrentScriptOrSingleFiles = ConcurrentDictionary<DocumentId, Project * FSharpProject>()
+
+    let Clear() =
+        lastSuccessfulCompilations.Clear()
+        CurrentProjects.Clear()
+        CurrentScriptOrSingleFiles.Clear()
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -47,90 +72,31 @@ type internal FSharpWorkspaceServiceFactory
     (
     ) =
 
-    // We have a lock just in case if multi-threads try to create a new IFSharpWorkspaceService -
-    //     but we only want to have a single instance of the FSharpChecker regardless if there are multiple instances of IFSharpWorkspaceService.
-    //     In VS, we only ever have a single IFSharpWorkspaceService, but for testing we may have mutliple; we still only want a
-    //     single FSharpChecker instance shared across them.
-    static let gate = obj()
-
-    // We only ever want to have a single FSharpChecker.
-    static let mutable checkerSingleton = None
-
     interface IWorkspaceServiceFactory with
-        member _.CreateService(workspaceServices) =
+        member _.CreateService(_workspaceServices) =
 
-            let workspace = workspaceServices.Workspace
+            // Store command line options
+            let commandLineOptions = ConcurrentDictionary<ProjectId, string[] * string[]>()
 
-            let tryGetMetadataSnapshot (path, timeStamp) = 
-                match workspace with
-                | :? VisualStudioWorkspace as workspace ->
-                    try
-                        let md = Microsoft.CodeAnalysis.ExternalAccess.FSharp.LanguageServices.FSharpVisualStudioWorkspaceExtensions.GetMetadata(workspace, path, timeStamp)
-                        let amd = (md :?> AssemblyMetadata)
-                        let mmd = amd.GetModules().[0]
-                        let mmr = mmd.GetMetadataReader()
+            let legacyProjectSites = ConcurrentDictionary<ProjectId, IProjectSite>()
 
-                        // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
-                        // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
-                        // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-                        // You shouldn't dispose it directly."
-
-                        let objToHold = box md
-
-                        // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-                        // Debug.Assert((FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
-
-                        Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
-                    with ex -> 
-                        // We catch all and let the backup routines in the F# compiler find the error
-                        Assert.Exception(ex)
-                        None 
-                | _ ->
-                    None
-
-            lock gate (fun () ->
-                match checkerSingleton with
-                | Some _ -> ()
-                | _ ->
-                    let checker = 
-                        lazy
-                            let checker = 
-                                FSharpChecker.Create(
-                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine. 
-                                    keepAllBackgroundResolutions = false,
-                                    legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
-                                    tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-                                    keepAllBackgroundSymbolUses = false,
-                                    enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                                    enablePartialTypeChecking = true)
-                            checker    
-                    checkerSingleton <- Some checker                   
-            )          
-
-            let optionsManager = 
-                lazy
-                    match checkerSingleton with
-                    | Some checker ->
-                        FSharpProjectOptionsManager(checker.Value, workspaceServices.Workspace)
-                    | _ ->
-                        failwith "Checker not set."
+            let scriptUpdatedEvent = Event<FSharpProjectOptions>()
 
             { new IFSharpWorkspaceService with
-                member _.Checker =
-                    match checkerSingleton with
-                    | Some checker -> checker.Value
-                    | _ -> failwith "Checker not set."
-                member _.FSharpProjectOptionsManager = optionsManager.Value } :> _
+                member _.CommandLineOptions = commandLineOptions
+                member _.LegacyProjectSites = legacyProjectSites
+                member _.ScriptUpdatedEvent = scriptUpdatedEvent } :> _
 
 [<Sealed>]
-type private FSharpSolutionEvents(projectManager: FSharpProjectOptionsManager, metadataAsSource: FSharpMetadataAsSourceService) =
+type private FSharpSolutionEvents(workspaceService: IFSharpWorkspaceService, metadataAsSource: FSharpMetadataAsSourceService) =
 
     interface IVsSolutionEvents with
 
         member _.OnAfterCloseSolution(_) =
-            projectManager.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             metadataAsSource.ClearGeneratedFiles()
-            projectManager.ClearAllCaches()
+            workspaceService.CommandLineOptions.Clear()
+            workspaceService.LegacyProjectSites.Clear()
+            FSharpProjectCaches.Clear()
             VSConstants.S_OK
 
         member _.OnAfterLoadProject(_, _) = VSConstants.E_NOTIMPL
@@ -246,11 +212,11 @@ type internal FSharpPackage() as this =
                     
                     let workspace = this.ComponentModel.GetService<VisualStudioWorkspace>()
                     let _ = this.ComponentModel.DefaultExportProvider.GetExport<HackCpsCommandLineChanges>()
-                    let optionsManager = workspace.Services.GetService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+                    let workspaceService = workspace.Services.GetService<IFSharpWorkspaceService>()
                     let metadataAsSource = this.ComponentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
                     let solution = this.GetServiceAsync(typeof<SVsSolution>).Result
                     let solution = solution :?> IVsSolution
-                    let solutionEvents = FSharpSolutionEvents(optionsManager, metadataAsSource)
+                    let solutionEvents = FSharpSolutionEvents(workspaceService, metadataAsSource)
                     let rdt = this.GetServiceAsync(typeof<SVsRunningDocumentTable>).Result
                     let rdt = rdt :?> IVsRunningDocumentTable
 
@@ -267,7 +233,7 @@ type internal FSharpPackage() as this =
                                 FSharpWorkspaceProjectContextFactory(projectContextFactory)
                             ),
                             rdt)
-                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)
+                    let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, workspaceService, projectContextFactory)
                     ()
                 let awaiter = this.JoinableTaskFactory.SwitchToMainThreadAsync().GetAwaiter()
                 if awaiter.IsCompleted then
@@ -358,4 +324,4 @@ type internal HackCpsCommandLineChanges
         let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
         let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
-        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projectId, sourcePaths, options)
+        workspaceService.CommandLineOptions.[projectId] <- (sourcePaths, options |> Array.ofSeq)

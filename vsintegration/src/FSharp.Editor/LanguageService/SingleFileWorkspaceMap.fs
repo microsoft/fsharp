@@ -145,7 +145,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
     // We have a lock because the `ScriptUpdated` event may happen concurrently when a document opens or closes.
     let gate = obj()
     let files = ConcurrentDictionary(StringComparer.OrdinalIgnoreCase)
-    let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+    let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
     static let mustUpdateProjectReferences (refSourceFiles: string []) (projectContext: IFSharpWorkspaceProjectContext) =
         refSourceFiles.Length <> projectContext.ProjectReferenceCount ||
@@ -166,8 +166,6 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
     let tryRemove (document: Document) =
         let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
         if projIds.Count = 0 then
-            optionsManager.ClearSingleFileOptionsCache(document.Id)
-
             match files.TryRemove(document.FilePath) with
             | true, projectContext ->
                 (projectContext :> IDisposable).Dispose()
@@ -175,7 +173,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                 ()
 
     do
-        optionsManager.ScriptUpdated.Add(fun scriptProjectOptions ->
+        workspaceService.ScriptUpdatedEvent.Publish.Add(fun scriptProjectOptions ->
             if scriptProjectOptions.SourceFiles.Length > 0 then
                 // The last file in the project options is the main script file.
                 let filePath = scriptProjectOptions.SourceFiles.[scriptProjectOptions.SourceFiles.Length - 1]
@@ -291,8 +289,7 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                     |> Seq.tryFind (fun x -> String.Equals(x.FilePath, filePath, StringComparison.OrdinalIgnoreCase))
                 match documentOpt with
                 | None -> ()
-                | Some(document) ->                           
-                    optionsManager.ClearSingleFileOptionsCache(document.Id)
+                | Some(_document) ->                           
                     projectContext.Dispose()
                     files.[newFilePath] <- projectContextFactory.CreateProjectContext(newFilePath)
             else

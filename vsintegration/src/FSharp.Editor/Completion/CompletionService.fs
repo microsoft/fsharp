@@ -22,12 +22,10 @@ type internal FSharpCompletionService
     ) =
     inherit CompletionServiceWithProviders(workspace)
 
-    let projectInfoManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
-
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
             FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
-            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
+            FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace)))
 
     override _.Language = FSharpConstants.FSharpLanguageName
     override _.GetBuiltInProviders() = builtInProviders
@@ -47,7 +45,7 @@ type internal FSharpCompletionService
     override _.GetDefaultCompletionListSpan(sourceText, caretIndex) =
         let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
-        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+        let defines = document.GetFSharpQuickDefines()
         CompletionUtils.getDefaultCompletionListSpan(sourceText, caretIndex, documentId, document.FilePath, defines)
 
 [<Shared>]

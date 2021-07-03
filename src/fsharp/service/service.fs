@@ -46,6 +46,296 @@ module EnvMisc =
     let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
     //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
+    let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
+
+    // We currently share one global dependency provider for all scripts for the FSharpChecker.
+    // For projects, one is used per project.
+    // 
+    // Sharing one for all scripts is necessary for good performance from GetProjectOptionsFromScript,
+    // which requires a dependency provider to process through the project options prior to working out
+    // if the cached incremental builder can be used for the project.
+    let dependencyProviderForScripts = new DependencyProvider()
+
+[<Sealed>]
+type FSharpProject private (parsingOptions: FSharpParsingOptions, projectOptions: FSharpProjectOptions, builder: IncrementalBuilder, creationDiags, suggestNamesForErrors, keepAssemblyContents) =
+
+    /// One of the references has been marked invalidated.
+    /// This is due to a type provider being invalidated.
+    member this.IsInvalidated = builder.IsReferencesInvalidated
+
+    member this.ParsingOptions = parsingOptions
+
+    member this.Options = projectOptions
+
+    member this.GetParseFileResults(filePath) =
+        let parseTree,_,_,parseDiags = builder.GetParseResultsForFile (filePath)
+        let diagnostics = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (builder.TcConfig.errorSeverityOptions, false, filePath, parseDiags, suggestNamesForErrors) |]
+        FSharpParseFileResults(diagnostics = diagnostics, input = parseTree, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+
+    member this.GetParseAndCheckFileResultsAsync(filePath) =
+        node {
+            let (parseTree, _, _, parseDiags) = builder.GetParseResultsForFile (filePath)
+            let! tcProj = builder.GetFullCheckResultsAfterFileInProject (filePath)
+
+            let! tcInfo, tcInfoExtras = tcProj.GetOrComputeTcInfoWithExtras()
+
+            let tcResolutions = tcInfoExtras.tcResolutions
+            let tcSymbolUses = tcInfoExtras.tcSymbolUses
+            let tcOpenDeclarations = tcInfoExtras.tcOpenDeclarations
+            let latestCcuSigForFile = tcInfo.latestCcuSigForFile
+            let tcState = tcInfo.tcState
+            let tcEnvAtEnd = tcInfo.tcEnvAtEndOfFile
+            let latestImplementationFile = tcInfoExtras.latestImplFile
+            let tcDependencyFiles = tcInfo.tcDependencyFiles
+            let tcErrors = tcInfo.TcErrors
+            let errorOptions = builder.TcConfig.errorSeverityOptions
+            let parseDiags = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, filePath, parseDiags, suggestNamesForErrors) |]
+            let tcErrors = [| yield! creationDiags; yield! DiagnosticHelpers.CreateDiagnostics (errorOptions, false, filePath, tcErrors, suggestNamesForErrors) |]
+            let parseResults = FSharpParseFileResults(diagnostics=parseDiags, input=parseTree, parseHadErrors=false, dependencyFiles=builder.AllDependenciesDeprecated)
+            let loadClosure = None
+            let typedResults = 
+                FSharpCheckFileResults.Make
+                    (filePath, 
+                        projectOptions.ProjectFileName, 
+                        tcProj.TcConfig, 
+                        tcProj.TcGlobals, 
+                        projectOptions.IsIncompleteTypeCheckEnvironment, 
+                        builder, 
+                        projectOptions,
+                        Array.ofList tcDependencyFiles, 
+                        creationDiags, 
+                        parseResults.Diagnostics, 
+                        tcErrors,
+                        keepAssemblyContents,
+                        Option.get latestCcuSigForFile, 
+                        tcState.Ccu, 
+                        tcProj.TcImports, 
+                        tcEnvAtEnd.AccessRights,
+                        tcResolutions, 
+                        tcSymbolUses,
+                        tcEnvAtEnd.NameEnv,
+                        loadClosure, 
+                        latestImplementationFile,
+                        tcOpenDeclarations) 
+            return (parseResults, typedResults)
+        }
+        |> Async.AwaitNodeCode
+
+    member this.TryGetSemanticClassificationForFileAsync(filePath) =
+        node {
+            let! checkResults = builder.GetFullCheckResultsAfterFileInProject (filePath)
+            let! scopt = checkResults.GetOrComputeSemanticClassificationIfEnabled()
+            match scopt with
+            | None -> return None
+            | Some sc -> return Some (sc.GetView ())
+        }
+        |> Async.AwaitNodeCode
+
+    member this.FindReferencesInFileAsync(filePath, symbol: FSharpSymbol) =
+        node {
+            if builder.ContainsFile filePath then
+                let! checkResults = builder.GetFullCheckResultsAfterFileInProject filePath
+                let! keyStoreOpt = checkResults.GetOrComputeItemKeyStoreIfEnabled()
+                match keyStoreOpt with
+                | None -> return Seq.empty
+                | Some reader -> return reader.FindAll symbol.Item
+            else
+                return Seq.empty
+        }
+        |> Async.AwaitNodeCode
+
+    member this.ToReferencedProject() =
+        let rawAssemblyData =
+            node {
+                let! (_, _, tcAssemblyDataOpt, _) = builder.GetCheckResultsAndImplementationsForProject()
+                return tcAssemblyDataOpt
+            }
+        FSharpReferencedProject.FSharpRawAssemblyData(projectOptions.ProjectFileName, rawAssemblyData)
+
+    member this.UpdateFiles(files: (string * (unit -> ISourceText) * bool) []) =
+        FSharpProject(parsingOptions, projectOptions, builder.UpdateFilesAsSnapshot(files), creationDiags, suggestNamesForErrors, keepAssemblyContents)
+
+    static member CreateAsync(projectOptions: FSharpProjectOptions, ?parsingOptions: FSharpParsingOptions, ?legacyReferenceResolver: LegacyReferenceResolver, ?suggestNamesForErrors: bool, ?tryGetMetadataSnapshot: ILBinaryReader.ILReaderTryGetMetadataSnapshot) =
+        node {
+            let legacyReferenceResolver = defaultArg legacyReferenceResolver (SimulatedMSBuildReferenceResolver.getResolver())
+            let suggestNamesForErrors = defaultArg suggestNamesForErrors false
+            let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
+            
+            let parsingOptions = defaultArg parsingOptions (FSharpProject.GetParsingOptions(projectOptions))
+
+            let projectReferences =  
+                [ for r in projectOptions.ReferencedProjects do
+
+                    match r with
+                    | FSharpReferencedProject.FSharpReference _ ->
+                       // FSharpProject does not support FSharpReferencedProject.FSharpReference as it requires the project lookup in the service.
+                       ()
+
+                    | FSharpReferencedProject.FSharpRawAssemblyData(nm, rawAssemblyData) ->
+                        yield
+                            { new IProjectReference with 
+                                member x.EvaluateRawContents() = rawAssemblyData
+                                member x.TryGetLogicalTimeStamp(_) = DateTime.MinValue |> Some
+                                member x.FileName = nm }
+                            
+                    | FSharpReferencedProject.PEReference(nm,stamp,delayedReader) ->
+                        yield
+                            { new IProjectReference with 
+                                member x.EvaluateRawContents() = 
+                                  node {
+                                    let! ilReaderOpt = delayedReader.TryGetILModuleReader() |> NodeCode.FromCancellable
+                                    match ilReaderOpt with
+                                    | Some ilReader ->
+                                        let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                        return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                    | _ ->
+                                        return None
+                                  }
+                                member x.TryGetLogicalTimeStamp(_) = stamp |> Some
+                                member x.FileName = nm }
+
+                    | FSharpReferencedProject.ILModuleReference(nm,getStamp,getReader) ->
+                        yield
+                            { new IProjectReference with 
+                                member x.EvaluateRawContents() = 
+                                  node {
+                                    let ilReader = getReader()
+                                    let ilModuleDef, ilAsmRefs = ilReader.ILModuleDef, ilReader.ILAssemblyRefs
+                                    return RawFSharpAssemblyData(ilModuleDef, ilAsmRefs) :> IRawFSharpAssemblyData |> Some
+                                  }
+                                member x.TryGetLogicalTimeStamp(_) = getStamp() |> Some
+                                member x.FileName = nm }
+                ]
+
+            let keepAssemblyContents = false
+
+            let! builderOpt, diagnostics =
+                IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions
+                    (legacyReferenceResolver, FSharpCheckerResultsSettings.defaultFSharpBinariesDir, frameworkTcImportsCache, None, Array.toList projectOptions.SourceFiles, 
+                     Array.toList projectOptions.OtherOptions, projectReferences, projectOptions.ProjectDirectory, 
+                     projectOptions.UseScriptResolutionRules, keepAssemblyContents, false,
+                     tryGetMetadataSnapshot, suggestNamesForErrors, false,
+                     true,
+                     true,
+                     (if projectOptions.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
+                     false)
+        
+            return
+                match builderOpt with
+                | None -> Result.Error(diagnostics)
+                | Some builder -> Result.Ok(FSharpProject(parsingOptions, projectOptions, builder, diagnostics, suggestNamesForErrors, keepAssemblyContents))
+        }
+        |> Async.AwaitNodeCode
+
+    static member GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
+        let isEditing = defaultArg isEditing false
+        let isInteractive = defaultArg isInteractive false
+        use errorScope = new ErrorScope()
+        let tcConfigB = 
+            TcConfigBuilder.CreateNew((SimulatedMSBuildReferenceResolver.getResolver()),
+                defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
+                reduceMemoryUsage=ReduceMemoryFlag.Yes,
+                implicitIncludeDir="",
+                isInteractive=isInteractive,
+                isInvalidationSupported=false,
+                defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
+                tryGetMetadataSnapshot=(fun _ -> None),
+                sdkDirOverride=None,
+                rangeForErrors=range0)
+
+        // These defines are implied by the F# compiler
+        tcConfigB.conditionalCompilationDefines <- 
+            let define = if isInteractive then "INTERACTIVE" else "COMPILED"
+            define :: tcConfigB.conditionalCompilationDefines
+        if isEditing then 
+            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
+
+        // Apply command-line arguments and collect more source files if they are in the arguments
+        let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
+        FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+
+    static member GetParsingOptions(projectOptions: FSharpProjectOptions) =
+        let sourceFiles = List.ofArray projectOptions.SourceFiles
+        let argv = List.ofArray projectOptions.OtherOptions
+
+        FSharpProject.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, projectOptions.UseScriptResolutionRules)
+        |> fst
+
+    static member GetProjectOptionsFromScriptAux(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, legacyReferenceResolver, tryGetMetadataSnapshot, _userOpName) =
+        cancellable {
+            use errors = new ErrorScope()
+
+            // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
+            let useFsiAuxLib = defaultArg useFsiAuxLib true
+            let useSdkRefs =  defaultArg useSdkRefs true
+            let reduceMemoryUsage = ReduceMemoryFlag.Yes
+            let previewEnabled = defaultArg previewEnabled false
+
+            // Do we assume .NET Framework references for scripts?
+            let assumeDotNetFramework = defaultArg assumeDotNetFramework true
+            let extraFlags =
+                if previewEnabled then
+                    [| "--langversion:preview" |]
+                else
+                    [||]
+            let otherFlags = defaultArg otherFlags extraFlags
+            let useSimpleResolution = 
+#if ENABLE_MONO_SUPPORT
+                runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+#else
+                true
+#endif
+            let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
+            let applyCompilerOptions tcConfigB  = 
+                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
+                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
+
+            let loadClosure =
+                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
+                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
+                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
+                    applyCompilerOptions, assumeDotNetFramework, 
+                    tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
+
+            let otherFlags = 
+                [| yield "--noframework"; yield "--warn:3";
+                   yield! otherFlags 
+                   for r in loadClosure.References do yield "-r:" + fst r
+                   for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
+                |]
+
+            let options = 
+                {
+                    ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
+                    ProjectId = None
+                    SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
+                    OtherOptions = otherFlags 
+                    ReferencedProjects= [| |]  
+                    IsIncompleteTypeCheckEnvironment = false
+                    UseScriptResolutionRules = true 
+                    LoadTime = loadedTimeStamp
+                    UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
+                    OriginalLoadReferences = loadClosure.OriginalLoadReferences
+                    Stamp = optionsStamp
+                }
+            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
+            return options, loadClosure, (diags @ errors.Diagnostics)
+          }
+          |> Cancellable.toAsync
+
+    /// For a given script file, get the ProjectOptions implied by the #load closure
+    static member GetProjectOptionsFromScript(filename, source, ?previewEnabled, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?useSdkRefs, ?assumeDotNetFramework, ?sdkDirOverride, ?optionsStamp: int64, ?legacyReferenceResolver, ?tryGetMetadataSnapshot) = 
+        let userOpName = "Unknown"
+        let legacyReferenceResolver = defaultArg legacyReferenceResolver ((SimulatedMSBuildReferenceResolver.getResolver()))
+        let tryGetMetadataSnapshot = defaultArg tryGetMetadataSnapshot (fun _ -> None)
+        async {
+            let! options, _, diags = FSharpProject.GetProjectOptionsFromScriptAux(filename, source, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib, useSdkRefs, sdkDirOverride, assumeDotNetFramework, optionsStamp, legacyReferenceResolver, tryGetMetadataSnapshot, userOpName)
+            return (options, diags)
+        }
+
+    static member MatchBraces(filePath, sourceText, parsingOptions) =
+        let userOpName = "Unknown"
+        ParseAndCheckFile.matchBraces(sourceText, filePath, parsingOptions, userOpName, false)
 //----------------------------------------------------------------------------
 // BackgroundCompiler
 //
@@ -233,16 +523,6 @@ type BackgroundCompiler(
             areSame=FSharpProjectOptions.AreSameForChecking, 
             areSimilar=FSharpProjectOptions.UseSameProject)
 
-    let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
-
-    // We currently share one global dependency provider for all scripts for the FSharpChecker.
-    // For projects, one is used per project.
-    // 
-    // Sharing one for all scripts is necessary for good performance from GetProjectOptionsFromScript,
-    // which requires a dependency provider to process through the project options prior to working out
-    // if the cached incremental builder can be used for the project.
-    let dependencyProviderForScripts = new DependencyProvider()
-
     /// CreateOneIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (options:FSharpProjectOptions, userOpName) = 
@@ -252,6 +532,10 @@ type BackgroundCompiler(
             [ for r in options.ReferencedProjects do
 
                match r with
+               | FSharpReferencedProject.FSharpRawAssemblyData _ ->
+                    // Creating an incremental build in the service does not support FSharpReferencedProject.FSharpRawAssemblyData.
+                    ()
+
                | FSharpReferencedProject.FSharpReference(nm,opts) ->
                    // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
                    // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
@@ -309,7 +593,8 @@ type BackgroundCompiler(
                    tryGetMetadataSnapshot, suggestNamesForErrors, keepAllBackgroundSymbolUses,
                    enableBackgroundItemKeyStoreAndSemanticClassification,
                    enablePartialTypeChecking,
-                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None))
+                   (if options.UseScriptResolutionRules then Some dependencyProviderForScripts else None),
+                   true)
 
         match builderOpt with 
         | None -> ()
@@ -862,68 +1147,28 @@ type BackgroundCompiler(
     member bc.ParseAndCheckProject(options, userOpName) =
         bc.ParseAndCheckProjectImpl(options, userOpName)
 
-    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, _userOpName) = 
-          cancellable {
-            use errors = new ErrorScope()
+    member _.GetProjectOptionsFromScript(filename, sourceText, previewEnabled, loadedTimeStamp, otherFlags, useFsiAuxLib: bool option, useSdkRefs: bool option, sdkDirOverride: string option, assumeDotNetFramework: bool option, optionsStamp: int64 option, userOpName) = 
+        async {
+            let! options, loadClosure, diags = 
+                FSharpProject.GetProjectOptionsFromScriptAux(
+                    filename,
+                    sourceText,
+                    previewEnabled,
+                    loadedTimeStamp,
+                    otherFlags,
+                    useFsiAuxLib,
+                    useSdkRefs,
+                    sdkDirOverride,
+                    assumeDotNetFramework,
+                    optionsStamp,
+                    legacyReferenceResolver,
+                    tryGetMetadataSnapshot,
+                    userOpName
+                )
 
-            // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
-            let useFsiAuxLib = defaultArg useFsiAuxLib true
-            let useSdkRefs =  defaultArg useSdkRefs true
-            let reduceMemoryUsage = ReduceMemoryFlag.Yes
-            let previewEnabled = defaultArg previewEnabled false
-
-            // Do we assume .NET Framework references for scripts?
-            let assumeDotNetFramework = defaultArg assumeDotNetFramework true
-            let extraFlags =
-                if previewEnabled then
-                    [| "--langversion:preview" |]
-                else
-                    [||]
-            let otherFlags = defaultArg otherFlags extraFlags
-            let useSimpleResolution = 
-#if ENABLE_MONO_SUPPORT
-                runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
-#else
-                true
-#endif
-            let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
-            let applyCompilerOptions tcConfigB  = 
-                let fsiCompilerOptions = CompilerOptions.GetCoreFsiCompilerOptions tcConfigB 
-                CompilerOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
-
-            let loadClosure =
-                LoadClosure.ComputeClosureOfScriptText(legacyReferenceResolver, 
-                    FSharpCheckerResultsSettings.defaultFSharpBinariesDir, filename, sourceText, 
-                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, useSdkRefs, sdkDirOverride, new Lexhelp.LexResourceManager(), 
-                    applyCompilerOptions, assumeDotNetFramework, 
-                    tryGetMetadataSnapshot, reduceMemoryUsage, dependencyProviderForScripts)
-
-            let otherFlags = 
-                [| yield "--noframework"; yield "--warn:3";
-                   yield! otherFlags 
-                   for r in loadClosure.References do yield "-r:" + fst r
-                   for (code,_) in loadClosure.NoWarns do yield "--nowarn:" + code
-                |]
-
-            let options = 
-                {
-                    ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
-                    ProjectId = None
-                    SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
-                    OtherOptions = otherFlags 
-                    ReferencedProjects= [| |]  
-                    IsIncompleteTypeCheckEnvironment = false
-                    UseScriptResolutionRules = true 
-                    LoadTime = loadedTimeStamp
-                    UnresolvedReferences = Some (FSharpUnresolvedReferencesSet(loadClosure.UnresolvedReferences))
-                    OriginalLoadReferences = loadClosure.OriginalLoadReferences
-                    Stamp = optionsStamp
-                }
             scriptClosureCache.Set(AnyCallerThread, options, loadClosure) // Save the full load closure for later correlation.
-            let diags = loadClosure.LoadClosureRootFileDiagnostics |> List.map (fun (exn, isError) -> FSharpDiagnostic.CreateFromException(exn, isError, range.Zero, false))
-            return options, (diags @ errors.Diagnostics)
-          }
-          |> Cancellable.toAsync
+            return (options, diags)
+        }
             
     member bc.InvalidateConfiguration(options: FSharpProjectOptions, userOpName) =
         if incrementalBuildersCache.ContainsSimilarKey (AnyCallerThread, options) then
@@ -1013,12 +1258,12 @@ type FSharpChecker(legacyReferenceResolver,
             enablePartialTypeChecking)
 
     static let globalInstance = lazy FSharpChecker.Create()
-            
+
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.braceMatchCache. Most recently used cache for brace matching. Accessed on the
     // background UI thread, not on the compiler thread.
     //
     // This cache is safe for concurrent access.
-    let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing) 
+    let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
     let mutable maxMemoryReached = false
 
@@ -1309,29 +1554,7 @@ type FSharpChecker(legacyReferenceResolver,
     member _.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, ?isInteractive, ?isEditing) =
         let isEditing = defaultArg isEditing false
         let isInteractive = defaultArg isInteractive false
-        use errorScope = new ErrorScope()
-        let tcConfigB = 
-            TcConfigBuilder.CreateNew(legacyReferenceResolver,
-                defaultFSharpBinariesDir=FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
-                reduceMemoryUsage=ReduceMemoryFlag.Yes,
-                implicitIncludeDir="",
-                isInteractive=isInteractive,
-                isInvalidationSupported=false,
-                defaultCopyFSharpCore=CopyFSharpCoreFlag.No,
-                tryGetMetadataSnapshot=tryGetMetadataSnapshot,
-                sdkDirOverride=None,
-                rangeForErrors=range0)
-
-        // These defines are implied by the F# compiler
-        tcConfigB.conditionalCompilationDefines <- 
-            let define = if isInteractive then "INTERACTIVE" else "COMPILED"
-            define :: tcConfigB.conditionalCompilationDefines
-        if isEditing then 
-            tcConfigB.conditionalCompilationDefines <- "EDITING":: tcConfigB.conditionalCompilationDefines
-
-        // Apply command-line arguments and collect more source files if they are in the arguments
-        let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, argv)
-        FSharpParsingOptions.FromTcConfigBuilder(tcConfigB, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
+        FSharpProject.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, isInteractive, isEditing)
 
     member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool, ?isEditing) =
         ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive, ?isEditing=isEditing)

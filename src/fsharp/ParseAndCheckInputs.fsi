@@ -49,6 +49,9 @@ val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 /// Parse one input file
 val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool -> ParsedInput
 
+/// Parse one input source text
+val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * sourceText: ISourceText * isLastCompiland: (bool * bool) * ErrorLogger -> ParsedInput
+
 /// Parse multiple input files from disk
 val ParseInputFiles: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string list * ErrorLogger * Exiter * createErrorLogger: (Exiter -> CapturingErrorLogger) * retryLocked: bool -> (ParsedInput * string) list
 

@@ -19,16 +19,19 @@ open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 open NUnit.Framework
+open FSharp.Compiler.CodeAnalysis
 
 [<TestFixture>]
 module WorkspaceTests =
+
+    let checker = FSharpChecker.Create()
 
     let compileFileAsDll (workspace: Workspace) filePath outputFilePath =
         let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
 
         try
             let result, _ =
-                workspaceService.Checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
+                checker.Compile([|"fsc.dll";filePath;$"-o:{ outputFilePath }";"--deterministic+";"--optimize+";"--target:library"|])
                 |> Async.RunSynchronously
 
             if result.Length > 0 then
@@ -220,7 +223,7 @@ module WorkspaceTests =
                         )
                 )
 
-                not (solution.Workspace.TryApplyChanges(solution)) |> ignore
+                solution.Workspace.TryApplyChanges(solution) |> ignore
 
                 mainProj <- solution.GetProject(currentProj.Id)
 

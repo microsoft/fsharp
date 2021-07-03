@@ -109,16 +109,17 @@ type internal DelayedILModuleReader =
         | _ ->
             Cancellable.ret (Some this.result)
 
-
 [<RequireQualifiedAccess;NoComparison;CustomEquality>]
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | FSharpRawAssemblyData of projectFileName: string * rawAssemblyData: NodeCode<IRawFSharpAssemblyData option>
     | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member this.FileName =
         match this with
         | FSharpReference(projectFileName=projectFileName)
+        | FSharpRawAssemblyData(projectFileName=projectFileName)
         | PEReference(projectFileName=projectFileName)
         | ILModuleReference(projectFileName=projectFileName) -> projectFileName
 
@@ -131,6 +132,9 @@ type FSharpReferencedProject =
     static member CreateFromILModuleReader(projectFileName, getStamp, getReader) =
         ILModuleReference(projectFileName, getStamp, getReader)
 
+    static member CreateRawAssemblyData(projectFileName: string, rawAssemblyData: NodeCode<IRawFSharpAssemblyData option>) =
+        FSharpRawAssemblyData(projectFileName, rawAssemblyData)
+
     override this.Equals(o) =
         match o with
         | :? FSharpReferencedProject as o ->
@@ -141,6 +145,8 @@ type FSharpReferencedProject =
                 projectFileName1 = projectFileName2 && stamp1 = stamp2
             | ILModuleReference(projectFileName1, getStamp1, _), ILModuleReference(projectFileName2, getStamp2, _) ->
                 projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
+            | FSharpRawAssemblyData(projectFileName1, rawAssemblyData1), FSharpRawAssemblyData(projectFileName2, rawAssemblyData2) ->
+                projectFileName1 = projectFileName2 && obj.ReferenceEquals(rawAssemblyData1, rawAssemblyData2)
             | _ ->
                 false
         | _ ->

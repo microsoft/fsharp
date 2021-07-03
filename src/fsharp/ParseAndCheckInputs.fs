@@ -423,11 +423,28 @@ let parseInputFileAux (tcConfig: TcConfig, lexResourceManager, conditionalCompil
     // Parse the file drawing tokens from the lexbuf
     ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
 
+let parseInputSourceTextAux (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, sourceText, isLastCompiland, errorLogger) =
+    // Set up the LexBuffer for the file
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfig.langVersion
+    let lexbuf = UnicodeLexing.SourceTextAsLexbuf(not tcConfig.compilingFslib, tcConfig.langVersion.SupportsFeature, checkLanguageFeatureErrorRecover, sourceText)
+
+    // Parse the file drawing tokens from the lexbuf
+    ParseOneInputLexbuf(tcConfig, lexResourceManager, conditionalCompilationDefines, lexbuf, filename, isLastCompiland, errorLogger)
+
 /// Parse an input from disk
 let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked) =
     try
        checkInputFile tcConfig filename
        parseInputFileAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, isLastCompiland, errorLogger, retryLocked)
+    with e ->
+        errorRecovery e rangeStartup
+        EmptyParsedInput(filename, isLastCompiland)
+
+/// Parse an input from source text
+let ParseOneInputSourceText (tcConfig: TcConfig, lexResourceManager, conditionalCompilationDefines, filename, sourceText, isLastCompiland, errorLogger) =
+    try
+       checkInputFile tcConfig filename
+       parseInputSourceTextAux(tcConfig, lexResourceManager, conditionalCompilationDefines, filename, sourceText, isLastCompiland, errorLogger)
     with e ->
         errorRecovery e rangeStartup
         EmptyParsedInput(filename, isLastCompiland)

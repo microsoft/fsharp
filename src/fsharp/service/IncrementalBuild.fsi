@@ -237,6 +237,8 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile: filename:string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
+      member UpdateFilesAsSnapshot: files: (string * (unit -> ISourceText) * bool) [] -> IncrementalBuilder
+
       /// Create the incremental builder
       static member TryCreateIncrementalBuilderForProjectOptions:
           LegacyReferenceResolver *
@@ -255,7 +257,8 @@ type internal IncrementalBuilder =
           keepAllBackgroundSymbolUses: bool *
           enableBackgroundItemKeyStoreAndSemanticClassification: bool *
           enablePartialTypeChecking: bool *
-          dependencyProvider: DependencyProvider option
+          dependencyProvider: DependencyProvider option *
+          isMutable: bool
              -> NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

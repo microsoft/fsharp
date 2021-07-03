@@ -45,7 +45,7 @@ let private DefaultDocumentationProvider =
         override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
     }
 
-let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:int) =
+let GetSignatureHelp (project:VisualFSharp.UnitTests.Roslyn.FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let triggerChar = None
         let fileContents = File.ReadAllText(fileName)
@@ -74,7 +74,7 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         return triggered
     } |> Async.RunSynchronously
 
-let GetCompletionTypeNames (project:FSharpProject) (fileName:string) (caretPosition:int) =
+let GetCompletionTypeNames (project:VisualFSharp.UnitTests.Roslyn.FSharpProject) (fileName:string) (caretPosition:int) =
     let sigHelp = GetSignatureHelp project fileName caretPosition
     match sigHelp with
         | None -> [||]
@@ -84,7 +84,7 @@ let GetCompletionTypeNames (project:FSharpProject) (fileName:string) (caretPosit
                 |> Array.map (fun r -> r.Parameters |> Array.map (fun p -> p.CanonicalTypeTextForSorting))
             completionTypeNames
 
-let GetCompletionTypeNamesFromCursorPosition (project:FSharpProject) =
+let GetCompletionTypeNamesFromCursorPosition (project:VisualFSharp.UnitTests.Roslyn.FSharpProject) =
     let fileName, caretPosition = project.GetCaretPosition()
     let completionNames = GetCompletionTypeNames project fileName caretPosition
     completionNames

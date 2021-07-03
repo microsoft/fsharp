@@ -23,7 +23,7 @@ type internal HashCompletion =
           AllowableExtensions = allowableExtensions
           UseIncludeDirectives = useIncludeDirectives }
 
-type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: HashCompletion list) =
+type internal HashDirectiveCompletionProvider(workspace: Workspace, completions: HashCompletion list) =
 
     let [<Literal>] NetworkPath = "\\\\"
     let commitRules = ImmutableArray.Create(CharacterSetModificationRule.Create(CharacterSetModificationKind.Replace, '"', '\\', ',', '/'))
@@ -48,7 +48,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
     let getClassifiedSpans(text: SourceText, position: int) : ResizeArray<ClassifiedSpan> =
         let documentId = workspace.GetDocumentIdInCurrentContext(text.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
-        let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+        let defines = document.GetFSharpQuickDefines()
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition(position)
         Tokenizer.getClassifiedSpans(documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
@@ -82,14 +82,14 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
            )
         |> Seq.toList
 
-    static member Create(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager) =
+    static member Create(workspace: Workspace) =
         let completions =
             [
                 HashCompletion.Create("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [ ".fs"; ".fsx" ], useIncludeDirectives = true)
                 HashCompletion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [ ".dll"; ".exe" ], useIncludeDirectives = true)
                 HashCompletion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", [ "\x00" ], useIncludeDirectives = false)
             ]
-        HashDirectiveCompletionProvider(workspace, projectInfoManager, completions)
+        HashDirectiveCompletionProvider(workspace, completions)
 
     interface IFSharpCommonCompletionProvider with
 

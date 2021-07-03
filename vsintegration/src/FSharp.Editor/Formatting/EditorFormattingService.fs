@@ -27,7 +27,7 @@ type internal FSharpEditorFormattingService
     
     static let getIndentation (line : string) = line |> Seq.takeWhile ((=) ' ') |> Seq.length
 
-    static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, parsingOptions: FSharpParsingOptions, position: int) =
+    static member GetFormattingChanges(document: Document, sourceText: SourceText, filePath: string, indentStyle: FormattingOptions.IndentStyle, position: int) =
         // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
         // match the indent with the indent on the line that opened it
@@ -38,9 +38,11 @@ type internal FSharpEditorFormattingService
             // (this is what C# does)
             do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
 
+            let documentId = document.Id
+
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let defines = document.GetFSharpQuickDefines()
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
@@ -51,8 +53,9 @@ type internal FSharpEditorFormattingService
                     x.Tag <> FSharpTokenTag.COMMENT &&
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
-            let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService", forFormatting=true)
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
+            let! (left, right) = 
+                FSharpBraceMatchingService.GetBraceMatchingResult(parsingOptions, sourceText, filePath, position, forFormatting=true)
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
@@ -151,8 +154,7 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let parsingOptions = document.GetFSharpQuickParsingOptions()
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, document.GetFSharpChecker(), indentStyle, parsingOptions, position)
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document, sourceText, document.FilePath, indentStyle, position)
             return textChange |> Option.toList |> toIList
         }
         

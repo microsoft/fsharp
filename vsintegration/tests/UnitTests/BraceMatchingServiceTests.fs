@@ -36,8 +36,8 @@ type BraceMatchingServiceTests()  =
         let position = fileContents.IndexOf(marker)
         Assert.IsTrue(position >= 0, "Cannot find marker '{0}' in file contents", marker)
 
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
+        let parsingOptions = FSharpProject.GetParsingOptions(projectOptions)
+        match FSharpBraceMatchingService.GetBraceMatchingResult(parsingOptions, sourceText, fileName, position) |> Async.RunSynchronously with
         | None -> ()
         | Some(left, right) -> Assert.Fail("Found match for brace '{0}'", marker)
         
@@ -49,8 +49,8 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(startMarkerPosition >= 0, "Cannot find start marker '{0}' in file contents", startMarkerPosition)
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
         
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunSynchronously with
+        let parsingOptions = FSharpProject.GetParsingOptions(projectOptions)
+        match FSharpBraceMatchingService.GetBraceMatchingResult(parsingOptions, sourceText, fileName, startMarkerPosition) |> Async.RunSynchronously with
         | None -> Assert.Fail("Didn't find a match for start brace at position '{0}", startMarkerPosition)
         | Some(left, right) ->
             let endPositionInRange(range) = 
@@ -182,10 +182,10 @@ let main argv =
     [<TestCase ("let a8 = seq { yield() }", [|13;23|])>]
     member this.DoNotMatchOnInnerSide(fileContents: string, matchingPositions: int[]) =
         let sourceText = SourceText.From(fileContents)
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let parsingOptions = FSharpProject.GetParsingOptions(projectOptions)
         
         for position in matchingPositions do
-            match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
+            match FSharpBraceMatchingService.GetBraceMatchingResult(parsingOptions, sourceText, fileName, position) |> Async.RunSynchronously with
             | Some _ -> ()
             | None ->
                 match position with

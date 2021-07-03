@@ -20,7 +20,7 @@ open Microsoft.VisualStudio.Shell.Interop
 
 [<Sealed>]
 type internal LegacyProjectWorkspaceMap(solution: IVsSolution, 
-                                        projectInfoManager: FSharpProjectOptionsManager,
+                                        workspaceService: IFSharpWorkspaceService,
                                         projectContextFactory: IWorkspaceProjectContextFactory) as this =
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
@@ -46,7 +46,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
         let projectId = projectContext.Id
 
-        projectInfoManager.SetLegacyProjectSite (projectId, site)
+        workspaceService.LegacyProjectSites.[projectId] <- site
 
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
@@ -139,7 +139,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
             site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                             AdviseProjectSiteChanges(fun () -> 
-                                            projectInfoManager.ClearInfoForProject(projectContext.Id)
+                                            workspaceService.LegacyProjectSites.TryRemove(projectContext.Id) |> ignore
                                             optionsAssociation.Remove(projectContext) |> ignore
                                             projectContext.Dispose()))
 

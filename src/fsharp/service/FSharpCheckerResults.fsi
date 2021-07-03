@@ -24,6 +24,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Text
 
 /// Delays the creation of an ILModuleReader
@@ -97,6 +98,7 @@ type public FSharpProjectOptions =
 and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
     internal
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
+    | FSharpRawAssemblyData of projectFileName: string * rawAssemblyData: NodeCode<IRawFSharpAssemblyData option>
     | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
@@ -113,6 +115,8 @@ and [<NoComparison;CustomEquality>] public FSharpReferencedProject =
 
     /// Creates a reference from an ILModuleReader.
     static member CreateFromILModuleReader : projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader) -> FSharpReferencedProject
+
+    static member internal CreateRawAssemblyData : projectFileName: string * rawAssemblyData: NodeCode<IRawFSharpAssemblyData option> -> FSharpReferencedProject
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

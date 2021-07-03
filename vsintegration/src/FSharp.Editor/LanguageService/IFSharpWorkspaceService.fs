@@ -2,14 +2,20 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System.Collections.Immutable
+open System.Collections.Concurrent
+open Microsoft.CodeAnalysis
 open FSharp.Compiler.CodeAnalysis
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host
 
-// Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
-// Diagnostic providers can be executed in environment that does not use MEF so they can rely only
-// on services exposed by the workspace
 type internal IFSharpWorkspaceService =
     inherit IWorkspaceService
-    abstract Checker: FSharpChecker
-    abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
+
+    /// Store command line options, used for Cps projects
+    abstract CommandLineOptions : ConcurrentDictionary<ProjectId, string[] * string[]>
+
+    /// Legacy project mappings 
+    abstract LegacyProjectSites : ConcurrentDictionary<ProjectId, IProjectSite>
+
+    abstract ScriptUpdatedEvent : Event<FSharpProjectOptions>
