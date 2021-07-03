@@ -90,7 +90,7 @@ module Structure =
         | Member
         | LetOrUse
         | Val
-        | CompExpr
+        | ComputationExpr
         | IfThenElse
         | ThenInIfThenElse
         | ElseInIfThenElse
@@ -140,7 +140,7 @@ module Structure =
             | Member              -> "Member"
             | LetOrUse            -> "LetOrUse"
             | Val                 -> "Val"
-            | CompExpr            -> "CompExpr"
+            | ComputationExpr            -> "ComputationExpr"
             | IfThenElse          -> "IfThenElse"
             | ThenInIfThenElse    -> "ThenInIfThenElse"
             | ElseInIfThenElse    -> "ElseInIfThenElse"
@@ -292,24 +292,24 @@ module Structure =
                 // seq exprs, custom operators, etc
                 if ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
                    && (function SynExpr.Ident _    -> true  | _ -> false) funcExpr
-                   && (function SynExpr.CompExpr _ -> false | _ -> true ) argExpr then
+                   && (function SynExpr.ComputationExpr _ -> false | _ -> true ) argExpr then
                    // if the argExpr is a computation expression another match will handle the outlining
                    // these cases must be removed to prevent creating unnecessary tags for the same scope
                     let collapse = Range.endToEnd funcExpr.Range r
                     rcheck Scope.SpecialFunc Collapse.Below r collapse
                 elif ExprAtomicFlag.NonAtomic=atomicFlag && (not isInfix)
-                   && (function SynExpr.CompExpr _ -> true | _ -> false) argExpr then
+                   && (function SynExpr.ComputationExpr _ -> true | _ -> false) argExpr then
                         let collapse = Range.startToEnd argExpr.Range r
-                        rcheck Scope.CompExpr Collapse.Same r <| Range.modBoth 1 1 collapse
+                        rcheck Scope.ComputationExpr Collapse.Same r <| Range.modBoth 1 1 collapse
                 parseExpr argExpr
                 parseExpr funcExpr
             | SynExpr.Sequential (_, _, e1, e2, _) ->
                 parseExpr e1
                 parseExpr e2
-            | SynExpr.ArrayOrListOfSeqExpr (isArray, e, r) ->
+            | SynExpr.ArrayOrListComputed (isArray, e, r) ->
                 rcheck  Scope.ArrayOrList Collapse.Same r <| Range.modBoth (if isArray then 2 else 1) (if isArray then 2 else 1) r
                 parseExpr e
-            | SynExpr.CompExpr (_arrayOrList, _, e, _r) as _c ->
+            | SynExpr.ComputationExpr (_, e, _r) as _c ->
                 parseExpr e
             | SynExpr.ObjExpr (_, argOpt, bindings, extraImpls, newRange, wholeRange) as _objExpr ->
                 match argOpt with

@@ -385,6 +385,9 @@ module ErrorLoggerExtensions =
         member x.Warning exn = 
             x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Warning)
 
+        member x.InformationalWarning exn = 
+            x.EmitDiagnostic (exn, FSharpDiagnosticSeverity.Info)
+
         member x.Error   exn = 
             x.ErrorR exn
             raise (ReportedError (Some exn))
@@ -464,6 +467,9 @@ let errorR exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
+
+/// Raises a warning with error recovery and returns unit.
+let informationalWarning exn = CompileThreadStatic.ErrorLogger.InformationalWarning exn
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
 let error exn = CompileThreadStatic.ErrorLogger.Error exn

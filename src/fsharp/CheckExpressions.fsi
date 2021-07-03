@@ -224,9 +224,9 @@ type TcFileState =
             
       isInternalTestSpanStackReferring: bool
       // forward call 
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref *  SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call 
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call 
       TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     } 
@@ -243,7 +243,7 @@ type TcFileState =
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
         // forward call to CheckComputationExpressions.fs
-        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv) *
+        tcSequenceExpressionEntry: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs 
         tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         // forward call to CheckComputationExpressions.fs
@@ -653,6 +653,10 @@ val TcConst: cenv: TcFileState -> ty: TType -> m: range -> env: TcEnv -> c: SynC
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExpr: cenv:TcFileState -> ty:TType -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * UnscopedTyparEnv    
+
+/// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+/// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+val RewriteRangeExpr: expr: SynExpr -> SynExpr option
 
 /// Check a syntactic expression and convert it to a typed tree expression
 val TcExprOfUnknownType: cenv:TcFileState -> env:TcEnv -> tpenv:UnscopedTyparEnv -> expr:SynExpr -> Expr * TType * UnscopedTyparEnv    

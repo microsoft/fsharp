@@ -2403,7 +2403,7 @@ type internal FsiInteractionProcessor
 
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
-            Parser.typedSeqExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
+            Parser.typedSequentialExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
 
     let mainThreadProcessParsedExpression ctok errorLogger (expr, istate) =
       istate |> InteractiveCatch errorLogger (fun istate ->

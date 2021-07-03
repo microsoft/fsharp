@@ -3,7 +3,7 @@
 
 //<Expects status="notin">fsbug</Expects>
 //<Expects status="notin">nonTerminalId\.GetTag</Expects>
-//<Expects status="error" span="(8,5)" id="FS0010">Unexpected symbol '\.\.' in interaction\. Expected incomplete structured construct at or before this point, ';', ';;' or other token\.$</Expects>
+//<Expects status="error" span="(8,1)" id="FS0751">Incomplete expression or invalid use of indexer syntax</Expects>
 
 aaaa..;;
 

@@ -408,7 +408,7 @@
       <Link>ParserAndUntypedAST\lex.fsl</Link>
     </FsLex>
     <FsYacc Include="..\pars.fsy">
-      <OtherFlags>--module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <OtherFlags>-v --module FSharp.Compiler.Parser --open FSharp.Compiler --open FSharp.Compiler.Syntax --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>ParserAndUntypedAST\pars.fsy</Link>
     </FsYacc>
     <None Include="..\pplex.fsl">

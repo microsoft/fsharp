@@ -407,6 +407,16 @@
         <target state="translated">Byref-Typen sind in einer Deklaration für offene Typen nicht zulässig.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</source>
+        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated2">
+        <source>The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'.</source>
+        <target state="new">The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">Konflikt in interpolierter Zeichenfolge. Interpolierte Zeichenfolgen dürfen keine Formatbezeichner vom Typ "%" verwenden, es sei denn, jeder erhält einen Ausdruck, z. B. "%d{{1+1}}"</target>
@@ -425,6 +435,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">"use!" darf nicht mit "and!" kombiniert werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseOfReverseIndex">
+        <source>Invalid use of reverse index in list expression.</source>
+        <target state="new">Invalid use of reverse index in list expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -3373,8 +3388,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">Ungültiger Indexerausdruck.</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="needs-review-translation">Ungültiger Indexerausdruck.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">

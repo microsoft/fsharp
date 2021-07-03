@@ -25,7 +25,7 @@ module public Structure =
         | Member
         | LetOrUse
         | Val
-        | CompExpr
+        | ComputationExpr
         | IfThenElse
         | ThenInIfThenElse
         | ElseInIfThenElse

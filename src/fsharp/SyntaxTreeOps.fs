@@ -77,7 +77,7 @@ let rec IsControlFlowExpression e =
     | SynExpr.LetOrUse _
     | SynExpr.Sequential _
     // Treat "ident { ... }" as a control flow expression
-    | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.CompExpr _, _)
+    | SynExpr.App (_, _, SynExpr.Ident _, SynExpr.ComputationExpr _, _)
     | SynExpr.IfThenElse _
     | SynExpr.LetOrUseBang _
     | SynExpr.Match _
@@ -298,14 +298,14 @@ let mkSynApp5 f x1 x2 x3 x4 x5 m = mkSynApp1 (mkSynApp4 f x1 x2 x3 x4 m) x5 m
 
 let mkSynDotParenSet  m a b c = mkSynTrifix m parenSet a b c
 
-let mkSynDotBrackGet  m mDot a b fromEnd   = SynExpr.DotIndexedGet (a, [SynIndexerArg.One (b, fromEnd, m)], mDot, m)
+let mkSynDotBrackGet  m mDot a b = SynExpr.DotIndexedGet (a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 
-let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
+//let mkSynDotBrackSliceGet  m mDot arr sliceArg = SynExpr.DotIndexedGet (arr, [sliceArg], mDot, m)
 
-let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
-    SynExpr.DotIndexedGet (arr, argsList, mDot, m)
+//let mkSynDotBrackSeqSliceGet  m mDot arr (argsList: list<SynIndexerArg>) =
+//    SynExpr.DotIndexedGet (arr, argsList, mDot, m)
 
 let mkSynDotParenGet lhsm dotm a b   =
     match b with
@@ -644,8 +644,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.TypeTest (e, _, _)
           | SynExpr.Upcast (e, _, _)
           | SynExpr.AddressOf (_, e, _, _)
-          | SynExpr.CompExpr (_, _, e, _)
-          | SynExpr.ArrayOrListOfSeqExpr (_, e, _)
+          | SynExpr.ComputationExpr (_, e, _)
+          | SynExpr.ArrayOrListComputed (_, e, _)
           | SynExpr.Typed (e, _, _)
           | SynExpr.FromParseError (e, _)
           | SynExpr.Do (e, _)
@@ -725,11 +725,18 @@ let rec synExprContainsError inpExpr =
           | SynExpr.IfThenElse (e1, e2, e3opt, _, _, _, _) ->
               walkExpr e1 || walkExpr e2 || walkExprOpt e3opt
 
-          | SynExpr.DotIndexedGet (e1, es, _, _) ->
-              walkExpr e1 || walkExprs [ for e in es do yield! e.Exprs ]
+          | SynExpr.IndexRange (expr1, _, expr2, _, _, _) -> 
+              (match expr1 with Some e -> walkExpr e | None -> false) ||
+              (match expr2 with Some e -> walkExpr e | None -> false)
 
-          | SynExpr.DotIndexedSet (e1, es, e2, _, _, _) ->
-              walkExpr e1 || walkExprs [ for e in es do yield! e.Exprs ] || walkExpr e2
+          | SynExpr.IndexFromEnd (e, _) -> 
+              walkExpr e
+
+          | SynExpr.DotIndexedGet (e1, indexArgs, _, _) ->
+              walkExpr e1 || walkExpr indexArgs
+
+          | SynExpr.DotIndexedSet (e1, indexArgs, e2, _, _, _) ->
+              walkExpr e1 || walkExpr indexArgs || walkExpr e2
 
           | SynExpr.DotNamedIndexedPropertySet (e1, _, e2, e3, _) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3

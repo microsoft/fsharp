@@ -119,13 +119,13 @@ val mkSynApp5: f:SynExpr -> x1:SynExpr -> x2:SynExpr -> x3:SynExpr -> x4:SynExpr
 
 val mkSynDotParenSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> fromEnd:bool -> SynExpr
+val mkSynDotBrackGet: m:range -> mDot:range -> a:SynExpr -> b:SynExpr -> SynExpr
 
 val mkSynQMarkSet: m:range -> a:SynExpr -> b:SynExpr -> c:SynExpr -> SynExpr
 
-val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
+//val mkSynDotBrackSliceGet: m:range -> mDot:range -> arr:SynExpr -> sliceArg:SynIndexerArg -> SynExpr
 
-val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
+//val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
 val mkSynDotParenGet: lhsm:range -> dotm:range -> a:SynExpr -> b:SynExpr -> SynExpr
 

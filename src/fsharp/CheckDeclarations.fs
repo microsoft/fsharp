@@ -5806,7 +5806,7 @@ let TypeCheckOneImplFile
         cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
             conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
-            tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
+            tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
             tcComputationExpression=TcComputationExpression)    
 
     let envinner, mtypeAcc = MakeInitialEnv env 
@@ -5913,7 +5913,7 @@ let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, condition
             (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink,
              (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
              tcSequenceExpressionEntry=TcSequenceExpressionEntry,
-             tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
+             tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
              tcComputationExpression=TcComputationExpression)
 
     let envinner, mtypeAcc = MakeInitialEnv tcEnv 

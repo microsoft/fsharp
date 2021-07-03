@@ -407,6 +407,16 @@
         <target state="translated">Byref 형식은 개방형 형식 선언에서 허용되지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated">
+        <source>The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</source>
+        <target state="new">The syntax 'arr.[idx]' is now revised to 'arr[idx]'. Consider updating your code.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIndexNotationDeprecated2">
+        <source>The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'.</source>
+        <target state="new">The syntax 'expr[idx]' is used for indexing. Consider adding a type annotation or, if function application is intended, then add a space, e.g. 'expr [idx]'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
         <source>Mismatch in interpolated string. Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'</source>
         <target state="translated">보간 문자열의 불일치. 각 보간 문자열에 식(예: '%d{{1+1}}')이 지정되지 않는 한 '%' 형식 지정자를 사용할 수 없습니다.</target>
@@ -425,6 +435,11 @@
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
         <source>use! may not be combined with and!</source>
         <target state="translated">use!는 and!와 함께 사용할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidUseOfReverseIndex">
+        <source>Invalid use of reverse index in list expression.</source>
+        <target state="new">Invalid use of reverse index in list expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
@@ -3373,8 +3388,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexerExpression">
-        <source>Invalid indexer expression</source>
-        <target state="translated">인덱서 식이 잘못되었습니다.</target>
+        <source>Incomplete expression or invalid use of indexer syntax</source>
+        <target state="needs-review-translation">인덱서 식이 잘못되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcObjectOfIndeterminateTypeUsedRequireTypeConstraint">

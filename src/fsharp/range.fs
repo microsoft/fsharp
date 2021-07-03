@@ -347,7 +347,8 @@ module Range =
         let e =
           if (m1.EndLine > m2.EndLine || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then m1
           else m2
-        range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        let m = range (m1.FileIndex, b.StartLine, b.StartColumn, e.EndLine, e.EndColumn)
+        if m1.IsSynthetic || m2.IsSynthetic then m.MakeSynthetic() else m
 
     let rangeContainsRange (m1:range) (m2:range) =
         m1.FileIndex = m2.FileIndex &&

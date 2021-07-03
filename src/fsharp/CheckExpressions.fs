@@ -404,9 +404,9 @@ type TcFileState =
 
       isInternalTestSpanStackReferring: bool
       // forward call
-      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * bool ref * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcSequenceExpressionEntry: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call
-      TcArrayOrListSequenceExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
+      TcArrayOrListComputedExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv
       // forward call
       TcComputationExpression: TcFileState -> TcEnv -> TType -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv
     }
@@ -437,7 +437,7 @@ type TcFileState =
           conditionalDefines = conditionalDefines
           isInternalTestSpanStackReferring = isInternalTestSpanStackReferring
           TcSequenceExpressionEntry = tcSequenceExpressionEntry
-          TcArrayOrListSequenceExpression = tcArrayOrListSequenceExpression
+          TcArrayOrListComputedExpression = tcArrayOrListSequenceExpression
           TcComputationExpression = tcComputationExpression
         }
 
@@ -3678,15 +3678,11 @@ let buildApp cenv expr resultTy arg m =
 //-------------------------------------------------------------------------
 
 type DelayedItem =
-  /// DelayedTypeApp (typeArgs, mTypeArgs, mExprAndTypeArgs)
-  ///
   /// Represents the <tyargs> in "item<tyargs>"
-  | DelayedTypeApp of SynType list * range * range
+  | DelayedTypeApp of typeArgs: SynType list * mTypeArgs: range * mExprAndTypeArgs: range
 
-  /// DelayedApp (isAtomic, argExpr, mFuncAndArg)
-  ///
-  /// Represents the args in "item args", or "item.[args]".
-  | DelayedApp of ExprAtomicFlag * SynExpr * range
+  /// Represents the args in "item args", or "item.Property(args)".
+  | DelayedApp of isAtomic: ExprAtomicFlag * funcExprForIndexer: SynExpr option * argExpr: SynExpr * mFuncAndArg: range
 
   /// Represents the long identifiers in "item.Ident1", or "item.Ident1.Ident2" etc.
   | DelayedDotLookup of Ident list * range
@@ -3760,6 +3756,9 @@ type ValSpecResult =
         partialValReprInfo: PartialValReprInfo *
         declKind: DeclKind
 
+type DecodedIndexArg =
+    | IndexArgRange of (SynExpr * bool) option * (SynExpr * bool) option * range * range
+    | IndexArgItem of SynExpr * bool * range
 //-------------------------------------------------------------------------
 // Additional data structures used by checking recursive bindings
 //-------------------------------------------------------------------------
@@ -5001,7 +5000,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             let activePatResTys = NewInferenceTypes apinfo.Names
             let activePatType = apinfo.OverallType cenv.g m ty activePatResTys isStructRetTy
 
-            let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, arg, unionRanges (rangeOfLid longId) arg.Range))
+            let delayed = activePatArgsAsSynExprs |> List.map (fun arg -> DelayedApp(ExprAtomicFlag.NonAtomic, None, arg, unionRanges (rangeOfLid longId) arg.Range))
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
 
             if idx >= activePatResTys.Length then error(Error(FSComp.SR.tcInvalidIndexIntoActivePatternArray(), m))
@@ -5259,7 +5258,7 @@ and RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv e
 
     let rec dummyCheckedDelayed delayed =
         match delayed with
-        | DelayedApp (_hpa, arg, _mExprAndArg) :: otherDelayed ->
+        | DelayedApp (_hpa, _, arg, _mExprAndArg) :: otherDelayed ->
             RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv arg
             dummyCheckedDelayed otherDelayed
         | _ -> ()
@@ -5384,7 +5383,7 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
 
     // f x
     | SynExpr.App (hpa, _, func, arg, mFuncAndArg) ->
-        TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, arg, mFuncAndArg)) :: delayed)
+        TcExprThen cenv overallTy env tpenv func ((DelayedApp (hpa, Some func, arg, mFuncAndArg)) :: delayed)
 
     // e<tyargs>
     | SynExpr.TypeApp (func, _, typeArgs, _, _, mTypeArgs, mFuncAndTypeArgs) ->
@@ -5399,14 +5398,16 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
     // e1.[e2]
     // e1.[e21, ..., e2n]
     // etc.
-    | SynExpr.DotIndexedGet (e1, e2, mDot, mWholeExpr) ->
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv synExpr e1 e2 delayed
+    | SynExpr.DotIndexedGet (e1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
+        warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None e1 indexArgs delayed
 
     // e1.[e2] <- e3
     // e1.[e21, ..., e2n] <- e3
     // etc.
-    | SynExpr.DotIndexedSet (e1, e2, _, _, mDot, mWholeExpr) ->
-        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv synExpr e1 e2 delayed
+    | SynExpr.DotIndexedSet (e1, IndexerArgs indexArgs, e3, mOfLeftOfSet, mDot, mWholeExpr) ->
+        warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (e3, mOfLeftOfSet)) e1 indexArgs delayed
 
     | _ ->
         match delayed with
@@ -5439,6 +5440,11 @@ and TcExprUndelayedNoType cenv env tpenv synExpr: Expr * TType * _ =
 and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
 
     match synExpr with
+    // ( * )
+    | SynExpr.Paren(SynExpr.IndexRange (None, opm, None, _m1, _m2, _), _, _, _) ->
+        let replacementExpr = SynExpr.Ident(ident(CompileOpName "*", opm))
+        TcExpr cenv overallTy env tpenv replacementExpr
+
     | SynExpr.Paren (expr2, _, _, mWholeExprIncludingParentheses) ->
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the
         // construct is a dot-lookup for the result of the construct.
@@ -5635,15 +5641,20 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.ForEach (spForLoop, SeqExprOnly seqExprOnly, isFromSource, pat, enumSynExpr, bodySynExpr, m) ->
         assert isFromSource
         if seqExprOnly then warning (Error(FSComp.SR.tcExpressionRequiresSequence(), m))
+        let enumSynExpr =
+            match RewriteRangeExpr enumSynExpr with
+            | Some e -> e
+            | None -> enumSynExpr
         TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, m, spForLoop)
 
-    | SynExpr.CompExpr (isArrayOrList, isNotNakedRefCell, comp, m) ->
+    | SynExpr.ComputationExpr (hasSeqBuilder, comp, m) ->
         let env = ExitFamilyRegion env
-        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m
+        cenv.TcSequenceExpressionEntry cenv env overallTy tpenv (hasSeqBuilder, comp) m
 
-    | SynExpr.ArrayOrListOfSeqExpr (isArray, comp, m) ->
+    | SynExpr.ArrayOrListComputed (isArray, comp, m) ->
+        let env = ExitFamilyRegion env
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.eAccessRights)
-        cenv.TcArrayOrListSequenceExpression cenv env overallTy tpenv (isArray, comp)  m
+        cenv.TcArrayOrListComputedExpression cenv env overallTy tpenv (isArray, comp)  m
 
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false synExpr (fun x -> x)
@@ -5745,7 +5756,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup)]
         else
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
-            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); DelayedApp(ExprAtomicFlag.Atomic, e2, mStmt); MakeDelayedSet(e3, mStmt)]
+            TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); DelayedApp(ExprAtomicFlag.Atomic, None, e2, mStmt); MakeDelayedSet(e3, mStmt)]
 
     | SynExpr.LongIdentSet (lidwd, e2, m) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
@@ -5760,7 +5771,7 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
             // just drop rhs on the floor
             TcLongIdentThen cenv overallTy env tpenv lidwd [ ]
         else
-            TcLongIdentThen cenv overallTy env tpenv lidwd [ DelayedApp(ExprAtomicFlag.Atomic, e1, mStmt); MakeDelayedSet(e2, mStmt) ]
+            TcLongIdentThen cenv overallTy env tpenv lidwd [ DelayedApp(ExprAtomicFlag.Atomic, None, e1, mStmt); MakeDelayedSet(e2, mStmt) ]
 
     | SynExpr.TraitCall (tps, memSpfn, arg, m) ->
         let synTypes = tps |> List.map (fun tp -> SynType.Var(tp, m))
@@ -5840,6 +5851,31 @@ and TcExprUndelayed cenv overallTy env tpenv (synExpr: SynExpr) =
     | SynExpr.MatchBang (_, _, _, m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
+    | SynExpr.IndexFromEnd (range=m)
+    | SynExpr.IndexRange (range=m) ->
+        error(Error(FSComp.SR.tcInvalidIndexerExpression(), m))
+
+// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
+// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
+//
+// NOTE: we could eliminate these more efficiently in LowerCallsAndSeqs.fs, since
+//    [| 1..4 |]
+// becomes [| for i in (..) 1 4 do yield i |]
+// instead of generating the array directly from the ranges
+and RewriteRangeExpr expr = 
+    match expr with
+    // a..b..c (parsed as (a..b)..c )
+    | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some expr1, _, Some synStepExpr, _, _, _)), _, Some expr2, _m1, _m2, wholem) ->
+        Some (mkSynTrifix wholem ".. .." expr1 synStepExpr expr2)
+    // a..b
+    | SynExpr.IndexRange (Some expr1, opm, Some expr2, _m1, _m2, wholem) ->
+        let otherExpr =
+            match mkSynInfix opm expr1 ".." expr2 with
+            | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, wholem)
+            | _ -> failwith "impossible"
+        Some otherExpr  
+    | _ -> None
+
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with
@@ -5860,19 +5896,95 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
             //TcExprFlex cenv true true overallTy env tpenv e)
             TcExpr cenv overallTy env tpenv e)
 
+and (|IndexArgOptionalFromEnd|) indexArg = 
+    match indexArg with
+    | SynExpr.IndexFromEnd (a, m) -> (a, true, m)
+    | expr -> (expr, false, expr.Range)
+
+and DecodeIndexArg indexArg = 
+    match indexArg with
+    | SynExpr.IndexRange (info1, _opm, info2, m1, m2, _) ->
+        let info1 = 
+            match info1 with 
+            | Some (IndexArgOptionalFromEnd (expr1, isFromEnd1, _)) -> Some (expr1, isFromEnd1)
+            | None -> None 
+        let info2 = 
+            match info2 with 
+            | Some (IndexArgOptionalFromEnd (expr2, isFromEnd2, _)) -> Some (expr2, isFromEnd2)
+            | None -> None 
+        IndexArgRange (info1, info2, m1, m2)
+    | IndexArgOptionalFromEnd (expr, isFromEnd, m) ->
+        IndexArgItem(expr, isFromEnd, m)
+
+and (|IndexerArgs|) e =
+    match e with 
+    | SynExpr.IndexRange _ -> [e]
+    | SynExpr.IndexFromEnd _ -> [e]
+    | SynExpr.Tuple (false, args, _, _) -> args
+    | e -> [e]
+
+and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (setInfo: _ option) e1 indexArgs delayed =
+    let e1', e1ty, tpenv = TcExprOfUnknownType cenv env tpenv e1
+    let expandedIndexArgs = ExpandIndexArgs (Some e1) indexArgs
+    TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo (Some e1) e1' e1ty expandedIndexArgs indexArgs delayed
+
+// Eliminate GetReverseIndex from index args
+and ExpandIndexArgs (synLeftExpr: SynExpr option) indexArgs =
+
+    // xs.GetReverseIndex rank offset - 1
+    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) =
+        let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
+        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
+        match synLeftExpr with 
+        | None -> error(Error(FSComp.SR.tcInvalidUseOfReverseIndex(), range)) 
+        | Some xsId -> 
+            mkSynApp1
+                (mkSynDot range range xsId (mkSynId (range.MakeSynthetic()) "GetReverseIndex"))
+                sliceArgs
+                range
+
+    let mkSynSomeExpr (m: range) x = 
+        let m = m.MakeSynthetic()
+        SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynLidGet m FSharpLib.CorePath "Some", x, m)
+
+    let mkSynNoneExpr (m: range) =
+        let m = m.MakeSynthetic()
+        mkSynLidGet m FSharpLib.CorePath "None"
+
+    let expandedIndexArgs =
+        indexArgs
+        |> List.mapi ( fun pos indexerArg ->
+            match DecodeIndexArg indexerArg with
+            | IndexArgItem(expr, fromEnd, range) ->
+                [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
+            | IndexArgRange(info1, info2, range1, range2) ->
+                [
+                   match info1 with 
+                   | Some (a1, isFromEnd1) ->
+                       yield mkSynSomeExpr range1 (if isFromEnd1 then rewriteReverseExpr pos a1 range1 else a1)
+                   | None -> 
+                       yield mkSynNoneExpr range1
+                   match info2 with 
+                   | Some (a2, isFromEnd2) ->
+                       yield mkSynSomeExpr range2 (if isFromEnd2 then rewriteReverseExpr pos a2 range2 else a2)
+                   | None ->
+                       yield mkSynNoneExpr range1
+                ]
+        )
+        |> List.collect id
+
+    expandedIndexArgs
 
 // Check expr.[idx]
 // This is a little over complicated for my liking. Basically we want to interpret e1.[idx] as e1.Item(idx).
 // However it's not so simple as all that. First "Item" can have a different name according to an attribute in
 // .NET metadata. This means we manually typecheck 'e1' and look to see if it has a nominal type. We then
 // do the right thing in each case.
-and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArgs delayed =
+and TcIndexingThen cenv env overallTy mWholeExpr mDot tpenv setInfo synLeftExpr e1' e1ty expandedIndexArgs indexArgs delayed =
     let ad = env.AccessRights
-    let e1', e1ty, tpenv = TcExprOfUnknownType cenv env tpenv e1
-
     // Find the first type in the effective hierarchy that either has a DefaultMember attribute OR
     // has a member called 'Item'
-    let isIndex = indexArgs |> List.forall( fun x -> match x with SynIndexerArg.One _ -> true | _ -> false)
+    let isIndex = indexArgs |> List.forall (fun indexArg -> match DecodeIndexArg indexArg with IndexArgItem _ -> true | _ -> false)
     let propName =
         if isIndex then
             FoldPrimaryHierarchyOfType (fun ty acc ->
@@ -5902,47 +6014,10 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
 
     let idxRange = indexArgs |> List.map (fun e -> e.Range) |> List.reduce unionRanges
 
-    // xs.GetReverseIndex rank offset - 1
-    let rewriteReverseExpr (rank: int) (offset: SynExpr) (range: range) =
-        let rankExpr = SynExpr.Const(SynConst.Int32(rank), range)
-        let sliceArgs = SynExpr.Paren(SynExpr.Tuple(false, [rankExpr; offset], [], range), range, Some range, range)
-        let xsId = e1
-
-        mkSynApp1
-            (mkSynDot range range xsId (mkSynId range "GetReverseIndex"))
-            sliceArgs
-            range
-
-    let rewriteReverseOption (app: SynExpr) (rank: int) (range: range) =
-       match app with
-       | SynExpr.App(atomicFlag, isInfix, funcExpr, e1, outerRange) -> SynExpr.App(atomicFlag, isInfix, funcExpr, rewriteReverseExpr rank e1 range, outerRange)
-       | _ -> app
-
-    let expandedIndexArgs =
-        indexArgs
-        |> List.mapi ( fun pos indexerArg ->
-            match indexerArg with
-            | SynIndexerArg.One(expr, fromEnd, range) ->
-                [ if fromEnd then rewriteReverseExpr pos expr range else expr ]
-            | SynIndexerArg.Two
-                (
-                    a1,
-                    fromEnd1,
-                    a2,
-                    fromEnd2,
-                    range1,
-                    range2) ->
-                [
-                   if fromEnd1 then rewriteReverseOption a1 pos range1 else a1 ;
-                   if fromEnd2 then rewriteReverseOption a2 pos range2 else a2
-                ]
-        )
-        |> List.collect (id)
-
     let MakeIndexParam setSliceArrayOption =
-       match indexArgs with
+       match List.map DecodeIndexArg indexArgs with
        | [] -> failwith "unexpected empty index list"
-       | [SynIndexerArg.One _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
+       | [IndexArgItem _] -> SynExpr.Paren (expandedIndexArgs.Head, range0, None, idxRange)
        | _ -> SynExpr.Paren (SynExpr.Tuple (false, expandedIndexArgs @ Option.toList setSliceArrayOption, [], idxRange), range0, None, idxRange)
 
     let attemptArrayString =
@@ -5952,76 +6027,77 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         let info =
             if isArray then
                 let fixedIndex3d4dEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.FixedIndexSlice3d4d
-                match wholeExpr with
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _], _, _)                                                   -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _;], _, _)                             -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _], _, _)         -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _)                                                                        -> Some (indexOpPath, "GetArray", expandedIndexArgs)
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _], e3, _, _, _)                                            -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _;], e3, _, _, _)                      -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _; SynIndexerArg.One _], e3, _, _, _)  -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _], e3, _, _, _)                                                                 -> Some (indexOpPath, "SetArray", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _)                                                                        -> Some (sliceOpPath, "GetArraySlice", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                                                    -> Some (sliceOpPath, "GetArraySlice2DFixed1", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                                                    -> Some (sliceOpPath, "GetArraySlice2DFixed2", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                                                    -> Some (sliceOpPath, "GetArraySlice2D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                                -> Some (sliceOpPath, "GetArraySlice3D", expandedIndexArgs)
-                    | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)            -> Some (sliceOpPath, "GetArraySlice4D", expandedIndexArgs)
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _], e3, _, _, _)                                                                 -> Some (sliceOpPath, "SetArraySlice", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)                                             -> Some (sliceOpPath, "SetArraySlice2D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _)                                             -> Some (sliceOpPath, "SetArraySlice2DFixed1", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _)                                             -> Some (sliceOpPath, "SetArraySlice2DFixed2", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)                         -> Some (sliceOpPath, "SetArraySlice3D", (expandedIndexArgs @ [e3]))
-                    | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)     -> Some (sliceOpPath, "SetArraySlice4D", (expandedIndexArgs @ [e3]))
-                    | _ when fixedIndex3d4dEnabled ->
-                        match wholeExpr with
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)                            -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
-                        | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], _, _)        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _)                     -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [e3]))
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _;SynIndexerArg.One _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [e3])
-                        | SynExpr.DotIndexedSet (_, [SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.One _;SynIndexerArg.Two _], e3, _, _, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple4", expandedIndexArgs @ [e3])
-                        | _                                                                                                                         -> None
+                let indexArgs = List.map DecodeIndexArg indexArgs
+                match indexArgs, setInfo with
+                | [IndexArgItem _; IndexArgItem _], None                                        -> Some (indexOpPath, "GetArray2D", expandedIndexArgs)
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], None                        -> Some (indexOpPath, "GetArray3D", expandedIndexArgs)
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _; IndexArgItem _], None          -> Some (indexOpPath, "GetArray4D", expandedIndexArgs)
+                | [IndexArgItem _], None                                                       -> Some (indexOpPath, "GetArray", expandedIndexArgs)
+                | [IndexArgItem _; IndexArgItem _], Some (e3, _)                                -> Some (indexOpPath, "SetArray2D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _;], Some (e3, _)                -> Some (indexOpPath, "SetArray3D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _; IndexArgItem _; IndexArgItem _; IndexArgItem _], Some (e3, _)  -> Some (indexOpPath, "SetArray4D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _], Some (e3, _)                                               -> Some (indexOpPath, "SetArray", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _], None                                                       -> Some (sliceOpPath, "GetArraySlice", expandedIndexArgs)
+                | [IndexArgItem _;IndexArgRange _], None                                         -> Some (sliceOpPath, "GetArraySlice2DFixed1", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgItem _], None                                         -> Some (sliceOpPath, "GetArraySlice2DFixed2", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _], None                                         -> Some (sliceOpPath, "GetArraySlice2D", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _], None                           -> Some (sliceOpPath, "GetArraySlice3D", expandedIndexArgs)
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None             -> Some (sliceOpPath, "GetArraySlice4D", expandedIndexArgs)
+                | [IndexArgRange _], Some (e3, _)                                               -> Some (sliceOpPath, "SetArraySlice", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgRange _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2D", (expandedIndexArgs @ [e3]))
+                | [IndexArgItem _;IndexArgRange _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2DFixed1", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgItem _], Some (e3, _)                                 -> Some (sliceOpPath, "SetArraySlice2DFixed2", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _)                   -> Some (sliceOpPath, "SetArraySlice3D", (expandedIndexArgs @ [e3]))
+                | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _)     -> Some (sliceOpPath, "SetArraySlice4D", (expandedIndexArgs @ [e3]))
+                | _ when fixedIndex3d4dEnabled ->
+                    match indexArgs, setInfo with
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle1", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle2", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedSingle3", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble1", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble2", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _], None                      -> Some (sliceOpPath, "GetArraySlice3DFixedDouble3", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle1", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle2", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle3", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedSingle4", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble1", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble2", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble3", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble4", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble5", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedDouble6", expandedIndexArgs)
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple1", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple2", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple3", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], None        -> Some (sliceOpPath, "GetArraySlice4DFixedTriple4", expandedIndexArgs)
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle1", (expandedIndexArgs @ [e3]))
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle2", (expandedIndexArgs @ [e3]))
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedSingle3", (expandedIndexArgs @ [e3]))
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble1", (expandedIndexArgs @ [e3]))
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble2", (expandedIndexArgs @ [e3]))
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _)               -> Some (sliceOpPath, "SetArraySlice3DFixedDouble3", (expandedIndexArgs @ [e3]))
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle1", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle2", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle3", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedSingle4", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble1", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble2", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgRange _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble3", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble4", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble5", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedDouble6", expandedIndexArgs @ [e3])
+                    | [IndexArgRange _;IndexArgItem _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple1", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgRange _;IndexArgItem _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple2", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgItem _;IndexArgRange _;IndexArgItem _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple3", expandedIndexArgs @ [e3])
+                    | [IndexArgItem _;IndexArgItem _;IndexArgItem _;IndexArgRange _], Some (e3, _) -> Some (sliceOpPath, "SetArraySlice4DFixedTriple4", expandedIndexArgs @ [e3])
                     | _ -> None
+                | _ -> None
 
             elif isString then
-                match wholeExpr with
-                | SynExpr.DotIndexedGet (_, [SynIndexerArg.Two _], _, _) -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
-                | SynExpr.DotIndexedGet (_, [SynIndexerArg.One _], _, _) -> Some (indexOpPath, "GetString", expandedIndexArgs)
+                match List.map DecodeIndexArg indexArgs, setInfo with
+                | [IndexArgRange _], None -> Some (sliceOpPath, "GetStringSlice", expandedIndexArgs)
+                | [IndexArgItem _], None -> Some (indexOpPath, "GetString", expandedIndexArgs)
                 | _ -> None
 
             else None
@@ -6029,12 +6105,12 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         match info with
             | None -> None
             | Some (path, functionName, indexArgs) ->
-                let operPath = mkSynLidGet mDot path (CompileOpName functionName)
+                let operPath = mkSynLidGet (mDot.MakeSynthetic()) path (CompileOpName functionName)
                 let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
                 let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
                 UnifyTypes cenv env mWholeExpr domainTy e1ty
                 let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
-                let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
+                let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, None, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
                 Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
 
     match attemptArrayString with
@@ -6046,17 +6122,16 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             | None -> "Item"
             | Some nm -> nm
         let delayed =
-            match wholeExpr with
+            match setInfo with
             // e1.[e2]
-            | SynExpr.DotIndexedGet _ ->
-                DelayedDotLookup([ident(nm, mWholeExpr)], mWholeExpr) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mWholeExpr) :: delayed
+            | None  ->
+                DelayedDotLookup([ident(nm, mWholeExpr)], mWholeExpr) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExpr, MakeIndexParam None, mWholeExpr) :: delayed
             // e1.[e2] <- e3
-            | SynExpr.DotIndexedSet (_, _, e3, mOfLeftOfSet, _, _) ->
+            | Some (e3, mOfLeftOfSet) ->
                 match isIndex with
-                | true -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
-                | false -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, MakeIndexParam (Some e3), mWholeExpr) :: delayed
+                | true -> DelayedDotLookup([ident(nm, mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExpr, MakeIndexParam None, mOfLeftOfSet) :: MakeDelayedSet(e3, mWholeExpr) :: delayed
+                | false -> DelayedDotLookup([ident("SetSlice", mOfLeftOfSet)], mOfLeftOfSet) :: DelayedApp(ExprAtomicFlag.Atomic, synLeftExpr, MakeIndexParam (Some e3), mWholeExpr) :: delayed
 
-            | _ -> error(InternalError("unreachable", mWholeExpr))
         PropagateThenTcDelayed cenv overallTy env tpenv mDot (MakeApplicableExprNoFlex cenv e1') e1ty ExprAtomicFlag.Atomic delayed
 
     else
@@ -7307,7 +7382,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             // Note this case should not occur: would eventually give an "Unexpected type application" error in TcDelayed
             propagate isAddrOf delayedList' mExprAndTypeArgs exprty
 
-        | DelayedApp (_, arg, mExprAndArg) :: delayedList' ->
+        | DelayedApp (atomicFlag, _, arg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprty with
             | ValueSome (_, resultTy) ->
@@ -7326,8 +7401,17 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             | _ ->
                 let mArg = arg.Range
                 match arg with
-                | SynExpr.CompExpr _ -> ()
-                | SynExpr.ArrayOrListOfSeqExpr (false, _, _) ->
+                | SynExpr.ComputationExpr _ -> ()
+                | SynExpr.ArrayOrListComputed (false, _, _) ->
+                    match atomicFlag with 
+                    | ExprAtomicFlag.Atomic -> 
+                        // expr[idx]
+                        // expr[idx1, idx2]
+                        // expr[idx1..]
+                        // expr[..idx1]
+                        // expr[idx1..idx2]
+                        ()
+                    | _ -> 
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     if IsIndexerType cenv.g cenv.amap expr.Type then
@@ -7370,8 +7454,8 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag: ExprAtomic
     | DelayedDotLookup (longId, mDotLookup) :: otherDelayed ->
         TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
     // f x
-    | DelayedApp (hpa, arg, mExprAndArg) :: otherDelayed ->
-        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty arg hpa otherDelayed
+    | DelayedApp (hpa, synExpr, arg, mExprAndArg) :: otherDelayed ->
+        TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr exprty arg hpa otherDelayed
     // f<tyargs>
     | DelayedTypeApp (_, mTypeArgs, _mExprAndTypeArgs) :: _ ->
         error(Error(FSComp.SR.tcUnexpectedTypeArguments(), mTypeArgs))
@@ -7517,15 +7601,21 @@ and TcNameOfExprResult cenv (lastIdent: Ident) m =
 // TcFunctionApplicationThen: Typecheck "expr x" + projections
 //-------------------------------------------------------------------------
 
-and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (synArg: SynExpr) atomicFlag delayed =
+and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr exprty (synArg: SynExpr) atomicFlag delayed =
     let denv = env.DisplayEnv
     let mArg = synArg.Range
     let mFunExpr = expr.Range
 
     // If the type of 'synArg' unifies as a function type, then this is a function application, otherwise
-    // it is an error or a computation expression
+    // it is an error or a computation expression or indexer or delegate invoke
     match UnifyFunctionTypeUndoIfFailed cenv denv mFunExpr exprty with
     | ValueSome (domainTy, resultTy) ->
+        match synArg, atomicFlag with
+        // expr[idx]
+        | (SynExpr.ArrayOrList _ | SynExpr.ArrayOrListComputed _), ExprAtomicFlag.Atomic ->
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated2(), mExprAndArg))
+        | _ -> ()
+
         match expr with
         | ApplicableExpr(_, NameOfExpr cenv.g _, _) when cenv.g.langVersion.SupportsFeature LanguageFeature.NameOf ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
@@ -7533,26 +7623,41 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         | _ ->
             // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
             // Set a flag in the syntax tree to say we noticed a leading 'seq'
-            match synArg with
-            | SynExpr.CompExpr (false, isNotNakedRefCell, _comp, _m) ->
-                isNotNakedRefCell :=
-                    !isNotNakedRefCell
-                    ||
-                    (match expr with
-                     | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true
-                     | _ -> false)
-            | _ -> ()
+            //
+            // Note that 'seq' predated computation expressions and is not actually a computation expression builder
+            // though users don't realise that.
+            let synArg =
+                match synArg with
+                | SynExpr.ComputationExpr (false, comp, m) when 
+                        (match expr with
+                         | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr cenv.g], _), _) -> true
+                         | _ -> false) ->
+                    SynExpr.ComputationExpr (true, comp, m)
+                | _ -> synArg
 
             let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
             let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
             TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
 
     | ValueNone ->
-        // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }'
-        match synArg with
-        | SynExpr.CompExpr (false, _isNotNakedRefCell, comp, _m) ->
+        // Type-directed invokables
+
+        match synArg, atomicFlag with
+        // expr[idx]
+        // expr[idx] <- expr2
+        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m), ExprAtomicFlag.Atomic ->
+            let expandedIndexArgs = ExpandIndexArgs synExpr indexArgs
+            let setInfo, delayed = 
+                match delayed with 
+                | DelayedSet(e3, _) :: rest -> Some (e3, unionRanges expr.Range synArg.Range), rest
+                | _ -> None, delayed
+            TcIndexingThen cenv env overallTy mExprAndArg m tpenv setInfo synExpr expr.Expr exprty expandedIndexArgs indexArgs delayed
+
+        // Perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }'
+        | SynExpr.ComputationExpr (false, comp, _m), _ ->
             let bodyOfCompExpr, tpenv = cenv.TcComputationExpression cenv env overallTy tpenv (mFunExpr, expr.Expr, exprty, comp)
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed
+
         | _ ->
             error (NotAFunction(denv, overallTy, mFunExpr, mArg))
 
@@ -7627,7 +7732,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
         match delayed with
         // This is where the constructor is applied to an argument
-        | ((DelayedApp (atomicFlag, (FittedArgs args as origArg), mExprAndArg)) :: otherDelayed) ->
+        | ((DelayedApp (atomicFlag, _, (FittedArgs args as origArg), mExprAndArg)) :: otherDelayed) ->
             // assert the overall result type if possible
             if isNil otherDelayed then
                 UnifyTypes cenv env mExprAndArg overallTy ucaseAppTy
@@ -7773,7 +7878,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
         // Static method calls Type.Foo(arg1, ..., argn)
         let meths = List.map (fun minfo -> minfo, None) minfos
         match delayed with
-        | (DelayedApp (atomicFlag, arg, mExprAndArg) :: otherDelayed) ->
+        | (DelayedApp (atomicFlag, _, arg, mExprAndArg) :: otherDelayed) ->
             TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag otherDelayed
 
         | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
@@ -7787,7 +7892,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
               CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, [], ItemOccurence.Use, env.eAccessRights)
 
               match otherDelayed with
-              | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed ->
+              | DelayedApp(atomicFlag, _, arg, mExprAndArg) :: otherDelayed ->
                   TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [arg] atomicFlag otherDelayed
               | _ ->
                   TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
@@ -7803,7 +7908,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
 
             match otherDelayed with
-            | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed ->
+            | DelayedApp(atomicFlag, _, arg, mExprAndArg) :: otherDelayed ->
                 TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag otherDelayed
             | _ ->
                 TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndTypeArgs mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
@@ -7821,12 +7926,12 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | (minfo :: _) -> minfo.ApparentEnclosingType
             | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
         match delayed with
-        | ((DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
+        | ((DelayedApp (_, _, arg, mExprAndArg)) :: otherDelayed) ->
 
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTy, env.eAccessRights)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mItem) item false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, arg, mExprAndArg)) :: otherDelayed) ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs)) :: (DelayedApp (_, _, arg, mExprAndArg)) :: otherDelayed) ->
 
             let objTyAfterTyArgs, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mExprAndTypeArgs objTy tinstEnclosing tyargs
             CallExprHasTypeSink cenv.tcSink (mExprAndArg, env.NameEnv, objTyAfterTyArgs, env.eAccessRights)
@@ -7928,8 +8033,8 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.While _
             | SynExpr.For _
             | SynExpr.ForEach _
-            | SynExpr.ArrayOrListOfSeqExpr _
-            | SynExpr.CompExpr _
+            | SynExpr.ArrayOrListComputed _
+            | SynExpr.ComputationExpr _
             | SynExpr.Lambda _
             | SynExpr.MatchLambda _
             | SynExpr.Match _
@@ -7963,15 +8068,16 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.LetOrUseBang _
             | SynExpr.DoBang _
             | SynExpr.TraitCall _
+            | SynExpr.IndexFromEnd _
+            | SynExpr.IndexRange _
                 -> false
-
 
         // Propagate the known application structure into function types
         Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr g expr) delayed
 
         // Take all simple arguments and process them before applying the constraint.
         let delayed1, delayed2 =
-            let pred = (function (DelayedApp (_, arg, _)) -> isSimpleArgument arg | _ -> false)
+            let pred = (function (DelayedApp (_, _, arg, _)) -> isSimpleArgument arg | _ -> false)
             List.takeWhile pred delayed, List.skipWhile pred delayed
         let intermediateTy = if isNil delayed2 then overallTy else NewInferenceType ()
 
@@ -7987,9 +8093,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
     | Item.DelegateCtor ty ->
         match delayed with
-        | ((DelayedApp (atomicFlag, arg, mItemAndArg)) :: otherDelayed) ->
+        | ((DelayedApp (atomicFlag, _, arg, mItemAndArg)) :: otherDelayed) ->
             TcNewDelegateThen cenv overallTy env tpenv mItem mItemAndArg ty arg atomicFlag otherDelayed
-        | ((DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs)) :: (DelayedApp (atomicFlag, arg, mItemAndArg)) :: otherDelayed) ->
+        | ((DelayedTypeApp(tyargs, _mTypeArgs, mItemAndTypeArgs)) :: (DelayedApp (atomicFlag, _, arg, mItemAndArg)) :: otherDelayed) ->
             let ty, tpenv = TcNestedTypeApplication cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv mItemAndTypeArgs ty tinstEnclosing tyargs
 
             // Report information about the whole expression including type arguments to VS
@@ -8178,9 +8284,9 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
 
 and GetSynMemberApplicationArgs delayed tpenv =
     match delayed with
-    | DelayedApp (atomicFlag, arg, _) :: otherDelayed ->
+    | DelayedApp (atomicFlag, _, arg, _) :: otherDelayed ->
         atomicFlag, None, [arg], otherDelayed, tpenv
-    | DelayedTypeApp(tyargs, mTypeArgs, _) :: DelayedApp (atomicFlag, arg, _mExprAndArg) :: otherDelayed ->
+    | DelayedTypeApp(tyargs, mTypeArgs, _) :: DelayedApp (atomicFlag, _, arg, _mExprAndArg) :: otherDelayed ->
         (atomicFlag, Some (tyargs, mTypeArgs), [arg], otherDelayed, tpenv)
     | DelayedTypeApp(tyargs, mTypeArgs, _) :: otherDelayed ->
         (ExprAtomicFlag.Atomic, Some (tyargs, mTypeArgs), [], otherDelayed, tpenv)
@@ -8482,7 +8588,7 @@ and TcMethodApplication
     let curriedCallerArgs, exprTy, delayed =
         match calledMeths with
         | [calledMeth] when not isProp && calledMeth.NumArgs.Length > 1 ->
-            [], NewInferenceType (), [ for x in curriedCallerArgs -> DelayedApp(ExprAtomicFlag.NonAtomic, x, x.Range) ] @ delayed
+            [], NewInferenceType (), [ for x in curriedCallerArgs -> DelayedApp(ExprAtomicFlag.NonAtomic, None, x, x.Range) ] @ delayed
         | _ when not isProp && calledMeths |> List.exists (fun calledMeth -> calledMeth.NumArgs.Length > 1) ->
             // This condition should only apply when multiple conflicting curried extension members are brought into scope
             error(Error(FSComp.SR.tcOverloadsCannotHaveCurriedArguments(), mMethExpr))

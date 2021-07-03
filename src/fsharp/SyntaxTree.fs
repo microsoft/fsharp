@@ -532,14 +532,25 @@ type SynExpr =
         bodyExpr: SynExpr *
         range: range
 
-    | ArrayOrListOfSeqExpr of
+    | ArrayOrListComputed of
         isArray: bool *
         expr: SynExpr *
         range: range
 
-    | CompExpr of
-        isArrayOrList: bool *
-        isNotNakedRefCell: bool ref *
+    | IndexRange of
+        expr1: SynExpr option *
+        opm: range *
+        expr2: SynExpr option*
+        range1: range *
+        range2: range *
+        range: range
+
+    | IndexFromEnd of
+        expr: SynExpr *
+        range: range
+
+    | ComputationExpr of
+        hasSeqBuilder: bool *
         expr: SynExpr *
         range: range
 
@@ -664,13 +675,13 @@ type SynExpr =
 
     | DotIndexedGet of
         objectExpr: SynExpr *
-        indexExprs: SynIndexerArg list *
+        indexArgs: SynExpr *
         dotRange: range *
         range: range
 
     | DotIndexedSet of
         objectExpr: SynExpr *
-        indexExprs: SynIndexerArg list *
+        indexArgs: SynExpr *
         valueExpr: SynExpr *
         leftOfSetRange: range *
         dotRange: range *
@@ -838,8 +849,8 @@ type SynExpr =
         | SynExpr.While (range=m)
         | SynExpr.For (range=m)
         | SynExpr.ForEach (range=m)
-        | SynExpr.CompExpr (range=m)
-        | SynExpr.ArrayOrListOfSeqExpr (range=m)
+        | SynExpr.ComputationExpr (range=m)
+        | SynExpr.ArrayOrListComputed (range=m)
         | SynExpr.Lambda (range=m)
         | SynExpr.Match (range=m)
         | SynExpr.MatchLambda (range=m)
@@ -869,6 +880,8 @@ type SynExpr =
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
         | SynExpr.LibraryOnlyILAssembly (range=m)
         | SynExpr.LibraryOnlyStaticOptimization (range=m)
+        | SynExpr.IndexRange (range=m)
+        | SynExpr.IndexFromEnd (range=m)
         | SynExpr.TypeTest (range=m)
         | SynExpr.Upcast (range=m)
         | SynExpr.AddressOf (range=m)
@@ -923,24 +936,6 @@ type SynExpr =
 type SynInterpolatedStringPart =
     | String of value: string * range: range
     | FillExpr of fillExpr: SynExpr * qualifiers: Ident option
-
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type SynIndexerArg =
-    | Two of
-        expr1: SynExpr *
-        fromEnd1: bool *
-        expr2: SynExpr *
-        fromEnd2: bool *
-        range1: range *
-        range2: range
-
-    | One of
-        expr: SynExpr *
-        fromEnd: bool * range
-
-    member x.Range = match x with Two (e1, _, e2, _, _, _) -> unionRanges e1.Range e2.Range | One (e, _, _) -> e.Range
-
-    member x.Exprs = match x with Two (e1, _, e2, _, _, _) -> [e1;e2] | One (e, _, _) -> [e]
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynSimplePat =
