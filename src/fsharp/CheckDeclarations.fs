@@ -1597,6 +1597,15 @@ module AddAugmentationDeclarations =
             else []
         else []
 
+    let ShouldAugmentUnion (g: TcGlobals) (tcref: TyconRef) =
+        g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
+        match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
+        | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
+        | Some (Attrib(_, _, _, _, _, _, m)) ->
+            errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
+            true
+        | _ -> true
+
     let AddUnionAugmentationBindings (cenv: cenv) (env: TcEnv) tycon =
         let g = cenv.g
         let tcref = mkLocalTyconRef tycon
@@ -2585,17 +2594,8 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                 match tyconOpt with
                 | Some tycon when declKind = DeclKind.ModuleOrMemberBinding ->
                     let envForDecls = MakeInnerEnvForTyconRef envForDecls tcref false
-                    if tycon.IsUnionTycon then
-                        let shouldAugment =
-                            cenv.g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
-                            match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
-                            | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
-                            | Some (Attrib(_, _, _, _, _, _, m)) ->
-                                errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
-                                true
-                            | _ -> true
-                        if shouldAugment then
-                            extraBindings.Add(tycon, AddAugmentationDeclarations.AddUnionAugmentationBindings cenv envForDecls tycon)
+                    if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion g tcref then
+                        extraBindings.Add(tycon, AddAugmentationDeclarations.AddUnionAugmentationBindings cenv envForDecls tycon)
                     envForDecls
                 | _ -> 
                     envForDecls
