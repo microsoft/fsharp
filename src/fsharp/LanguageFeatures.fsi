@@ -26,6 +26,7 @@ type LanguageFeature =
     | ExpandedMeasurables
     | StructActivePattern
     | PrintfBinaryFormat
+    | IndexerNotationWithoutDot
     | UseBindingValueDiscard
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword

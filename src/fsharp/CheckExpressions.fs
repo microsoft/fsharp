@@ -5399,14 +5399,16 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
     // e1.[e21, ..., e2n]
     // etc.
     | SynExpr.DotIndexedGet (e1, IndexerArgs indexArgs, mDot, mWholeExpr) ->
-        warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv None e1 indexArgs delayed
 
     // e1.[e2] <- e3
     // e1.[e21, ..., e2n] <- e3
     // etc.
     | SynExpr.DotIndexedSet (e1, IndexerArgs indexArgs, e3, mOfLeftOfSet, mDot, mWholeExpr) ->
-        warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
+        if cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot then
+            warning(Error(FSComp.SR.tcIndexNotationDeprecated(), mDot))
         TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv (Some (e3, mOfLeftOfSet)) e1 indexArgs delayed
 
     | _ ->
@@ -7404,7 +7406,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 | SynExpr.ComputationExpr _ -> ()
                 | SynExpr.ArrayOrListComputed (false, _, _) ->
                     match atomicFlag with 
-                    | ExprAtomicFlag.Atomic -> 
+                    | ExprAtomicFlag.Atomic when cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot -> 
                         // expr[idx]
                         // expr[idx1, idx2]
                         // expr[idx1..]
@@ -7612,8 +7614,8 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr 
     | ValueSome (domainTy, resultTy) ->
         match synArg, atomicFlag with
         // expr[idx]
-        | (SynExpr.ArrayOrList _ | SynExpr.ArrayOrListComputed _), ExprAtomicFlag.Atomic ->
-            warning(Error(FSComp.SR.tcIndexNotationDeprecated2(), mExprAndArg))
+        | (SynExpr.ArrayOrList _ | SynExpr.ArrayOrListComputed _), ExprAtomicFlag.Atomic when cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
+            warning(Error(FSComp.SR.tcHighPrecedenceFunctionApplicationToListDeprecated(), mExprAndArg))
         | _ -> ()
 
         match expr with
@@ -7645,7 +7647,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg synExpr expr 
         match synArg, atomicFlag with
         // expr[idx]
         // expr[idx] <- expr2
-        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m), ExprAtomicFlag.Atomic ->
+        | SynExpr.ArrayOrListComputed(false, IndexerArgs indexArgs, m), ExprAtomicFlag.Atomic when cenv.g.langVersion.SupportsFeature LanguageFeature.IndexerNotationWithoutDot ->
             let expandedIndexArgs = ExpandIndexArgs synExpr indexArgs
             let setInfo, delayed = 
                 match delayed with 

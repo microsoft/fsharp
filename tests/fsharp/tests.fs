@@ -50,10 +50,10 @@ module CoreTests =
     let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
 
     [<Test>]
-    let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
+    let ``array-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/array" FSC_BASIC "preview"
 
     [<Test>]
-    let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+    let ``array-FSI_BASIC`` () = singleTestBuildAndRunVersion "core/array" FSI_BASIC "preview"
 
     [<Test>]
     let ``comprehensions-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC
