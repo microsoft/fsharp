@@ -3138,26 +3138,26 @@ let mkRefForILField scope (tdefs, tdef) (fdef: ILFieldDef) = mkILFieldRef (mkRef
 let prependInstrsToClassCtor instrs tag cd =
     cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
 
-let mkILField (isStatic, nm, ty, (init: ILFieldInit option), (at: byte [] option), access, isLiteral) =
-     ILFieldDef(name=nm,
-                fieldType=ty,
-                attributes=
+let mkILField (isStatic, nm, ty, (init: ILFieldInit option), (at: byte [] option), access, isLiteral, offset) =
+     ILFieldDef(name = nm,
+                fieldType = ty,
+                attributes =
                     (convertFieldAccess access |||
                      (if isStatic then FieldAttributes.Static else enum 0) |||
                      (if isLiteral then FieldAttributes.Literal else enum 0) |||
                      (if init.IsSome then FieldAttributes.HasDefault else enum 0) |||
                      (if at.IsSome then FieldAttributes.HasFieldRVA else enum 0)),
                 literalValue = init,
-                data=at,
-                offset=None,
-                marshal=None,
-                customAttrs=emptyILCustomAttrs)
+                data = at,
+                offset = offset,
+                marshal = None,
+                customAttrs = emptyILCustomAttrs)
 
-let mkILInstanceField (nm, ty, init, access) = mkILField (false, nm, ty, init, None, access, false)
+let mkILInstanceField (nm, ty, init, access, offset) = mkILField (false, nm, ty, init, None, access, false, offset)
 
-let mkILStaticField (nm, ty, init, at, access) = mkILField (true, nm, ty, init, at, access, false)
+let mkILStaticField (nm, ty, init, at, access) = mkILField (true, nm, ty, init, at, access, false, None)
 
-let mkILLiteralField (nm, ty, init, at, access) = mkILField (true, nm, ty, Some init, at, access, true)
+let mkILLiteralField (nm, ty, init, at, access) = mkILField (true, nm, ty, Some init, at, access, true, None)
 
 // --------------------------------------------------------------------
 // Scopes for allocating new temporary variables.

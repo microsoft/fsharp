@@ -1824,9 +1824,9 @@ val internal mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter 
 val internal mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 /// Make field definitions.
-val internal mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
-val internal mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
-val internal mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
+val internal mkILInstanceField: nm: string * ty: ILType * init: ILFieldInit option * access: ILMemberAccess * offset: int option -> ILFieldDef
+val internal mkILStaticField: nm: string * ty: ILType * init: ILFieldInit option * at: byte[] option * access: ILMemberAccess -> ILFieldDef
+val internal mkILLiteralField: nm: string * ty: ILType * init: ILFieldInit * at: byte[] option * access: ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.
 val internal mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef

@@ -787,7 +787,8 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     let debugProxyFieldName = "_obj"
                     
                     let debugProxyFields = 
-                        [ mkILInstanceField  (debugProxyFieldName,altTy, None, ILMemberAccess.Assembly)  |> addFieldNeverAttrs |> addFieldGeneratedAttrs]
+                        // todo offset?
+                        [ mkILInstanceField (debugProxyFieldName, altTy, None, ILMemberAccess.Assembly, None) |> addFieldNeverAttrs |> addFieldGeneratedAttrs]
 
                     let debugProxyCtor = 
                         mkILCtor(ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *),
@@ -856,7 +857,8 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                       fields 
                       |> Array.map (fun field -> 
                           let fldName,fldTy = mkUnionCaseFieldId field
-                          let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
+                          // todo offset?
+                          let fdef = mkILInstanceField (fldName,fldTy, None, ILMemberAccess.Assembly, None) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
                           fdef.WithInitOnly(isTotallyImmutable))
                       |> Array.toList
 
@@ -938,7 +940,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
            if repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) || 
               repr.RepresentAlternativeAsStructValue info then
         // TODO
-            let fields = alt.FieldDefs |> Array.map mkUnionCaseFieldId |> Array.toList
+            let fields = alt.FieldDefs |> Array.map (fun x -> x, mkUnionCaseFieldId x) |> Array.toList
             let baseInit = 
                 if isStruct then None else
                 match td.Extends with 
@@ -958,7 +960,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                     baseInit,
                     baseTy,
                     extraParamsForCtor,
-                    (fields @ tagFieldsInObject),
+                    (List.map snd fields @ tagFieldsInObject),
                     (if cuspec.HasHelpers = AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess))
                 |> addMethodGeneratedAttrs 
 
@@ -968,8 +970,14 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
          |> (fun (a,b,c) -> List.concat a, List.concat b, List.concat c)
 
     let selfAndTagFields = 
-        [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
-              let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
+        [ for i, (fldName, fldTy) in List.indexed tagFieldsInObject do
+              // todo don't assume the tag is 4 bytes
+              let offset = if cud.cudExplicitStructLayout then Some (i * 4) else None
+              let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly, offset) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
+              yield fdef.WithInitOnly(not isStruct && isTotallyImmutable)
+
+          for fldDef, (fldName, fldTy) in selfFields do
+              let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Assembly, fldDef.ILField.Offset) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
               yield fdef.WithInitOnly(not isStruct && isTotallyImmutable) ]
 
     let ctorMeths =

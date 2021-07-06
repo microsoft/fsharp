@@ -344,7 +344,7 @@ let mkILCloFldDefs cenv flds =
     flds 
     |> Array.toList
     |> List.map (fun fv -> 
-         let fdef = mkILInstanceField (fv.fvName, fv.fvType, None, ILMemberAccess.Public)
+         let fdef = mkILInstanceField (fv.fvName, fv.fvType, None, ILMemberAccess.Public, None)
          if fv.fvCompilerGenerated then 
              fdef |> cenv.addFieldNeverAttrs 
                   |> cenv.addFieldGeneratedAttrs 

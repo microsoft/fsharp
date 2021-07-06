@@ -151,6 +151,8 @@ type IlxUnionInfo =
 
       /// debug info for generated code for classunions 
       cudWhere: ILSourceMarker option
+
+      cudExplicitStructLayout: bool
      }
 
 // --------------------------------------------------------------------
