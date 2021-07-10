@@ -177,6 +177,11 @@
         <target state="translated">rozluźnianie reguł dotyczących odstępów</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="new">whitespace relaxation v2</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="translated">wzorzec z pojedynczym podkreśleniem</target>

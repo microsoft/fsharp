@@ -31,17 +31,18 @@ type DirectoryAttribute(dir: string) =
             | _ -> None
 
     let createCompilationUnit path fs =
-        let fsSource = (path ++ fs) |> File.ReadAllText
-        let bslFilePath = path ++ (fs + ".bsl")
-        let ilFilePath  = path ++ (fs + ".il")
+        let filePath = path ++ fs
+        let fsSource = File.ReadAllText filePath
+        let bslFilePath = filePath + ".bsl"
+        let ilFilePath  = filePath + ".il"
         let bslSource = readFileOrDefault bslFilePath
         let ilSource = readFileOrDefault ilFilePath
 
         { Source         = Text fsSource
           Baseline       =
-                Some { SourceFilename = Some (path ++ fs)
-                       OutputBaseline = bslSource
-                       ILBaseline     = ilSource }
+                Some { SourceFilename = Some filePath
+                       OutputBaseline = { FilePath = bslFilePath; Content = bslSource }
+                       ILBaseline     = { FilePath = ilFilePath;  Content = ilSource  } }
           Options        = []
           OutputType     = Library
           SourceKind     = SourceKind.Fsx
@@ -49,7 +50,7 @@ type DirectoryAttribute(dir: string) =
           IgnoreWarnings = false
           References     = [] } |> FS
 
-    member x.Includes with get() = includes and set v = includes <- v
+    member _.Includes with get() = includes and set v = includes <- v
 
     override _.GetData(_: MethodInfo) =
         let absolutePath = Path.GetFullPath(directory)

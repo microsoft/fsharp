@@ -541,7 +541,7 @@ but here has type
          this.VerifyWarningListCountAtOpenProject(
             fileContents = """
                             type foo = N1.T< 
-                                const "Hello World",2>""",
+                           const "Hello World",2>""",
             expectedNum = 1,
             addtlRefAssy = [PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll")]) 
     
@@ -572,7 +572,7 @@ but here has type
 
     [<Test>]
     [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
-    member public this.``UnicodeCharactors``() = 
+    member public this.``UnicodeCharacters``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"新規baApplication5")

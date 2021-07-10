@@ -177,6 +177,11 @@
         <target state="translated">공백 완화</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="new">whitespace relaxation v2</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="translated">단일 밑줄 패턴</target>
