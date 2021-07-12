@@ -1988,7 +1988,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access m fieldTy
 
-    if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
+    if isByrefLikeTyconRef g m tcref then 
         // Permit Span fields in IsByRefLike types
         CheckTypePermitSpanLike cenv env m fieldTy
         if cenv.reportErrors then
@@ -2211,8 +2211,10 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix nm, m))
 
-    if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref && not tycon.IsStructOrEnumTycon then 
-        errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tycon.Range))
+    // A check that IsByRefLikeAttribute is applied on a struct used to be here
+    // but was moved to isByrefLikeTyconRef. We call it to ensure it is performed.
+    // If it had been called in the past, the result is cached anyway.
+    isByrefLikeTyconRef g m tcref |> ignore
 
     if TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref && not tycon.IsStructOrEnumTycon then 
         errorR(Error(FSComp.SR.tcIsReadOnlyNotStruct(), tycon.Range))

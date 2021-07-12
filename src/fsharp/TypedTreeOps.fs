@@ -3165,6 +3165,28 @@ let TyconRefHasAttribute g m attribSpec tcref =
                     (fun _ -> Some ())
         |> Option.isSome
 
+/// Check if a type definition has an attribute with a specific full name
+let TyconRefHasAttributeByName (m: range) attrFullName (tcref: TyconRef) = 
+    ignore m
+    match metadataOfTycon tcref.Deref with 
+#if !NO_EXTENSIONTYPING
+    | ProvidedTypeMetadata info -> 
+        let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
+        provAttribs.PUntaint((fun a ->
+            a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure id, attrFullName)), m).IsSome
+#endif
+    | ILTypeMetadata (TILObjectReprData(_, _, tdef)) ->
+        tdef.CustomAttrs.AsArray
+        |> Array.exists (fun attr -> isILAttribByName ([], attrFullName) attr)
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        tcref.Attribs
+        |> List.exists (fun attr ->
+            match attr.TyconRef.CompiledRepresentation with
+            | CompiledTypeRepr.ILAsmNamed(typeRef, _, _) ->
+                typeRef.Enclosing.IsEmpty
+                && typeRef.Name = attrFullName
+            | CompiledTypeRepr.ILAsmOpen _ -> false)
+
 let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) = 
     (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
     (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
@@ -3182,7 +3204,12 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | _ -> 
        let res = 
            isByrefTyconRef g tcref ||
-           (isStructTyconRef tcref && TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref)
+           (match isStructTyconRef tcref, TyconRefHasAttributeByName m tname_IsByRefLikeAttribute tcref with
+            | true, hasAttr -> hasAttr
+            | false, hasAttr ->
+                if hasAttr then
+                    errorR(Error(FSComp.SR.tcByRefLikeNotStruct(), tcref.Deref.Range))
+                false)
        tcref.SetIsByRefLike res
        res
 

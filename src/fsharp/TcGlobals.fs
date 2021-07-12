@@ -171,6 +171,8 @@ let tname_DebuggableAttribute = "System.Diagnostics.DebuggableAttribute"
 let tname_AsyncCallback = "System.AsyncCallback"
 [<Literal>]
 let tname_IAsyncResult = "System.IAsyncResult"
+[<Literal>]
+let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAttribute"
 
 //-------------------------------------------------------------------------
 // Table of all these "globals"
@@ -1172,7 +1174,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
   // even if the type is not found in a system assembly.
-  member val attrib_IsByRefLikeAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
   member val attrib_IsReadOnlyAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
 
   member val attrib_SystemObsolete          = findSysAttrib "System.ObsoleteAttribute"
