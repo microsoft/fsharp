@@ -1635,19 +1635,20 @@ and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAsse
             | Some ilb -> 
                 return! ilb.EvaluateRawContents()
             | None -> 
-                return None
+                return ProjectAssemblyDataResult.Unavailable true
           }
 
         // If we have a project reference but did not get any valid contents,
         //     just return None and do not attempt to read elsewhere.
-        if contentsOpt.IsNone && r.ProjectReference.IsSome then
+        match contentsOpt with 
+        | ProjectAssemblyDataResult.Unavailable false ->
             return None
-        else
+        | _ ->
 
         let assemblyData =
             match contentsOpt with
-            | Some ilb -> ilb
-            | None ->
+            | ProjectAssemblyDataResult.Available ilb -> ilb
+            | ProjectAssemblyDataResult.Unavailable _ ->
                 let ilModule, ilAssemblyRefs = tcImports.OpenILBinaryModule(ctok, filename, m)
                 RawFSharpAssemblyDataBackedByFileOnDisk (ilModule, ilAssemblyRefs) :> IRawFSharpAssemblyData
 

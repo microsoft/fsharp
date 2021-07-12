@@ -2003,10 +2003,11 @@ type internal FsiStdinLexerProvider
         LightSyntaxStatus (initialLightSyntaxStatus, false (* no warnings *))
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
         UnicodeLexing.FunctionAsLexbuf
-          (true, isFeatureSupported, (fun (buf: char[], start, len) ->
+          (true, isFeatureSupported, checkLanguageFeatureErrorRecover, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readF()) with :? EndOfStreamException -> None
             inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
@@ -2044,6 +2045,7 @@ type internal FsiStdinLexerProvider
         tokenizer
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     // Create a new lexer to read stdin
     member _.CreateStdinLexer (errorLogger) =
@@ -2062,12 +2064,12 @@ type internal FsiStdinLexerProvider
 
     // Create a new lexer to read an "included" script file
     member _.CreateIncludedScriptLexer (sourceFileName, reader, errorLogger) =
-        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, isFeatureSupported, reader)
+        let lexbuf = UnicodeLexing.StreamReaderAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, reader)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     // Create a new lexer to read a string
     member this.CreateStringLexer (sourceFileName, source, errorLogger) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, source)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, source)
         CreateLexerForLexBuffer (sourceFileName, lexbuf, errorLogger)
 
     member _.ConsoleInput = fsiConsoleInput
@@ -2126,6 +2128,7 @@ type internal FsiInteractionProcessor
             istate, CompletedWithReportedError e
 
     let isFeatureSupported featureId = tcConfigB.langVersion.SupportsFeature featureId
+    let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfigB.langVersion
 
     let rangeStdin = rangeN Lexhelp.stdinMockFilename 0
 
@@ -2537,7 +2540,7 @@ type internal FsiInteractionProcessor
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
         use _unwind2 = ErrorLogger.PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
-        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
         currState
         |> InteractiveCatch errorLogger (fun istate ->
@@ -2554,7 +2557,7 @@ type internal FsiInteractionProcessor
         use _unwind1 = ErrorLogger.PushThreadBuildPhaseUntilUnwind(ErrorLogger.BuildPhase.Interactive)
         use _unwind2 = ErrorLogger.PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
-        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, sourceText)
+        let lexbuf = UnicodeLexing.StringAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, errorLogger)
         currState
         |> InteractiveCatch errorLogger (fun istate ->

@@ -680,8 +680,10 @@ signatureFile:
 
 /* The start of a module declaration */
 moduleIntro: 
-  | moduleKeyword opt_access opt_rec path 
-      { $3, $4.Lid, grabXmlDoc(parseState, 1), $2 }
+  | moduleKeyword opt_attributes opt_access opt_rec path
+      { if not (isNil $2) then
+            parseState.LexBuffer.CheckLanguageFeatureErrorRecover LanguageFeature.AttributesToRightOfModuleKeyword <| rhs parseState 4
+        $4, $5.Lid, grabXmlDoc(parseState, 1), $3, $2 }
 
 
 /* The start of a namespace declaration */
@@ -726,16 +728,16 @@ fileNamespaceSpec:
 
 /* The single module declaration that can make up a signature file */
 fileModuleSpec: 
-  | opt_attributes opt_declVisibility  moduleIntro moduleSpfnsPossiblyEmptyBlock 
+  | opt_attributes opt_declVisibility moduleIntro moduleSpfnsPossiblyEmptyBlock 
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
-      let isRec, path2, xml, vis = $3 
+      let isRec, path2, xml, vis, attribs2 = $3 
       (fun (isRec2, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2 
-        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xml, $1, vis, m)))  }
+        ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xml, $1 @ attribs2, vis, m)))  }
 
   | moduleSpfnsPossiblyEmptyBlock 
     { let m = (rhs parseState 1) 
@@ -796,19 +798,20 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let isRec, path, xml, vis = $3 
+        let isRec, path, xml, vis, attribs2 = $3 
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
+        if not (isNil attribs2) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
         match vis with
         | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
         | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
 
-  | opt_attributes opt_declVisibility  moduleIntro colonOrEquals moduleSpecBlock
-      { let isRec, path, xml, vis = $3 
+  | opt_attributes opt_declVisibility moduleIntro colonOrEquals moduleSpecBlock
+      { let isRec, path, xml, vis, attribs2 = $3
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        let info = SynComponentInfo($1, None, [], path, xml, false, vis, rhs parseState 3)
+        let info = SynComponentInfo($1 @ attribs2, None, [], path, xml, false, vis, rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let m = (rhs2 parseState 1 4, $5) ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
         SynModuleSigDecl.NestedModule(info, isRec, $5, m) }
@@ -1167,11 +1170,11 @@ fileModuleImpl:
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id
-      let isRec2, path2, xml, vis = $3 
+      let isRec2, path2, xml, vis, attribs2 = $3 
       (fun (isRec, path, _) -> 
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2 
-        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xml, $1, vis, m))) }
+        ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xml, $1@attribs2, vis, m))) }
 
   | moduleDefnsOrExprPossiblyEmptyOrBlock 
     { let m = (rhs parseState 1) 
@@ -1311,22 +1314,23 @@ moduleDefn:
         [ SynModuleDecl.Exception(ec, f) ] }
 
   /* 'module' definitions */
-  | opt_attributes opt_declVisibility moduleIntro EQUALS  namedModuleDefnBlock
+  | opt_attributes opt_declVisibility moduleIntro EQUALS namedModuleDefnBlock
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attribs, (isRec, path, xml, vis) = $1, $3 
-        match $5 with 
+        let attribs, (isRec, path, xml, vis, attribs2) = $1, $3 
+        match $5 with
         | Choice1Of2 eqn -> 
             if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
             if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
+            if not (isNil attribs) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
+            if not (isNil attribs2) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
             match vis with
             | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
-            | _ -> ()
+            | None -> ()
             [ SynModuleDecl.ModuleAbbrev(List.head path, eqn, (rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            let info = SynComponentInfo(attribs, None, [], path, xml, false, vis, rhs parseState 3)
+            let info = SynComponentInfo(attribs @ attribs2, None, [], path, xml, false, vis, rhs parseState 3)
             [ SynModuleDecl.NestedModule(info, isRec, def, false, (rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
   /* unattached custom attributes */
@@ -2233,7 +2237,7 @@ tyconDefnOrSpfnSimpleRepr:
        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError lhsm
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsInlineAssemblyCannotHaveVisibilityDeclarations(), rhs parseState 2))
        let s, _ = $5
-       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature (rhs parseState 5)
+       let ilType = ParseAssemblyCodeType s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature parseState.LexBuffer.CheckLanguageFeatureErrorRecover (rhs parseState 5)
        SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (box ilType, lhsm)  }
 
 
@@ -4547,7 +4551,7 @@ inlineAssemblyExpr:
       { if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyWarning (lhs parseState)
         let (s, _), sm = $2, rhs parseState 2
         (fun m ->
-            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature sm
+            let ilInstrs = ParseAssemblyCodeInstructions s parseState.LexBuffer.ReportLibraryOnlyFeatures parseState.LexBuffer.SupportsFeature parseState.LexBuffer.CheckLanguageFeatureErrorRecover sm
             SynExpr.LibraryOnlyILAssembly (box ilInstrs, $3, List.rev $4, $5, m)) }
 
 optCurriedArgExprs:

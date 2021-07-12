@@ -340,6 +340,7 @@ module FSharpKeywords =
     val DoesIdentifierNeedQuotation : string -> bool
 
     /// Add backticks if the identifier is a keyword.
+    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
     val QuoteIdentifierIfNeeded : string -> string
 
     /// Remove backticks if present.
@@ -347,9 +348,6 @@ module FSharpKeywords =
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription : (string * string) list
-
-    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
-    val QuoteIdentifierIfNeeded: string -> string
 
     /// All the keywords in the F# language
     val KeywordNames: string list
@@ -581,4 +579,3 @@ type public FSharpLexer =
         
     [<Experimental("This FCS API is experimental and subject to change.")>]
     static member Tokenize: text: ISourceText * tokenCallback: (FSharpToken -> unit) * ?langVersion: string * ?filePath: string * ?conditionalCompilationDefines: string list * ?flags: FSharpLexerFlags * ?pathMap: Map<string, string> * ?ct: CancellationToken -> unit
-

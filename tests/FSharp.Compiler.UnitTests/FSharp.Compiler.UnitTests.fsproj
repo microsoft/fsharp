@@ -24,6 +24,7 @@
     <Compile Include="EditDistance.fs" />
     <Compile Include="SuggestionBuffer.fs" />
     <Compile Include="ByteMemoryTests.fs" />
+    <Compile Include="BlockTests.fs" />
     <Compile Include="BuildGraphTests.fs" />
     <Compile Include="FsiTests.fs" />
     <Compile Include="AssemblySigningAttributes.fs" />

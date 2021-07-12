@@ -47,6 +47,10 @@ module internal PervasiveAutoOpens =
 
         member inline EndsWithOrdinal: value:string -> bool
 
+    type Async with
+        /// Runs the computation synchronously, always starting on the current thread.
+        static member RunImmediate: computation: Async<'T> * ?cancellationToken: CancellationToken -> 'T
+
     val foldOn: p:('a -> 'b) -> f:('c -> 'b -> 'd) -> z:'c -> x:'a -> 'd
 
     val notFound: unit -> 'a

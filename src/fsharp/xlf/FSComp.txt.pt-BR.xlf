@@ -92,6 +92,11 @@
         <target state="translated">expressões de computação aplicáveis</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="translated">atributos à direita da palavra-chave 'módulo'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">consumo de membro da interface padrão</target>
@@ -364,7 +369,7 @@
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
-        <target state="new">The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</target>
+        <target state="translated">Não foi possível determinar o .NET SDK para este script. Não foi possível encontrar dotnet.exe e certifique-se de que o SDK do .NET esteja instalado.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedUnexpected">
@@ -605,6 +610,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Considere usar 'return!' em vez de 'return'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="new">This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">
@@ -4559,7 +4569,7 @@
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
         <source>Freely distributed under the MIT Open Source License.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</source>
-        <target state="translated">Distribuído gratuitamente sob a Licença de Software Livre do MIT.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</target>
+        <target state="translated">Distribuído gratuitamente sob a Licença de Código Aberto do MIT.  https://github.com/Microsoft/visualfsharp/blob/master/License.txt</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNameOfOutputFile">

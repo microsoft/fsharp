@@ -22,8 +22,8 @@
                 <dependency id="System.Threading.Thread" version="4.3.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.3.0" />
                 <dependency id="System.ValueTuple" version="4.4.0" />
-                <dependency id="System.Buffers" version="4.5.0" />
-                <dependency id="System.Memory" version="4.5.3" />
+                <dependency id="System.Buffers" version="4.5.1" />
+                <dependency id="System.Memory" version="4.5.4" />
             </group>
         </dependencies>
         <contentFiles>

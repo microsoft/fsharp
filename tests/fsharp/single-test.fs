@@ -9,6 +9,7 @@ open FSharp.Compiler.IO
 
 type Permutation =
     | FSC_CORECLR
+    | FSC_CORECLR_OPT_MINUS
     | FSC_CORECLR_BUILDONLY
     | FSI_CORECLR
 #if !NETCOREAPP
@@ -304,6 +305,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
     match p with
     | FSC_CORECLR -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true false
+    | FSC_CORECLR_OPT_MINUS -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" false false
     | FSC_CORECLR_BUILDONLY -> executeSingleTestBuildAndRun OutputType.Exe "coreclr" "net5.0" true true
     | FSI_CORECLR -> executeSingleTestBuildAndRun OutputType.Script "coreclr" "net5.0" true false
 
@@ -333,7 +335,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         source1 |> Option.iter (fun from -> copy_y cfg from "tmptest.fs")
 
         log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi" cfg.fsc_flags ["tmptest.fs"]
+        fsc cfg "%s --sig:tmptest.fsi --define:GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
         (if FileSystem.FileExistsShim("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Compiling against generated signature file..."

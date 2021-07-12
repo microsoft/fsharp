@@ -71,7 +71,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
 
-        Async.RunSynchronously(work)
+        Async.RunImmediate(work)
         |> ignore
 
         Assert.shouldBe 1 computationCount
@@ -84,7 +84,7 @@ module BuildGraphTests =
 
         let work = Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode))
 
-        let result = Async.RunSynchronously(work)
+        let result = Async.RunImmediate(work)
 
         Assert.shouldNotBeEmpty result
         Assert.shouldBe requests result.Length
@@ -116,7 +116,7 @@ module BuildGraphTests =
         
         Assert.shouldBeTrue weak.IsAlive
 
-        Async.RunSynchronously(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
+        Async.RunImmediate(Async.Parallel(Array.init requests (fun _ -> graphNode.GetOrComputeValue() |> Async.AwaitNodeCode)))
         |> ignore
 
         GC.Collect(2, GCCollectionMode.Forced, true)

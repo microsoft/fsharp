@@ -228,3 +228,4 @@ module internal OpenDeclarationHelper =
 module internal TaggedText =
     let toString (tts: TaggedText[]) =
         tts |> Array.map (fun tt -> tt.Text) |> String.concat ""
+

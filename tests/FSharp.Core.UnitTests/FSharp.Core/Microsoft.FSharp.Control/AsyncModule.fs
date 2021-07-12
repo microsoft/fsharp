@@ -691,3 +691,56 @@ type AsyncModule() =
             } |> Async.RunSynchronously
 
         Assert.AreEqual(54, counter)
+
+    [<Fact>]
+    member this.``async doesn't do cancel check between do! and try-finally``() =
+        let gate = obj()
+        for i in 0..10 do
+            let procCount = 3
+            use semaphore = new SemaphoreSlim(procCount-1)
+            printfn "Semaphore count available: %i" semaphore.CurrentCount
+            let mutable acquiredCount = 0
+            let mutable releaseCount = 0
+            try
+                List.init procCount (fun index ->
+                    async {
+                        lock gate <| fun () -> printfn "[%i] Waiting to enter semaphore" index
+                        let! cancellationToken = Async.CancellationToken
+
+                        // The semaphore lets two threads through at a time
+                        do! semaphore.WaitAsync(cancellationToken) |> Async.AwaitTask
+
+                        // No implicit cancellation checks should take place between a do! and a try
+                        // if there are no other async control constructs present.  If there is synchronous code
+                        // it runs without cancellation checks
+                        //
+                        // index 1 will enter the try/finally quickly, call failwith and cancel the other tasks
+                        // One of index 2 and index 3 will be stuck here before the try/finally. But having got
+                        // this far it should enter the try/finally before cancellation takes effect
+                        do 
+                          lock gate <| fun () -> printfn "[%i] Acquired semaphore" index
+                          Interlocked.Increment(&acquiredCount) |> ignore
+                          if index <> 0 then 
+                              lock gate <| fun () -> printfn "[%i] Slowly entering try/finally" index
+                              System.Threading.Thread.Sleep(100)
+
+                        try
+                            lock gate <| fun () -> printfn "[%i] Within try-finally" index
+                            if index = 0 then 
+                                lock gate <| fun () -> printfn "[%i] Error" index
+                                // The failure will cause others to cancel
+                                failwith "Something bad happened!"
+                        finally
+                            semaphore.Release() |> ignore
+                            // This should always get executed
+                            Interlocked.Increment(&releaseCount) |> ignore
+                            lock gate <| fun () -> printfn "[%i] Semaphore released" index
+                    })
+                |> Async.Parallel
+                |> Async.Ignore
+                |> Async.RunSynchronously
+            with
+            | exn ->
+                lock gate <| fun () -> printfn "Unhandled exception: %s" exn.Message
+                lock gate <| fun () -> printfn "Semaphore count available: %i" semaphore.CurrentCount
+            Assert.AreEqual(acquiredCount, releaseCount)

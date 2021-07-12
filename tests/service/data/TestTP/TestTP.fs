@@ -3,6 +3,7 @@
 open ProviderImplementation.ProvidedTypes
 open Microsoft.FSharp.Core.CompilerServices
 open System.Reflection
+open FSharp.Quotations
 
 module Helper =
     let doNothing() = ()
@@ -68,7 +69,7 @@ open FSharp.Compiler.Service.Tests
 
 [<TypeProvider>]
 type BasicProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces ()
+    inherit TypeProviderForNamespaces (config)
 
     // resolve CSharp_Analysis from referenced assemblies
     do  System.AppDomain.CurrentDomain.add_AssemblyResolve(fun _ args ->
@@ -88,110 +89,110 @@ type BasicProvider (config : TypeProviderConfig) as this =
     let createTypes () =
         let myType = ProvidedTypeDefinition(asm, ns, "MyType", Some typeof<obj>)
 
-        let ctor = ProvidedConstructor([], InvokeCode = fun args -> <@@ "My internal state" :> obj @@>)
+        let ctor = ProvidedConstructor([], invokeCode = fun args -> <@@ "My internal state" :> obj @@>)
         myType.AddMember(ctor)
 
         let ctor2 = ProvidedConstructor(
                         [ProvidedParameter("InnerState", typeof<string>)],
-                        InvokeCode = fun args -> <@@ (%%(args.[0]):string) :> obj @@>)
+                        invokeCode = fun args -> <@@ (%%(args.[0]):string) :> obj @@>)
         myType.AddMember(ctor2)
 
         let innerState = ProvidedProperty("InnerState", typeof<string>,
-                            GetterCode = fun args -> <@@ (%%(args.[0]) :> obj) :?> string @@>)
+                            getterCode = fun args -> <@@ (%%(args.[0]) :> obj) :?> string @@>)
         myType.AddMember(innerState)
 
         let someMethod = ProvidedMethod("DoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothing() @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothing() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingOneArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingOneArg(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingOneArg(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingTwoArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingTwoArg(3, 4) @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingTwoArg(3, 4) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingTwoArgCurried", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingTwoArgCurried 3 4 @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingTwoArgCurried 3 4 @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingWithCompiledName", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingWithCompiledName() @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingWithCompiledName() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingGeneric", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingGeneric(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingGeneric(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingGenericWithConstraint", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingGenericWithConstraint(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingGenericWithConstraint(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("DoNothingGenericWithTypeConstraint", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.doNothingGenericWithTypeConstraint([3]) @@>)
+                            invokeCode = fun args -> <@@ Helper.doNothingGenericWithTypeConstraint([3]) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassDoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C.DoNothing() @@>)
+                            invokeCode = fun args -> <@@ Helper.C.DoNothing() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassDoNothingGeneric", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C.DoNothingGeneric(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.C.DoNothingGeneric(3) @@>)
 
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassDoNothingOneArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C.DoNothingOneArg(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.C.DoNothingOneArg(3) @@>)
 
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassDoNothingTwoArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C.DoNothingTwoArg(Helper.C(), 3) @@>)
+                            invokeCode = fun args -> <@@ Helper.C.DoNothingTwoArg(Helper.C(), 3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassDoNothingTwoArgCurried", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C.DoNothingTwoArgCurried (Helper.C()) 3 @@>)
+                            invokeCode = fun args -> <@@ Helper.C.DoNothingTwoArgCurried (Helper.C()) 3 @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassDoNothingWithCompiledName", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C.DoNothingWithCompiledName() @@>)
+                            invokeCode = fun args -> <@@ Helper.C.DoNothingWithCompiledName() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassInstanceDoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().InstanceDoNothing() @@>)
+                            invokeCode = fun args -> <@@ Helper.C().InstanceDoNothing() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassInstanceDoNothingGeneric", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().InstanceDoNothingGeneric(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.C().InstanceDoNothingGeneric(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassInstanceDoNothingOneArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().InstanceDoNothingOneArg(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.C().InstanceDoNothingOneArg(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassInstanceDoNothingTwoArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().InstanceDoNothingTwoArg(Helper.C(), 3) @@>)
+                            invokeCode = fun args -> <@@ Helper.C().InstanceDoNothingTwoArg(Helper.C(), 3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassInstanceDoNothingTwoArgCurried", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().InstanceDoNothingTwoArgCurried (Helper.C()) 3 @@>)
+                            invokeCode = fun args -> <@@ Helper.C().InstanceDoNothingTwoArgCurried (Helper.C()) 3 @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassInstanceDoNothingWithCompiledName", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().InstanceDoNothingWithCompiledName() @@>)
+                            invokeCode = fun args -> <@@ Helper.C().InstanceDoNothingWithCompiledName() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("InterfaceDoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ (Helper.C() :> Helper.I).DoNothing() @@>)
+                            invokeCode = fun args -> <@@ (Helper.C() :> Helper.I).DoNothing() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("OverrideDoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.C().VirtualDoNothing() @@>)
+                            invokeCode = fun args -> <@@ Helper.C().VirtualDoNothing() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("GenericClassDoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.G<int>.DoNothing() @@>)
+                            invokeCode = fun args -> <@@ Helper.G<int>.DoNothing() @@>)
         myType.AddMember(someMethod)
 
         // These do not seem to compile correctly when used in provided expressions:
@@ -201,91 +202,125 @@ type BasicProvider (config : TypeProviderConfig) as this =
         //Helper.G<int>().InstanceDoNothingGeneric(3)
                                                          
         let someMethod = ProvidedMethod("GenericClassDoNothingOneArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.G<int>.DoNothingOneArg(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.G<int>.DoNothingOneArg(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("GenericClassDoNothingTwoArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.G<int>.DoNothingTwoArg(Helper.C(), 3) @@>)
+                            invokeCode = fun args -> <@@ Helper.G<int>.DoNothingTwoArg(Helper.C(), 3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("GenericClassInstanceDoNothing", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.G<int>().InstanceDoNothing() @@>)
+                            invokeCode = fun args -> <@@ Helper.G<int>().InstanceDoNothing() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("GenericClassInstanceDoNothingOneArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.G<int>().InstanceDoNothingOneArg(3) @@>)
+                            invokeCode = fun args -> <@@ Helper.G<int>().InstanceDoNothingOneArg(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("GenericClassInstanceDoNothingTwoArg", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ Helper.G<int>().InstanceDoNothingTwoArg(Helper.C(), 3) @@>)
+                            invokeCode = fun args -> <@@ Helper.G<int>().InstanceDoNothingTwoArg(Helper.C(), 3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("OptionConstructionAndMatch", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ match Some 1 with None -> 0 | Some x -> x @@>)
+                            invokeCode = fun args -> <@@ match Some 1 with None -> 0 | Some x -> x @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ChoiceConstructionAndMatch", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ match Choice1Of2 1 with Choice2Of2 _ -> 0 | Choice1Of2 _ -> 1 @@>)
+                            invokeCode = fun args -> <@@ match Choice1Of2 1 with Choice2Of2 _ -> 0 | Choice1Of2 _ -> 1 @@>)
             // TODO: fix type checker to recognize union generated subclasses coming from TPs
-//                            InvokeCode = fun args -> <@@ match Choice1Of2 1 with Choice2Of2 _ -> 0 | Choice1Of2 x -> x @@>)
+//                            invokeCode = fun args -> <@@ match Choice1Of2 1 with Choice2Of2 _ -> 0 | Choice1Of2 x -> x @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("RecordConstructionAndFieldGetSet", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ let r : Helper.R = { A = 1; B = 0 } in r.B <- 1; r.A @@>)
+                            invokeCode = fun args -> <@@ let r : Helper.R = { A = 1; B = 0 } in r.B <- 1; r.A @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("TupleConstructionAndGet", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ let t = (1, 2, 3) in (let (_, i, _) = t in i) @@>)
+                            invokeCode = fun args -> <@@ let t = (1, 2, 3) in (let (_, i, _) = t in i) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpMethod", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ CSharpClass(0).Method("x") @@>)
+                            invokeCode = fun args -> <@@ CSharpClass(0).Method("x") @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpMethodOptionalParam", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ CSharpClass(0).Method2("x") + CSharpClass(0).Method2() @@>)
+                            invokeCode = fun args -> <@@ CSharpClass(0).Method2("x") + CSharpClass(0).Method2() @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpMethodParamArray", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ CSharpClass(0).Method3("x", "y") @@>)
+                            invokeCode = fun args -> <@@ CSharpClass(0).Method3("x", "y") @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpMethodGeneric", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ CSharpClass(0).GenericMethod<int>(2) @@>)
+                            invokeCode = fun args -> <@@ CSharpClass(0).GenericMethod<int>(2) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpMethodGenericWithConstraint", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ CSharpClass(0).GenericMethod2<obj>(obj()) @@>)
+                            invokeCode = fun args -> <@@ CSharpClass(0).GenericMethod2<obj>(obj()) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpMethodGenericWithTypeConstraint", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ CSharpClass(0).GenericMethod3<int>(3) @@>)
+                            invokeCode = fun args -> <@@ CSharpClass(0).GenericMethod3<int>(3) @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("CSharpExplicitImplementationMethod", [], typeof<unit>,
-                            InvokeCode = fun args -> <@@ (CSharpClass(0) :> ICSharpExplicitInterface).ExplicitMethod("x") @@>)
+                            invokeCode = fun args -> <@@ (CSharpClass(0) :> ICSharpExplicitInterface).ExplicitMethod("x") @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ModuleValue", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ Helper.moduleValue <- 1; Helper.moduleValue @@>)
+                            invokeCode = fun args -> <@@ Helper.moduleValue <- 1; Helper.moduleValue @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassProperty", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ let x = Helper.C() in x.Property <- 1; x.Property @@>)
+                            invokeCode = fun args -> <@@ let x = Helper.C() in x.Property <- 1; x.Property @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassAutoProperty", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ let x = Helper.C() in x.AutoProperty <- 1; x.AutoProperty @@>)
+                            invokeCode = fun args -> <@@ let x = Helper.C() in x.AutoProperty <- 1; x.AutoProperty @@>)
         myType.AddMember(someMethod)
 
         let someMethod = ProvidedMethod("ClassStaticAutoProperty", [], typeof<int>,
-                            InvokeCode = fun args -> <@@ Helper.C.StaticAutoProperty <- 1; Helper.C.StaticAutoProperty @@>)
+                            invokeCode = fun args -> <@@ Helper.C.StaticAutoProperty <- 1; Helper.C.StaticAutoProperty @@>)
         myType.AddMember(someMethod)
 
         [myType]  
 
     do
         this.AddNamespace(ns, createTypes())
+
+[<TypeProvider>]
+type BasicGenerativeProvider (config : TypeProviderConfig) as this =
+    inherit TypeProviderForNamespaces (config)
+
+    let ns = "GeneratedWithConstructor.Provided"
+    let asm = Assembly.GetExecutingAssembly()
+
+    let createType typeName (count:int) =
+        let asm = ProvidedAssembly()
+        let myType = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>, isErased=false)
+
+        let ctor = ProvidedConstructor([], invokeCode = fun args -> <@@ "My internal state" :> obj @@>)
+        myType.AddMember(ctor)
+
+        let ctor2 = ProvidedConstructor([ProvidedParameter("InnerState", typeof<string>)], invokeCode = fun args -> <@@ (%%(args.[1]):string) :> obj @@>)
+        myType.AddMember(ctor2)
+
+        for i in 1 .. count do 
+            let prop = ProvidedProperty("Property" + string i, typeof<int>, getterCode = fun args -> <@@ i @@>)
+            myType.AddMember(prop)
+
+        let meth = ProvidedMethod("StaticMethod", [], typeof<CSharpClass>, isStatic=true, invokeCode = (fun args -> Expr.Value(null, typeof<CSharpClass>)))
+        myType.AddMember(meth)
+        asm.AddTypes [ myType ]
+
+        myType
+
+    let myParamType = 
+        let t = ProvidedTypeDefinition(asm, ns, "GenerativeProvider", Some typeof<obj>, isErased=false)
+        t.DefineStaticParameters( [ProvidedStaticParameter("Count", typeof<int>)], fun typeName args -> createType typeName (unbox<int> args.[0]))
+        t
+    do
+        this.AddNamespace(ns, [myParamType])
 
 [<assembly:TypeProviderAssembly>]
 do ()

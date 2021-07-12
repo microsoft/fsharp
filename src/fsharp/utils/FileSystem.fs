@@ -353,7 +353,6 @@ module MemoryMappedFileExtensions =
             let length = int64 bytes.Length
             trymmf length
                 (fun stream ->
-                    stream.SetLength(stream.Length + length)
                     let span = Span<byte>(stream.PositionPointer |> NativePtr.toVoidPtr, int length)
                     bytes.Span.CopyTo(span)
                     stream.Position <- stream.Position + length

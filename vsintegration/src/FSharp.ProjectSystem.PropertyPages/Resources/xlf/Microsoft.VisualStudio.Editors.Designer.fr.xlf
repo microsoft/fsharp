@@ -330,7 +330,7 @@ Sélectionnez un chemin de dossier valide.</target>
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine4">
         <source>Shutdown: Raised after all application forms are closed.  This event is not raised if the application terminates abnormally.</source>
-        <target state="translated">Shutdown : Déclenché après la fermeture de tous les formulaires de l'application.  Cet événement n'est pas déclenché si l'application se termine de façon anormale.</target>
+        <target state="translated">Shutdown : Déclenché après la fermeture de tous les formulaires de l'application.  Cet événement n'est pas déclenché si l'application se termine de façon anormale.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine5">

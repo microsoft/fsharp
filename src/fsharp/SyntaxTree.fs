@@ -1826,7 +1826,7 @@ type SynModuleOrNamespaceSig =
         match this with
         | SynModuleOrNamespaceSig (range=m) -> m
 
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedHashDirectiveArgument =
      | String of value: string * stringKind: SynStringKind * range: Range
      | SourceIdentifier of constant: string * value: string * range: Range

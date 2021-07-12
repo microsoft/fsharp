@@ -23,8 +23,10 @@
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\Misc.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
+    <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
+    <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
     <Compile Include="ErrorMessages\AssignmentErrorTests.fs" />
@@ -36,7 +38,7 @@
     <Compile Include="ErrorMessages\InvalidNumericLiteralTests.fs" />    
     <Compile Include="ErrorMessages\MissingElseBranch.fs" />
     <Compile Include="ErrorMessages\MissingExpressionTests.fs" />
-    <Compile Include="ErrorMessages\ModuleAbbreviationTests.fs" />
+    <Compile Include="ErrorMessages\ModuleTests.fs" />
     <Compile Include="ErrorMessages\NameResolutionTests.fs" />
     <Compile Include="ErrorMessages\SuggestionsTests.fs" />
     <Compile Include="ErrorMessages\TypeMismatchTests.fs" />

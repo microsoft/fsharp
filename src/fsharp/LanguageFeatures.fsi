@@ -29,6 +29,7 @@ type LanguageFeature =
     | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
+    | AttributesToRightOfModuleKeyword
 
 /// LanguageVersion management
 type LanguageVersion =

@@ -86,7 +86,7 @@ let ``FileSystem compilation test``() =
           OriginalLoadReferences = []
           Stamp = None }
 
-    let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunSynchronously
+    let results = checker.ParseAndCheckProject(projectOptions) |> Async.RunImmediate
 
     results.Diagnostics.Length |> shouldEqual 0
     results.AssemblySignature.Entities.Count |> shouldEqual 2

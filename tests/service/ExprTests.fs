@@ -728,7 +728,7 @@ let ``Test Unoptimized Declarations Project1`` () =
     let cleanup, options = Project1.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -863,7 +863,7 @@ let ``Test Optimized Declarations Project1`` () =
     let cleanup, options = Project1.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -1014,7 +1014,7 @@ let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimi
 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFilePath, args)
 
-        let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+        let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
         let referencedAssemblies = wholeProjectResults.ProjectContext.GetReferencedAssemblies()
         let currentAssemblyToken =
             let fsCore = referencedAssemblies |> List.tryFind (fun asm -> asm.SimpleName = "FSharp.Core")
@@ -3194,7 +3194,7 @@ let ``Test expressions of declarations stress big expressions`` () =
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
@@ -3210,7 +3210,7 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
     let cleanup, options = ProjectStressBigExpressions.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     wholeProjectResults.Diagnostics.Length |> shouldEqual 0
 
@@ -3270,7 +3270,7 @@ let ``Test ProjectForWitnesses1`` () =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -3314,7 +3314,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses1.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses1 error: <<<%s>>>" e.Message
@@ -3394,7 +3394,7 @@ let ``Test ProjectForWitnesses2`` () =
     let cleanup, options = ProjectForWitnesses2.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses2 error: <<<%s>>>" e.Message
@@ -3449,7 +3449,7 @@ let ``Test ProjectForWitnesses3`` () =
     let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:preview"]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
@@ -3480,7 +3480,7 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses3.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses3 error: <<<%s>>>" e.Message
@@ -3543,7 +3543,7 @@ let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =
     let cleanup, options = ProjectForWitnesses4.createOptions()
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
-    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
 
     for e in wholeProjectResults.Diagnostics do
         printfn "ProjectForWitnesses4 error: <<<%s>>>" e.Message

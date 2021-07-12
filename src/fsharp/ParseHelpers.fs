@@ -220,7 +220,7 @@ and LexCont = LexerContinuation
 // Parse IL assembly code
 //------------------------------------------------------------------------
 
-let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) m : IL.ILInstr[] = 
+let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupported: LanguageFeature -> bool) checkLanguageFeatureErrorRecover m : IL.ILInstr[] = 
 #if NO_INLINE_IL_PARSER
     ignore s
     ignore isFeatureSupported
@@ -231,24 +231,26 @@ let ParseAssemblyCodeInstructions s reportLibraryOnlyFeatures (isFeatureSupporte
     try
         FSharp.Compiler.AbstractIL.AsciiParser.ilInstrs
            FSharp.Compiler.AbstractIL.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, s))
+           (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
     with _ ->
       errorR(Error(FSComp.SR.astParseEmbeddedILError(), m)); [||]
 #endif
 
-let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Features.LanguageFeature -> bool) m =
+let ParseAssemblyCodeType s reportLibraryOnlyFeatures (isFeatureSupported: Features.LanguageFeature -> bool) (checkLanguageFeatureErrorRecover: Features.LanguageFeature -> range -> unit) m =
     ignore s
     ignore isFeatureSupported
+    ignore checkLanguageFeatureErrorRecover
 
 #if NO_INLINE_IL_PARSER
     errorR(Error((193, "Inline IL not valid in a hosted environment"), m))
     IL.PrimaryAssemblyILGlobals.typ_Object
 #else
     let isFeatureSupported (_featureId:LanguageFeature) = true
+    let checkLanguageFeatureErrorRecover (_featureId:LanguageFeature) _range = ()
     try
         FSharp.Compiler.AbstractIL.AsciiParser.ilType
            FSharp.Compiler.AbstractIL.AsciiLexer.token
-           (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, s))
+           (UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, isFeatureSupported, checkLanguageFeatureErrorRecover, s))
     with RecoverableParseError ->
       errorR(Error(FSComp.SR.astParseEmbeddedILTypeError(), m));
       IL.PrimaryAssemblyILGlobals.typ_Object

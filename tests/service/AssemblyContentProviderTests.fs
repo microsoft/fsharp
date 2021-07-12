@@ -13,6 +13,7 @@ open System.Text
 open NUnit.Framework
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
+open FSharp.Compiler.Service.Tests.Common
 
 let private filePath = "C:\\test.fs"
 
@@ -43,7 +44,7 @@ let (=>) (source: string) (expected: string list) =
                // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                yield "" |]
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunSynchronously
+    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, FSharp.Compiler.Text.SourceText.ofString source, projectOptions) |> Async.RunImmediate
     
     let checkFileResults =
         match checkFileAnswer with

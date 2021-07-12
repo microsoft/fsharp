@@ -1639,7 +1639,9 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.ActivePatternCase (exp, _, _, _, _, _) -> CheckExprNoByrefs cenv env exp
     | DecisionTreeTest.Error _ -> ()
 
-and CheckAttrib cenv env (Attrib(_, _, args, props, _, _, _)) = 
+and CheckAttrib cenv env (Attrib(tcref, _, args, props, _, _, m)) =
+    if List.exists (tyconRefEq cenv.g tcref) cenv.g.attribs_Unsupported then
+        warning(Error(FSComp.SR.unsupportedAttribute(), m))
     props |> List.iter (fun (AttribNamedArg(_, _, _, expr)) -> CheckAttribExpr cenv env expr)
     args |> List.iter (CheckAttribExpr cenv env)
 

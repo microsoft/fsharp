@@ -111,7 +111,8 @@ module ScriptPreprocessClosure =
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
 
         let isFeatureSupported featureId = tcConfig.langVersion.SupportsFeature featureId
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, sourceText)
+        let checkLanguageFeatureErrorRecover = ErrorLogger.checkLanguageFeatureErrorRecover tcConfig.langVersion
+        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(true, isFeatureSupported, checkLanguageFeatureErrorRecover, sourceText)
 
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger)

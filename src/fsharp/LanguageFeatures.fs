@@ -41,6 +41,7 @@ type LanguageFeature =
     | UseBindingValueDiscard
     | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
+    | AttributesToRightOfModuleKeyword
 
 /// LanguageVersion management
 type LanguageVersion (specifiedVersionAsString) =
@@ -87,6 +88,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.UseBindingValueDiscard, previewVersion
             LanguageFeature.UnionIsPropertiesVisible, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
+            LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
         ]
 
     let specified =
@@ -165,6 +167,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
         | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
+        | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

@@ -92,6 +92,11 @@
         <target state="translated">применимые вычислительные выражения</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAttributesToRightOfModuleKeyword">
+        <source>attributes to the right of the 'module' keyword</source>
+        <target state="translated">атрибуты справа от ключевого слова "module"</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">использование элемента интерфейса по умолчанию</target>
@@ -605,6 +610,11 @@
       <trans-unit id="returnUsedInsteadOfReturnBang">
         <source>Consider using 'return!' instead of 'return'.</source>
         <target state="translated">Рекомендуется использовать "return!" вместо "return".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="unsupportedAttribute">
+        <source>This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</source>
+        <target state="new">This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.</target>
         <note />
       </trans-unit>
       <trans-unit id="useSdkRefs">
@@ -7444,12 +7454,12 @@
       </trans-unit>
       <trans-unit id="implicitlyDiscardedInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
-        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt; = &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield".</target>
+        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt;= &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield".</target>
         <note />
       </trans-unit>
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
-        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt; = &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield!".</target>
+        <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt;= &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield!".</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">

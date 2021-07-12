@@ -44,3 +44,8 @@ type Class1() =
     member this.X41 = T().ClassProperty()
     member this.X42 = T().ClassAutoProperty()
     member this.X43 = T().ClassStaticAutoProperty()
+
+type T2 = GeneratedWithConstructor.Provided.GenerativeProvider<3>
+
+type Class2() = 
+    member this.X1 = T2()

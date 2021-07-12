@@ -157,6 +157,10 @@ EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service", "src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj", "{B5A9BBD9-2F45-4722-A6CA-BAE3C64CD4E2}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Service.Tests", "tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj", "{14F3D3D6-5C8E-43C2-98A2-17EA704D4DEA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FF76BD3C-5E0A-4752-B6C3-044F6E15719B} = {FF76BD3C-5E0A-4752-B6C3-044F6E15719B}
+		{887630A3-4B1D-40EA-B8B3-2D842E9C40DB} = {887630A3-4B1D-40EA-B8B3-2D842E9C40DB}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpDebug", "vsintegration\Vsix\VisualFSharpFull\VisualFSharpDebug.csproj", "{A422D673-8E3B-4924-821B-DD3174173426}"
 EndProject

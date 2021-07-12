@@ -1102,7 +1102,7 @@ module internal Salsa =
             member file.GetFileName() = filename
             member file.GetProjectOptionsOfScript() = 
                 project.Solution.Vs.LanguageService.FSharpChecker.GetProjectOptionsFromScript(filename, FSharp.Compiler.Text.SourceText.ofString file.CombinedLines, false, System.DateTime(2000,1,1), [| |]) 
-                |> Async.RunSynchronously
+                |> Async.RunImmediate
                 |> fst // drop diagnostics
                  
             member file.RecolorizeWholeFile() = ()
@@ -1316,7 +1316,7 @@ module internal Salsa =
                 
                 let declarations = 
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1, cursor.col-1, reason) |> Async.RunSynchronously
+                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1, cursor.col-1, reason) |> Async.RunImmediate
                 match declarations with 
                 | null -> [||]
                 | declarations ->
@@ -1335,7 +1335,7 @@ module internal Salsa =
                 let currentAuthoringScope = file.DoIntellisenseRequest(BackgroundRequestReason.MemberSelect)
                 let declarations = 
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1,cursor.col-1, BackgroundRequestReason.MemberSelect) |> Async.RunSynchronously
+                    currentAuthoringScope.GetDeclarations(snapshot, cursor.line-1,cursor.col-1, BackgroundRequestReason.MemberSelect) |> Async.RunImmediate
                 match declarations with 
                 | null -> None
                 | declarations -> 

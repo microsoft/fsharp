@@ -98,7 +98,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
                             let checker = getInteractiveChecker()
-                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName,  FSharp.Compiler.Text.SourceText.ofString sourceText, SessionsProperties.fsiPreview, timestamp, [| |]) |> Async.RunSynchronously
+                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName,  FSharp.Compiler.Text.SourceText.ofString sourceText, SessionsProperties.fsiPreview, timestamp, [| |]) |> Async.RunImmediate
                             let referencedProjectFileNames = [| |]
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite
@@ -141,7 +141,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             // Do brace matching if required
             if req.ResultSink.BraceMatching then  
                 // Record brace-matching
-                let braceMatches = interactiveChecker.MatchBraces(req.FileName,req.Text,checkOptions) |> Async.RunSynchronously
+                let braceMatches = interactiveChecker.MatchBraces(req.FileName,req.Text,checkOptions) |> Async.RunImmediate
                     
                 let mutable pri = 0
                 for (b1,b2) in braceMatches do
@@ -153,14 +153,14 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
             | BackgroundRequestReason.ParseFile ->
 
                 // invoke ParseFile directly - relying on cache inside the interactiveChecker
-                let parseResults = interactiveChecker.ParseFileInProject(req.FileName, req.Text, checkOptions) |> Async.RunSynchronously
+                let parseResults = interactiveChecker.ParseFileInProject(req.FileName, req.Text, checkOptions) |> Async.RunImmediate
 
                 parseFileResults <- Some parseResults
 
             | _ -> 
                 let syncParseInfoOpt = 
                     if FSharpIntellisenseInfo_DEPRECATED.IsReasonRequiringSyncParse(req.Reason) then
-                        let parseResults = interactiveChecker.ParseFileInProject(req.FileName,req.Text,checkOptions) |> Async.RunSynchronously
+                        let parseResults = interactiveChecker.ParseFileInProject(req.FileName,req.Text,checkOptions) |> Async.RunImmediate
                         Some parseResults
                     else None
 
@@ -188,14 +188,14 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         let parseResults = 
                             match syncParseInfoOpt with 
                             | Some x -> x
-                            | None -> interactiveChecker.ParseFileInProject(req.FileName,req.Text,checkOptions) |> Async.RunSynchronously
+                            | None -> interactiveChecker.ParseFileInProject(req.FileName,req.Text,checkOptions) |> Async.RunImmediate
                         
                         // Should never matter but don't let anything in FSharp.Compiler extend the lifetime of 'source'
                         let sr = ref (Some source)
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProject(parseResults,req.FileName,req.Timestamp,FSharp.Compiler.Text.SourceText.ofString(req.Text),checkOptions) |> Async.RunSynchronously with 
+                            match interactiveChecker.CheckFileInProject(parseResults,req.FileName,req.Timestamp,FSharp.Compiler.Text.SourceText.ofString(req.Text),checkOptions) |> Async.RunImmediate with 
                             | FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
                                 None,true
@@ -219,7 +219,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     if outOfDateProjectFileNames.Contains(projectFileName) then
                         interactiveChecker.InvalidateConfiguration(checkOptions)
                         interactiveChecker.ParseAndCheckProject(checkOptions)
-                        |> Async.RunSynchronously
+                        |> Async.RunImmediate
                         |> ignore
                         outOfDateProjectFileNames.Remove(projectFileName) |> ignore
 
@@ -236,7 +236,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
                             interactiveChecker.ParseAndCheckProject(checkOptions)
-                            |> Async.RunSynchronously
+                            |> Async.RunImmediate
                             |> ignore
 
                     | Some typedResults -> 
@@ -265,7 +265,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                         // On 'FullTypeCheck', send a message to the reactor to start the background compile for this project, just in case
                         if req.Reason = BackgroundRequestReason.FullTypeCheck then    
                             interactiveChecker.ParseAndCheckProject(checkOptions)
-                            |> Async.RunSynchronously
+                            |> Async.RunImmediate
                             |> ignore
                             
                         // On 'QuickInfo', get the text for the quick info while we're off the UI thread, instead of doing it later

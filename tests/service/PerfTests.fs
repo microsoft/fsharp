@@ -49,7 +49,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pB, tB = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
 
     printfn "ParseFile()..."
-    let parseResults1 = checker.ParseFile(Project1.fileNames.[5], Project1.fileSources2.[5], Project1.parsingOptions)  |> Async.RunSynchronously
+    let parseResults1 = checker.ParseFile(Project1.fileNames.[5], Project1.fileSources2.[5], Project1.parsingOptions)  |> Async.RunImmediate
     let pC, tC = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
     (pC - pB) |> shouldEqual 1
     (tC - tB) |> shouldEqual 0
@@ -59,7 +59,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
     backgroundCheckCount.Value |> shouldEqual 0
 
     printfn "CheckFileInProject()..."
-    let checkResults1 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[5], 0, Project1.fileSources2.[5], Project1.options)  |> Async.RunSynchronously
+    let checkResults1 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[5], 0, Project1.fileSources2.[5], Project1.options)  |> Async.RunImmediate
     let pD, tD = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
 
     printfn "checking background parsing happened...., backgroundParseCount.Value = %d" backgroundParseCount.Value
@@ -78,7 +78,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
     (tD - tC) |> shouldEqual 1
 
     printfn "CheckFileInProject()..."
-    let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunSynchronously
+    let checkResults2 = checker.CheckFileInProject(parseResults1, Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunImmediate
     let pE, tE = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
     printfn "checking no extra  foreground parsing...., (pE - pD) = %d" (pE - pD)
     (pE - pD) |> shouldEqual 0
@@ -91,7 +91,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
 
     printfn "ParseAndCheckFileInProject()..."
     // A subsequent ParseAndCheck of identical source code doesn't do any more anything
-    let checkResults2 = checker.ParseAndCheckFileInProject(Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunSynchronously
+    let checkResults2 = checker.ParseAndCheckFileInProject(Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunImmediate
     let pF, tF = FSharpChecker.ActualParseFileCount, FSharpChecker.ActualCheckFileCount
     printfn "checking no extra foreground parsing...."
     (pF - pE) |> shouldEqual 0  // note, no new parse of the file

@@ -107,4 +107,4 @@ type internal FSharpIndentationService
                     match indent with
                     | None -> Nullable()
                     | Some(indentation) -> Nullable<FSharpIndentationResult>(FSharpIndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
-            } |> (fun c -> Async.RunSynchronously(c,cancellationToken=cancellationToken))
+            } |> (fun c -> Async.RunImmediateExceptOnUI(c,cancellationToken=cancellationToken))

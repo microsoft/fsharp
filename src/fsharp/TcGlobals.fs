@@ -1214,6 +1214,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_CallerFilePathAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerFilePathAttribute"
   member val attrib_CallerMemberNameAttribute = findSysAttrib "System.Runtime.CompilerServices.CallerMemberNameAttribute"
   member val attrib_SkipLocalsInitAttribute  = findSysAttrib "System.Runtime.CompilerServices.SkipLocalsInitAttribute"
+  member val attribs_Unsupported = [
+        tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
+                                   ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"

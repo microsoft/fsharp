@@ -439,6 +439,45 @@ module Bug10408 =
         | [| |] -> x
         | _ -> x
 
+module Bug11620A =
+
+    let createService (metadata: 'T) : 'Data when 'Data :> System.IComparable = Unchecked.defaultof<'Data>
+
+    let getCreateServiceCallback<'T> (thing: 'T) =
+        let getService () : 'Data = createService thing
+        (fun () -> getService)
+
+// The generated signature for this bug repro has mistakes, we are not enabling it yet
+#if !GENERATED_SIGNATURE
+module Bug11620B =
+
+    type Data = interface end
+    and Service<'Data when 'Data :> Data>() = class end
+
+    type IThing = interface end
+    and Thing<'T> = { Metadata: 'T } with interface IThing
+
+    let createService metadata = (Service<'Data>())
+
+    let getCreateServiceCallback<'T> (thing: IThing) =
+        let upcastThing =
+            thing
+            :?> Thing<'T>
+        let getService () = createService upcastThing.Metadata
+        (fun () -> getService)
+
+    let main _ =
+        let dummyThing : Thing<int> = { Thing.Metadata = 42 }
+        // crash occured on the following line
+        let callback = getCreateServiceCallback<int> dummyThing
+        let resolvedService = callback ()
+        printfn "Resolved service: %A" resolvedService
+        0
+
+    main ()
+#endif
+
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

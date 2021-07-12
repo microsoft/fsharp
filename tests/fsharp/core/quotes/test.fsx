@@ -2912,7 +2912,7 @@ module ReflectionOverTypeInstantiations =
 
     let notRequired opname item = 
         let msg = sprintf "The operation '%s' on item '%s' should not be called on provided type, member or parameter" opname item
-        System.Diagnostics.Debug.Assert (false, msg)
+        //System.Diagnostics.Debug.Assert (false, msg)
         raise (System.NotSupportedException msg)
 
     /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
@@ -4119,6 +4119,19 @@ module CheckEliminatedConstructs =
        """IfThenElse (Call (None, op_Equality, [ValueWithName ([||], ts), Value (<null>)]),
             Value (true), Value (false))"""
         
+module Interpolation =
+    let interpolatedNoHoleQuoted = <@ $"abc" @>
+    let actual1 = interpolatedNoHoleQuoted.ToString()
+    checkStrings "brewbreebrwhat1" actual1 """Value ("abc")"""
+
+    let interpolatedWithLiteralQuoted = <@ $"abc {1} def" @>
+    let actual2 = interpolatedWithLiteralQuoted.ToString()
+    checkStrings "brewbreebrwhat2" actual2
+        """Call (None, PrintFormatToString,
+                 [NewObject (PrintfFormat`5, Value ("abc %P() def"),
+                             NewArray (Object, Call (None, Box, [Value (1)])),
+                             Value (<null>))])"""
+
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
 

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+		<OtherFlags>$(OtherFlags) --nowarn:3390 --nowarn:3218</OtherFlags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="TestProject2.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+		<ProjectReference Include="..\TestProject\TestProject.fsproj" />
+		<ProjectReference Include="..\CSharp_Analysis\CSharp_Analysis.csproj" />
+		<Reference Include="TestTP">
+			<HintPath>..\..\..\..\artifacts\bin\TestTP\$(Configuration)\netstandard2.0\TestTP.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+</Project>

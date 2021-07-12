@@ -1226,3 +1226,64 @@ module ParsedHashDirective =
             Assert.AreEqual("40", v)
             assertRange (1, 8) (1, 16) m
         | _ -> Assert.Fail "Could not get valid AST"
+
+module Lambdas =
+    [<Test>]
+    let ``Lambda with two parameters gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun a b -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Named _], SynExpr.Ident(ident)))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Lambda with wild card parameter gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun a _ b -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Wild _; SynPat.Named _], SynExpr.Ident(ident)))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Lambda with tuple parameter with wild card gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun a (b, _) c -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Named _; SynPat.Paren(SynPat.Tuple _,_); SynPat.Named _], SynExpr.Ident(ident)))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"
+
+    [<Test>]
+    let ``Lambda with wild card that returns a lambda gives correct body`` () =
+        let parseResults = 
+            getParseResults
+                "fun _ -> fun _ -> x"
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.Lambda(parsedData = Some([SynPat.Wild _], SynExpr.Lambda(parsedData = Some([SynPat.Wild _], SynExpr.Ident(ident)))))
+            )
+        ]) ])) ->
+            Assert.AreEqual("x", ident.idText)
+        | _ -> Assert.Fail "Could not get valid AST"

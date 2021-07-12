@@ -21,10 +21,12 @@ open HandleExpects
 #if NETCOREAPP
 // Use these lines if you want to test CoreCLR
 let FSC_BASIC = FSC_CORECLR
+let FSC_BASIC_OPT_MINUS = FSC_CORECLR_OPT_MINUS
 let FSC_BUILDONLY = FSC_CORECLR_BUILDONLY
 let FSI_BASIC = FSI_CORECLR
 #else
 let FSC_BASIC = FSC_OPT_PLUS_DEBUG
+let FSC_BASIC_OPT_MINUS = FSC_OPT_MINUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
 // ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
@@ -38,10 +40,16 @@ let testConfig = getTestsDirectory >> testConfig
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
+    let ``access-FSC_BASIC_OPT_MINUS``() = singleTestBuildAndRun "core/access" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
 
     [<Test>]
     let ``access-FSI_BASIC``() = singleTestBuildAndRun "core/access" FSI_BASIC
+
+    [<Test>]
+    let ``apporder-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``apporder-FSC_BASIC`` () = singleTestBuildAndRun "core/apporder" FSC_BASIC
@@ -50,10 +58,16 @@ module CoreTests =
     let ``apporder-FSI_BASIC`` () = singleTestBuildAndRun "core/apporder" FSI_BASIC
 
     [<Test>]
+    let ``array-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/array" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``array-FSC_BASIC`` () = singleTestBuildAndRun "core/array" FSC_BASIC
 
     [<Test>]
     let ``array-FSI_BASIC`` () = singleTestBuildAndRun "core/array" FSI_BASIC
+
+    [<Test>]
+    let ``comprehensions-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``comprehensions-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSC_BASIC
@@ -62,10 +76,16 @@ module CoreTests =
     let ``comprehensions-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions" FSI_BASIC
 
     [<Test>]
+    let ``comprehensionshw-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``comprehensionshw-FSC_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSC_BASIC
 
     [<Test>]
     let ``comprehensionshw-FSI_BASIC`` () = singleTestBuildAndRun "core/comprehensions-hw" FSI_BASIC
+
+    [<Test; Ignore("test fails in debug mode, see https://github.com/dotnet/fsharp/pull/11763")>]
+    let ``genericmeasures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``genericmeasures-FSC_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSC_BASIC
@@ -74,13 +94,22 @@ module CoreTests =
     let ``genericmeasures-FSI_BASIC`` () = singleTestBuildAndRun "core/genericmeasures" FSI_BASIC
 
     [<Test>]
+    let ``innerpoly-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/innerpoly"  FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``innerpoly-FSC_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSC_BASIC
 
     [<Test>]
     let ``innerpoly-FSI_BASIC`` () = singleTestBuildAndRun "core/innerpoly" FSI_BASIC
 
     [<Test>]
+    let ``namespaceAttributes-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/namespaces" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``namespaceAttributes-FSC_BASIC`` () = singleTestBuildAndRun "core/namespaces" FSC_BASIC
+
+    [<Test>]
+    let ``unicode2-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/unicode" FSC_BASIC_OPT_MINUS // TODO: fails on coreclr
 
     [<Test>]
     let ``unicode2-FSC_BASIC`` () = singleTestBuildAndRun "core/unicode" FSC_BASIC // TODO: fails on coreclr
@@ -89,10 +118,16 @@ module CoreTests =
     let ``unicode2-FSI_BASIC`` () = singleTestBuildAndRun "core/unicode" FSI_BASIC
 
     [<Test>]
+    let ``lazy test-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/lazy" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``lazy test-FSC_BASIC`` () = singleTestBuildAndRun "core/lazy" FSC_BASIC
 
     [<Test>]
     let ``lazy test-FSI_BASIC`` () = singleTestBuildAndRun "core/lazy" FSI_BASIC
+
+    [<Test>]
+    let ``letrec-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``letrec-FSC_BASIC`` () = singleTestBuildAndRun "core/letrec" FSC_BASIC
@@ -101,10 +136,16 @@ module CoreTests =
     let ``letrec-FSI_BASIC`` () = singleTestBuildAndRun "core/letrec" FSI_BASIC
 
     [<Test>]
+    let ``letrec (mutrec variations part one) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``letrec (mutrec variations part one) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSC_BASIC
 
     [<Test>]
     let ``letrec (mutrec variations part one) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec" FSI_BASIC
+
+    [<Test>]
+    let ``libtest-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``libtest-FSC_BASIC`` () = singleTestBuildAndRun "core/libtest" FSC_BASIC
@@ -113,10 +154,16 @@ module CoreTests =
     let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
 
     [<Test>]
+    let ``lift-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/lift" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``lift-FSC_BASIC`` () = singleTestBuildAndRun "core/lift" FSC_BASIC
 
     [<Test>]
     let ``lift-FSI_BASIC`` () = singleTestBuildAndRun "core/lift" FSI_BASIC
+
+    [<Test>]
+    let ``map-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/map" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``map-FSC_BASIC`` () = singleTestBuildAndRun "core/map" FSC_BASIC
@@ -125,10 +172,16 @@ module CoreTests =
     let ``map-FSI_BASIC`` () = singleTestBuildAndRun "core/map" FSI_BASIC
 
     [<Test>]
+    let ``measures-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/measures" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``measures-FSC_BASIC`` () = singleTestBuildAndRun "core/measures" FSC_BASIC
 
     [<Test>]
     let ``measures-FSI_BASIC`` () = singleTestBuildAndRun "core/measures" FSI_BASIC
+
+    [<Test>]
+    let ``nested-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/nested" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``nested-FSC_BASIC`` () = singleTestBuildAndRun "core/nested" FSC_BASIC
@@ -140,13 +193,22 @@ module CoreTests =
     let ``members-ops-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC
 
     [<Test>]
+    let ``members-ops-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/ops" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``members-ops-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ops" FSI_BASIC
+
+    [<Test>]
+    let ``members-ops-mutrec-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``members-ops-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSC_BASIC
 
     [<Test>]
     let ``members-ops-mutrec-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ops-mutrec" FSI_BASIC
+
+    [<Test>]
+    let ``seq-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/seq" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``seq-FSC_BASIC`` () = singleTestBuildAndRun "core/seq" FSC_BASIC
@@ -161,10 +223,16 @@ module CoreTests =
     let ``math-numbers-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbers" FSI_BASIC
 
     [<Test>]
+    let ``members-ctree-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``members-ctree-FSC_BASIC`` () = singleTestBuildAndRun "core/members/ctree" FSC_BASIC
 
     [<Test>]
     let ``members-ctree-FSI_BASIC`` () = singleTestBuildAndRun "core/members/ctree" FSI_BASIC
+
+    [<Test>]
+    let ``members-factors-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``members-factors-FSC_BASIC`` () = singleTestBuildAndRun "core/members/factors" FSC_BASIC
@@ -173,10 +241,16 @@ module CoreTests =
     let ``members-factors-FSI_BASIC`` () = singleTestBuildAndRun "core/members/factors" FSI_BASIC
 
     [<Test>]
+    let ``members-factors-mutrec-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``members-factors-mutrec-FSC_BASIC`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSC_BASIC
 
     [<Test>]
     let ``members-factors-mutrec-FSI_BASIC`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSI_BASIC
+
+    [<Test>]
+    let ``graph-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "perf/graph" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``graph-FSC_BASIC`` () = singleTestBuildAndRun "perf/graph" FSC_BASIC
@@ -185,10 +259,16 @@ module CoreTests =
     let ``graph-FSI_BASIC`` () = singleTestBuildAndRun "perf/graph" FSI_BASIC
 
     [<Test>]
+    let ``nbody-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "perf/nbody" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``nbody-FSC_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSC_BASIC
 
     [<Test>]
     let ``nbody-FSI_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSI_BASIC
+
+    [<Test>]
+    let ``letrec (mutrec variations part two) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``letrec (mutrec variations part two) FSC_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC
@@ -203,10 +283,16 @@ module CoreTests =
     let ``printf-interpolated`` () = singleTestBuildAndRunVersion "core/printf-interpolated" FSC_BASIC "preview"
 
     [<Test>]
+    let ``tlr-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/tlr" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``tlr-FSC_BASIC`` () = singleTestBuildAndRun "core/tlr" FSC_BASIC
 
     [<Test>]
     let ``tlr-FSI_BASIC`` () = singleTestBuildAndRun "core/tlr" FSI_BASIC
+
+    [<Test>]
+    let ``subtype-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/subtype" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``subtype-FSC_BASIC`` () = singleTestBuildAndRun "core/subtype" FSC_BASIC
@@ -215,10 +301,16 @@ module CoreTests =
     let ``subtype-FSI_BASIC`` () = singleTestBuildAndRun "core/subtype" FSI_BASIC
 
     [<Test>]
+    let ``syntax-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/syntax" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``syntax-FSC_BASIC`` () = singleTestBuildAndRun "core/syntax" FSC_BASIC
 
     [<Test>]
     let ``syntax-FSI_BASIC`` () = singleTestBuildAndRun "core/syntax" FSI_BASIC
+
+    [<Test>]
+    let ``test int32-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/int32" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``test int32-FSC_BASIC`` () = singleTestBuildAndRun "core/int32" FSC_BASIC
@@ -227,10 +319,16 @@ module CoreTests =
     let ``test int32-FSI_BASIC`` () = singleTestBuildAndRun "core/int32" FSI_BASIC
 
     [<Test>]
+    let ``quotes-FSC-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
     let ``quotes-FSC-BASIC`` () = singleTestBuildAndRun "core/quotes" FSC_BASIC
 
     [<Test>]
     let ``quotes-FSI-BASIC`` () = singleTestBuildAndRun "core/quotes" FSI_BASIC
+
+    [<Test>]
+    let ``recordResolution-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC_OPT_MINUS
 
     [<Test>]
     let ``recordResolution-FSC_BASIC`` () = singleTestBuildAndRun "core/recordResolution" FSC_BASIC

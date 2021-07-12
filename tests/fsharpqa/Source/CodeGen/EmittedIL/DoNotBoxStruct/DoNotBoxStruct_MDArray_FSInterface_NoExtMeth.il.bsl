@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:7:0:0
+  .ver 5:0:0:0
 }
 .assembly DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x00000268
+  // Offset: 0x00000000 Length: 0x0000027A
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000270 Length: 0x000000B0
+  // Offset: 0x00000280 Length: 0x000000B0
 }
 .module DoNotBoxStruct_MDArray_FSInterface_NoExtMeth.exe
-// MVID: {5EAD3E33-A67D-867A-A745-0383333EAD5E}
+// MVID: {60E47018-A67D-867A-A745-03831870E460}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06A00000
+// Image base: 0x056F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -58,15 +58,11 @@
     .method assembly static void  Invoke(object x,
                                          int32 _arg1) cil managed
     {
-      // Code size       3 (0x3)
-      .maxstack  5
-      .locals init ([0] int32 V_0)
+      // Code size       1 (0x1)
+      .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\dev\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_MDArray_FSInterface_NoExtMeth.fs'
-      IL_0000:  ldarg.1
-      IL_0001:  stloc.0
-      .line 6,6 : 77,79 ''
-      IL_0002:  ret
+      .line 6,6 : 77,79 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_MDArray_FSInterface_NoExtMeth.fs'
+      IL_0000:  ret
     } // end of method F@6::Invoke
 
   } // end of class F@6

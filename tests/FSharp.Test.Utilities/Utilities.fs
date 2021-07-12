@@ -6,9 +6,10 @@ open System
 open System.IO
 open System.Reflection
 open System.Collections.Immutable
+open System.Diagnostics
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
-open System.Diagnostics
 open FSharp.Test.Utilities
 open TestFramework
 open NUnit.Framework
@@ -16,6 +17,19 @@ open NUnit.Framework
 // This file mimics how Roslyn handles their compilation references for compilation testing
 
 module Utilities =
+
+    type Async with
+        static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
+            let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
+            let ts = TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation,
+                (fun k -> ts.SetResult k),
+                (fun exn -> ts.SetException exn),
+                (fun _ -> ts.SetCanceled()),
+                cancellationToken)
+            task.Result
 
     [<RequireQualifiedAccess>]
     type TargetFramework =

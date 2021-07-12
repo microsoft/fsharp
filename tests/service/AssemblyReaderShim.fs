@@ -29,5 +29,5 @@ let x = 123
 """
 
     let fileName, options = Common.mkTestFileAndOptions source [| |]
-    Common.checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunSynchronously |> ignore
+    Common.checker.ParseAndCheckFileInProject(fileName, 0, SourceText.ofString source, options) |> Async.RunImmediate |> ignore
     gotRequest |> should be True

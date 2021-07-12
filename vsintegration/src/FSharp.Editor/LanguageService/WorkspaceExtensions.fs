@@ -203,7 +203,7 @@ type Document with
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
         let parsingOptions, _, _ = 
             workspaceService.FSharpProjectOptionsManager.TryGetOptionsForDocumentOrProject(this, CancellationToken.None, nameof(this.SetFSharpProjectOptionsForTesting))
-            |> Async.RunSynchronously
+            |> Async.RunImmediateExceptOnUI
             |> Option.get
         ProjectCache.Projects.Add(this.Project, (workspaceService.Checker, workspaceService.FSharpProjectOptionsManager, parsingOptions, projectOptions))
 
