@@ -88,15 +88,16 @@ type CallerNamedArg<'T> =
 /// Represents the list of unnamed / named arguments at method call site
 /// remark: The usage of list list is due to tupling and currying of arguments,
 /// stemming from SynValInfo in the AST.
-[<StructAttribute>]
-type CallerArgs<'T> =
-    { Unnamed: CallerArg<'T> list list
-      Named: CallerNamedArg<'T> list list }
+//[<Struct>]
+type CallerArgs<'T> = 
+    val Unnamed: CallerArg<'T> list list
+    val Named: CallerNamedArg<'T> list list
+    new : (CallerArg<'T> list list) * (CallerNamedArg<'T> list list) -> CallerArgs<'T>
     member ArgumentNamesAndTypes: (string option * TType) list
     member CallerArgCounts: int * int
     member CurriedCallerArgs: (CallerArg<'T> list * CallerNamedArg<'T> list) list
-    static member Empty: CallerArgs<'T>
-  
+    //static member Empty: CallerArgs<'T>
+
 /// F# supports some adhoc conversions at method callsites
 val AdjustCalledArgType: infoReader:InfoReader -> isConstraint:bool -> enforceNullableOptionalsKnownTypes:bool -> calledArg:CalledArg -> callerArg:CallerArg<'a> -> TType
 

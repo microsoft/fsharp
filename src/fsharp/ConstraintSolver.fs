@@ -1555,8 +1555,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                     |> List.choose (fun minfo ->
                           if minfo.IsCurried then None else
                           let callerArgs = 
-                            { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
-                              Named = [ [ ] ] }
+                            CallerArgs( ([ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]),                              ([ [ ] ] ))
                           let minst = FreshenMethInfo m minfo
                           let objtys = minfo.GetObjArgTypes(amap, m, minst)
                           Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, callerArgs, false, false, None)))
@@ -1564,7 +1563,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
                       (fun (a, _) -> Option.isSome a)
-                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some rty))
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (CallerArgs([],[])) AccessibleFromEverywhere calledMethGroup false (Some rty))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 

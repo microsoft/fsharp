@@ -121,13 +121,20 @@ type CallerNamedArg<'T> =
 /// Represents the list of unnamed / named arguments at method call site
 /// remark: The usage of list list is due to tupling and currying of arguments,
 /// stemming from SynValInfo in the AST.
-[<Struct>]
-type CallerArgs<'T> = 
-    { 
-        Unnamed: CallerArg<'T> list list
-        Named: CallerNamedArg<'T> list list 
-    }
-    static member Empty : CallerArgs<'T> = { Unnamed = []; Named = [] }
+//[<Struct>]
+type CallerArgs<'T>= 
+    //{ 
+    //    Unnamed: CallerArg<'T> list list
+    //    Named: CallerNamedArg<'T> list list 
+    //}
+    val Unnamed : CallerArg<'T> list list
+    val Named : CallerNamedArg<'T> list list
+    new (unnamed, named) = 
+      match unnamed, named with
+      | [_],[_] | [], [_]| [_], [] ->()
+      | _ -> raise (new System.Exception("odd shape in caller args"))
+      {Unnamed = unnamed; Named = named}
+    //static member Empty : CallerArgs<'T> = CallerArgs<'T>(unnamed = [], named = [])
     member x.CallerArgCounts = List.length x.Unnamed, List.length x.Named
     member x.CurriedCallerArgs = List.zip x.Unnamed x.Named
     member x.ArgumentNamesAndTypes =

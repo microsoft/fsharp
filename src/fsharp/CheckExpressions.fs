@@ -8645,7 +8645,7 @@ and TcMethodApplication
 
         let callerArgCounts = (List.sumBy List.length unnamedCurriedCallerArgs, List.sumBy List.length namedCurriedCallerArgs)
 
-        let callerArgs = { Unnamed = unnamedCurriedCallerArgs; Named = namedCurriedCallerArgs }
+        let callerArgs = CallerArgs(unnamedCurriedCallerArgs, namedCurriedCallerArgs)
 
         let makeOneCalledMeth (minfo, pinfoOpt, usesParamArrayConversion) =
             let minst = FreshenMethInfo mItem minfo
@@ -8744,7 +8744,7 @@ and TcMethodApplication
     /// Select the called method that's the result of overload resolution
     let finalCalledMeth =
 
-        let callerArgs = { Unnamed = unnamedCurriedCallerArgs ; Named = namedCurriedCallerArgs }
+        let callerArgs = CallerArgs(unnamedCurriedCallerArgs, namedCurriedCallerArgs)
 
         let postArgumentTypeCheckingCalledMethGroup =
             preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo: MethInfo, minst, pinfoOpt, usesParamArrayConversion) ->
