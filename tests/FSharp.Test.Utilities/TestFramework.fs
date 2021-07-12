@@ -289,8 +289,8 @@ let config configurationName envVars =
     let packagesDir = getPackagesDir ()
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
-    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
+    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "3.9.0" ++ "tools" ++ "csc.exe")
+    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "3.9.0" ++ "tools" ++ "vbc.exe")
     let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"

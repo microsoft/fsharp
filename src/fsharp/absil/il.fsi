@@ -276,11 +276,11 @@ type ILType =
     /// Custom modifiers.
     | Modified of
           /// True if modifier is "required".
-          bool *
+          isRequired: bool *
           /// The class of the custom modifier.
-          ILTypeRef *
+          modifierClass: ILTypeRef *
           /// The type being modified.
-          ILType
+          modifiedType: ILType
 
     member TypeSpec: ILTypeSpec
 

@@ -188,7 +188,7 @@
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
     <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>
-    <MicrosoftNetCompilersVersion>2.7.0</MicrosoftNetCompilersVersion>
+    <MicrosoftNetCompilersVersion>3.9.0</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
     <MicrosoftNETCoreILDAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILDAsmVersion>
     <MicrosoftNETCoreILAsmVersion>5.0.0-preview.7.20364.11</MicrosoftNETCoreILAsmVersion>

@@ -77,7 +77,12 @@ type AssignedItemSetterTarget =
 /// Represents the resolution of a caller argument as a named-setter argument
 type AssignedItemSetter<'T> =
     | AssignedItemSetter of
-      Ident * AssignedItemSetterTarget * CallerArg<'T>
+      /// named-setter identifier
+      name: Ident * 
+      /// named-setter target
+      setterTarget: AssignedItemSetterTarget * 
+      /// caller argument that resolved into AssignedItemSetter
+      callerArg: CallerArg<'T>
 
 type CallerNamedArg<'T> =
     | CallerNamedArg of Ident * CallerArg<'T>

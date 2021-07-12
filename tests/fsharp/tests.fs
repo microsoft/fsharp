@@ -1950,6 +1950,12 @@ module CoreTests =
         fsc cfg @"%s /target:library /out:fs.dll" cfg.fsc_flags ["fs.fs"]
         singleNegTest cfg "calls"
 
+    [<Test>]
+    let ``play nice with init properties and assignment syntax``() =
+        let cfg = testConfig "typecheck/init-property"
+        csc cfg "%s /target:library /out:niceinit.dll" cfg.csc_flags ["niceinit.cs"]
+        singleNegTest cfg "niceinit"
+
 #endif
 
 [<NonParallelizable>]

@@ -717,7 +717,7 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; Structur
     | Byref of ILType
     | FunctionPointer of ILCallingSignature
     | TypeVar of uint16
-    | Modified of bool * ILTypeRef * ILType
+    | Modified of isRequired: bool * modifierClass: ILTypeRef * modifiedType: ILType
 
     member x.BasicQualifiedName =
         match x with

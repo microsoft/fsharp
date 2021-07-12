@@ -723,6 +723,9 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member HasSetter: bool
 
+    /// Indicates if the IL property setter is marked as 'init'
+    member SetterIsInitOnly: bool
+
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
 
@@ -817,6 +820,9 @@ type PropInfo =
 
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
+
+    /// Indicates ...
+    member SetterIsInitOnly: bool
 
     member ImplementedSlotSignatures: SlotSig list
 

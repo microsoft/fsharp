@@ -192,7 +192,7 @@ type Item =
     | Event of EventInfo
 
     /// Represents the resolution of a name to a property
-    | Property of string * PropInfo list
+    | Property of propertyName: string * propertyInfos: PropInfo list
 
     /// Represents the resolution of a name to a group of methods.
     | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
