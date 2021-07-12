@@ -1566,3 +1566,4 @@ forFormatInvalidForInterpolated4,"Interpolated strings used as type IFormattable
 3391,tcLiteralAttributeCannotUseActivePattern,"A [<Literal>] declaration cannot use an active pattern for its identifier"
 3392,containerDeprecated,"The 'AssemblyKeyNameAttribute' has been deprecated. Use 'AssemblyKeyFileAttribute' instead."
 3393,containerSigningUnsupportedOnThisPlatform,"Key container signing is not supported on this platform."
+3394,parsNewExprMemberAccess,"This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'"

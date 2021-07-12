@@ -337,6 +337,11 @@
         <target state="translated">Token inesperado na definição de tipo. Esperava-se '=' após o tipo '{0}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="new">This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
         <source>Unexpected symbol '.' in member definition. Expected 'with', '=' or other token.</source>
         <target state="translated">Símbolo inesperado '.' na definição de membro. Esperado 'com', '=' ou outro token.</target>

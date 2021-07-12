@@ -331,7 +331,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <SynPat> headBindingPattern
 %type <SynExpr> atomicExprAfterType
 %type <SynExpr> typedSeqExprBlock
-%type <SynExpr * bool> atomicExpr
+%type <SynExpr * bool * bool> atomicExpr
 %type <SynTypeDefnSimpleRepr> tyconDefnOrSpfnSimpleRepr
 %type <(SynEnumCase, SynUnionCase) Choice list> unionTypeRepr
 %type <SynMemberDefns> tyconDefnAugmentation
@@ -4066,15 +4066,6 @@ minusExpr:
   | AMP_AMP  minusExpr   
       { SynExpr.AddressOf (false, $2, rhs parseState 1, unionRanges (rhs parseState 1) $2.Range) } 
 
-  | NEW atomTypeNonAtomicDeprecated  opt_HIGH_PRECEDENCE_APP atomicExprAfterType 
-      { SynExpr.New (false, $2, $4, unionRanges (rhs parseState 1) $4.Range) }
-
-  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP error   
-      { SynExpr.New (false, $2, arbExpr("minusExpr", (rhs parseState 4)), unionRanges (rhs parseState 1) ($2).Range) }
-
-  | NEW error
-      { arbExpr("minusExpr2", (rhs parseState 1)) }
-
   | UPCAST  minusExpr 
       { SynExpr.InferredUpcast ($2, unionRanges (rhs parseState 1) $2.Range) }   
 
@@ -4089,93 +4080,109 @@ appExpr:
       { SynExpr.App (ExprAtomicFlag.NonAtomic, false, $1, $2, unionRanges $1.Range $2.Range)  }
 
   | atomicExpr 
-      { let arg, _ = $1 
+      { let arg, _, _ = $1 
         arg }
 
 argExpr:
   | ADJACENT_PREFIX_OP atomicExpr 
-      { let arg2, hpa2 = $2 
+      { let arg2, hpa2, _ = $2 
         if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt arg2.Range (FSComp.SR.parsInvalidPrefixOperator())
         if hpa2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsSuccessiveArgsShouldBeSpacedOrTupled())
         mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) ("~"^($1)) arg2 }
 
    | atomicExpr 
-      { let arg, hpa = $1 
+      { let arg, hpa, _ = $1 
         if hpa then reportParseErrorAt arg.Range (FSComp.SR.parsSuccessiveArgsShouldBeSpacedOrTupled())
         arg }
     
 atomicExpr:
   | atomicExpr HIGH_PRECEDENCE_BRACK_APP atomicExpr
-      { let arg1, _ = $1 
-        let arg2, _ = $3 
-        SynExpr.App (ExprAtomicFlag.Atomic, false, arg1, arg2, unionRanges arg1.Range arg2.Range), true  }
+      { let arg1, _, _ = $1
+        let arg2, _, _ = $3
+        SynExpr.App (ExprAtomicFlag.Atomic, false, arg1, arg2, unionRanges arg1.Range arg2.Range), true, false }
 
   | atomicExpr HIGH_PRECEDENCE_PAREN_APP atomicExpr
-      { let arg1, _ = $1 
-        let arg2, _ = $3 
-        SynExpr.App (ExprAtomicFlag.Atomic, false, arg1, arg2, unionRanges arg1.Range arg2.Range), true  }
+      { let arg1, _, _ = $1
+        let arg2, _, _ = $3 
+        SynExpr.App (ExprAtomicFlag.Atomic, false, arg1, arg2, unionRanges arg1.Range arg2.Range), true, false }
 
   | atomicExpr HIGH_PRECEDENCE_TYAPP typeArgsActual
-      { let arg1, _ = $1 
+      { let arg1, _, _ = $1 
         let mLessThan, mGreaterThan, _, args, commas, mTypeArgs = $3
         let mWholeExpr = unionRanges arg1.Range mTypeArgs
-        SynExpr.TypeApp (arg1, mLessThan, args, commas, mGreaterThan, mTypeArgs, mWholeExpr), false }
+        SynExpr.TypeApp (arg1, mLessThan, args, commas, mGreaterThan, mTypeArgs, mWholeExpr), false, false }
 
   | PREFIX_OP atomicExpr  
-      { let arg2, hpa2 = $2 
+      { let arg2, hpa2, isNewExpr = $2
+        if isNewExpr then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsSuccessiveArgsShouldBeSpacedOrTupled())
         if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt arg2.Range (FSComp.SR.parsInvalidPrefixOperator())
-        mkSynPrefixPrim (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) $1 arg2, hpa2 }
+        mkSynPrefixPrim (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) $1 arg2, hpa2, false }
 
   | atomicExpr DOT atomicExprQualification 
-      { let arg1, hpa1 = $1 
-        $3 arg1 (lhs parseState) (rhs parseState 2), hpa1 }
+      { let arg1, hpa1, _ = $1 
+        $3 arg1 (lhs parseState) (rhs parseState 2), hpa1, false }
 
   | BASE DOT atomicExprQualification 
       { let arg1 = SynExpr.Ident (ident("base", rhs parseState 1))
-        $3 arg1 (lhs parseState) (rhs parseState 2), false }
+        $3 arg1 (lhs parseState) (rhs parseState 2), false, false }
+
+  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType
+      { SynExpr.New (false, $2, $4, unionRanges (rhs parseState 1) $4.Range), true, true }
+
+  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP error
+      { SynExpr.New (false, $2, arbExpr("minusExpr", (rhs parseState 4)), unionRanges (rhs parseState 1) ($2).Range), false, true }
+
+  | NEW error
+      { arbExpr("minusExpr2", (rhs parseState 1)), false, true }
+
+  | NEW atomTypeNonAtomicDeprecated opt_HIGH_PRECEDENCE_APP atomicExprAfterType DOT atomicExprQualification 
+      { errorR (Error (FSComp.SR.parsNewExprMemberAccess (), rhs parseState 6))
+        let newExpr = SynExpr.New (false, $2, $4, unionRanges (rhs parseState 1) $4.Range)
+        $6 newExpr (lhs parseState) (rhs parseState 5), true, true }
 
   | QMARK nameop 
-      { SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs parseState 2), false }
+      { SynExpr.LongIdent (true, LongIdentWithDots([$2], []), None, rhs parseState 2), false, false }
 
   | atomicExpr QMARK dynamicArg
-      { let arg1, hpa1 = $1
-        mkSynInfix (rhs parseState 2) arg1 "?" $3, hpa1 }
+      { let arg1, hpa1, isNewExpr = $1
+        if isNewExpr then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsSuccessiveArgsShouldBeSpacedOrTupled())
+        mkSynInfix (rhs parseState 2) arg1 "?" $3, hpa1, false }
 
   | GLOBAL
-      { SynExpr.Ident (ident(MangledGlobalName, rhs parseState 1)), false }
+      { SynExpr.Ident (ident(MangledGlobalName, rhs parseState 1)), false, false }
 
   | identExpr
-      { $1, false }
+      { $1, false, false }
 
   | LBRACK listExprElements RBRACK 
-      { $2 (lhs parseState) false, false }
+      { $2 (lhs parseState) false, false, false }
 
   | LBRACK listExprElements recover 
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()) 
-        exprFromParseError ($2 (rhs2 parseState 1 2) false), false }
+        exprFromParseError ($2 (rhs2 parseState 1 2) false), false, false }
 
   | LBRACK error RBRACK 
       { // silent recovery 
-        SynExpr.ArrayOrList (false, [ ], lhs parseState), false  } 
+        SynExpr.ArrayOrList (false, [ ], lhs parseState), false, false }
 
   | LBRACK recover
       { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedBracket()) 
         // silent recovery 
-        exprFromParseError (SynExpr.ArrayOrList (false, [ ], rhs parseState 1)), false  } 
+        exprFromParseError (SynExpr.ArrayOrList (false, [ ], rhs parseState 1)), false, false }
 
   | STRUCT LPAREN tupleExpr rparen
       { let exprs, commas = $3
         let m = rhs2 parseState 1 4
-        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false }
+        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false, false }
 
   | STRUCT LPAREN tupleExpr recover
       { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedBracket());
         let exprs, commas = $3
         let m = (rhs parseState 1, exprs) ||> unionRangeWithListBy (fun e -> e.Range)
-        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false }
+        SynExpr.Tuple (true, List.rev exprs, List.rev commas, m), false, false }
 
   | atomicExprAfterType 
-      { $1, false }
+      { $1, false, false }
 
 atomicExprQualification:
   | identOrOp 
@@ -5133,7 +5140,8 @@ atomType:
        SynType.StaticConstant(SynConst.String (null, SynStringKind.Regular, m), m) }
 
   | CONST atomicExpr
-     {  let e, _ = $2
+      { let e, hpa, _ = $2
+        if hpa then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsSuccessiveArgsShouldBeSpacedOrTupled())
         SynType.StaticConstantExpr(e, lhs parseState) }
 
   | FALSE  
