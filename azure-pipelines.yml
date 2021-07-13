@@ -57,7 +57,7 @@ variables:
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
   - name: DotNetSdkVersion
-    value: '5.0.300'
+    value: '6.0.100-preview.4.21255.9'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -388,6 +388,7 @@ stages:
         #       inputs:
         #         packageType: sdk
         #         version: $(DotNetSdkVersion)
+        #         workingDirectory: $(Build.SourcesDirectory)
         #         installationPath: $(Agent.ToolsDirectory)/dotnet
         #   - script: dotnet build .\FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
         #     displayName: Regular rebuild
@@ -410,7 +411,10 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
+              # We cannot use .NET version from global.json, since it tries to install all SDK version from all global.json files in the tree, and we use some fake versions for testing. 
+              useGlobalJson: false
               version: $(DotNetSdkVersion)
+              workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild
@@ -433,7 +437,11 @@ stages:
             displayName: install SDK
             inputs:
               packageType: sdk
+              # We cannot use .NET version from global.json, since it tries to install all SDK version from all global.json files in the tree, and we use some fake versions for testing. 
+              useGlobalJson: false
               version: $(DotNetSdkVersion)
+              performMultiLevelLookup: false
+              workingDirectory: $(Build.SourcesDirectory)
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet build ./FSharp.sln /bl:\"artifacts/log/$(_BuildConfig)/RegularBuild.binlog\"
             displayName: Regular rebuild

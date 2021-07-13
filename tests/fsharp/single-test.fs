@@ -151,6 +151,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' == ''"">$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
     <RestoreAdditionalProjectSources Condition = "" '$(RestoreAdditionalProjectSources)' != ''"">$(RestoreAdditionalProjectSources);$(RestoreFromArtifactsPath)</RestoreAdditionalProjectSources>
+    <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 
   <!-- FSharp.Core reference -->
@@ -257,6 +258,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
 
         let targetsBody = generateTargets
         let overridesBody = generateOverrides
+        
         let targetsFileName = Path.Combine(directory, "Directory.Build.targets")
         let propsFileName = Path.Combine(directory, "Directory.Build.props")
         let overridesFileName = Path.Combine(directory, "Directory.Overrides.targets")

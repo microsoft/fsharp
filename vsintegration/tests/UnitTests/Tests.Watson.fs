@@ -5,6 +5,7 @@ namespace Tests.Compiler.Watson
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 open FSharp.Compiler
+open FSharp.Compiler.IO
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open Internal.Utilities.Library 
@@ -20,9 +21,9 @@ type Check =
 #if DEBUG
                 FSharp.Compiler.CompilerDiagnostics.CompilerService.showAssertForUnexpectedException := false
 #endif
-                if (File.Exists("watson-test.fs")) then
-                    File.Delete("watson-test.fs")
-                File.WriteAllText("watson-test.fs", "// Hello watson" )
+                if (FileSystem.FileExistsShim("watson-test.fs")) then
+                    FileSystem.FileDeleteShim("watson-test.fs")
+                FileSystem.OpenFileForWriteShim("watson-test.fs").Write("// Hello watson" )
                 let argv =
                     [|  "--simulateException:"+simulationCode
                         "--nowarn:988" // don't show `watson-test.fs(1,16): warning FS0988: Main module of program is empty: nothing will happen when it is run`
@@ -47,7 +48,7 @@ type Check =
 #if DEBUG
             FSharp.Compiler.CompilerDiagnostics.CompilerService.showAssertForUnexpectedException := true 
 #endif
-        File.Delete("watson-test.fs")
+        FileSystem.FileDeleteShim("watson-test.fs")
 
 
 [<TestFixture>] 

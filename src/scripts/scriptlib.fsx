@@ -104,6 +104,10 @@ module Scripting =
 
             let exePath = path |> processExePath workDir
             let processInfo = new ProcessStartInfo(exePath, arguments)
+            
+            processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            processInfo.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
+            
             processInfo.CreateNoWindow <- true
             processInfo.UseShellExecute <- false
             processInfo.WorkingDirectory <- workDir
@@ -159,7 +163,7 @@ module Scripting =
 
             match p.ExitCode with
             | 0 -> Success
-            | errCode -> 
+            | errCode ->
                 let msg = sprintf "Error running command '%s' with args '%s' in directory '%s'.\n---- stdout below --- \n%s\n---- stderr below --- \n%s " exePath arguments workDir (out.ToString()) (err.ToString())
                 ErrorLevel (msg, errCode)
 

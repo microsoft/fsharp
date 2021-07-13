@@ -335,7 +335,7 @@ type CompilerAssert private () =
         "tfm": "net5.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
-            "version": "5.0.0"
+            "version": "6.0"
         }
     }
 }"""
