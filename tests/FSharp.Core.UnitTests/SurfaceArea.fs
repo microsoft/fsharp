@@ -513,6 +513,7 @@ Microsoft.FSharp.Control.AsyncActivation`1[T]: Boolean IsCancellationRequested
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Boolean get_IsCancellationRequested()
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnCancellation()
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnSuccess(T)
+Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn Success(Microsoft.FSharp.Control.AsyncActivation`1[T], T)
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Void OnExceptionRaised()
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn Bind[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], Microsoft.FSharp.Control.FSharpAsync`1[TResult], Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])
 Microsoft.FSharp.Control.AsyncPrimitives: Microsoft.FSharp.Control.AsyncReturn CallThenInvoke[T,TResult](Microsoft.FSharp.Control.AsyncActivation`1[T], TResult, Microsoft.FSharp.Core.FSharpFunc`2[TResult,Microsoft.FSharp.Control.FSharpAsync`1[T]])

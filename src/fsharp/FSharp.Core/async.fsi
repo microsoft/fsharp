@@ -622,7 +622,12 @@ namespace Microsoft.FSharp.Control
         /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
         ///
         /// <returns>A value indicating asynchronous execution.</returns>
-        member OnSuccess: 'T -> AsyncReturn
+        static member Success: AsyncActivation<'T> -> result: 'T -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        member OnSuccess: result: 'T -> AsyncReturn
 
         /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
         member OnExceptionRaised: unit -> unit

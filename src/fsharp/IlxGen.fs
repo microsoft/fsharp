@@ -3415,7 +3415,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
           // For instance method calls chop off some type arguments, which are already
           // carried by the class.  Also work out if it's a virtual call.
-          let _, virtualCall, newobj, isSuperInit, isSelfInit, _, _, _ = GetMemberCallInfo g (vref, valUseFlags)
+          let _, virtualCall, newobj, isSuperInit, isSelfInit, takesInstanceArg, _, _ = GetMemberCallInfo g (vref, valUseFlags)
 
           // numEnclILTypeArgs will include unit-of-measure args, unfortunately. For now, just cut-and-paste code from GetMemberCallInfo
           // @REVIEW: refactor this
@@ -3447,7 +3447,8 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                   let isDllImport = IsValRefIsDllImport g vref
                   let hasByrefArg = mspec.FormalArgTypes |> List.exists (function ILType.Byref _ -> true | _ -> false)
                   let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls
-                  CanTailcall((boxity=AsValue), ccallInfo, eenv.withinSEH, hasByrefArg, mustGenerateUnitAfterCall, isDllImport, isSelfInit, makesNoCriticalTailcalls, sequel)
+                  let hasStructObjArg = (boxity=AsValue) && takesInstanceArg
+                  CanTailcall(hasStructObjArg, ccallInfo, eenv.withinSEH, hasByrefArg, mustGenerateUnitAfterCall, isDllImport, isSelfInit, makesNoCriticalTailcalls, sequel)
               else
                   Normalcall
 
@@ -4193,7 +4194,8 @@ and GenILCall cenv cgbuf eenv (virt, valu, newobj, valUseFlags, isDllImport, ilM
     let boxity = (if valu then AsValue else AsObject)
     let mustGenerateUnitAfterCall = isNil returnTys
     let makesNoCriticalTailcalls = (newobj || not virt) // Don't tailcall for 'newobj', or 'call' to IL code
-    let tail = CanTailcall(valu, ccallInfo, eenv.withinSEH, hasByrefArg, mustGenerateUnitAfterCall, isDllImport, false, makesNoCriticalTailcalls, sequel)
+    let hasStructObjArg = valu && ilMethRef.CallingConv.IsInstance
+    let tail = CanTailcall(hasStructObjArg, ccallInfo, eenv.withinSEH, hasByrefArg, mustGenerateUnitAfterCall, isDllImport, false, makesNoCriticalTailcalls, sequel)
 
     let ilEnclArgTys = GenTypeArgs cenv.amap m eenv.tyenv enclArgTys
     let ilMethArgTys = GenTypeArgs cenv.amap m eenv.tyenv methArgTys
