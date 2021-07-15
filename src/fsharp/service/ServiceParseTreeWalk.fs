@@ -489,12 +489,12 @@ module SyntaxTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
 
-                | SynExpr.IfThenElse (synExpr, synExpr2, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
+                | SynExpr.IfThenElse (_, synExpr, _, synExpr2, _, synExprOpt, _sequencePointInfoForBinding, _isRecovery, _range, _range2) -> 
                     [yield dive synExpr synExpr.Range traverseSynExpr
                      yield dive synExpr2 synExpr2.Range traverseSynExpr
                      match synExprOpt with 
                      | None -> ()
-                     | Some(x) -> yield dive x x.Range traverseSynExpr]
+                     | Some x -> yield dive x x.Range traverseSynExpr]
                     |> pick expr
 
                 | SynExpr.Ident (_ident) -> None

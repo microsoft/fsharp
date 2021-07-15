@@ -270,7 +270,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
-%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immeditely followed by 'if', when they become 'ELIF' */
+%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' */
 %token OWITH            /* LexFilter #light converts SOME (but not all) 'WITH' tokens to 'OWITH' */ 
 %token OFUNCTION        /* LexFilter #light converts 'FUNCTION' tokens to 'OFUNCTION' */ 
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
@@ -3486,7 +3486,7 @@ declExpr:
         SynExpr.TryFinally ($2, $4, mTryToLast, spTry, spFinally) }
 
   | IF declExpr ifExprCases %prec expr_if 
-      { let mIf = (rhs parseState 1)
+      { let mIf = SynIfThenElseStart.If (rhs parseState 1)
         $3 $2 mIf }
 
   | IF declExpr recover %prec expr_if 
@@ -3504,7 +3504,7 @@ declExpr:
         let m = rhs parseState 1
         let mEnd = m.EndRange
         let spIfToThen = DebugPointAtBinding.Yes mEnd
-        exprFromParseError (SynExpr.IfThenElse (arbExpr("ifGuard1", mEnd), arbExpr("thenBody1", mEnd), None, spIfToThen, true, m, m)) }
+        exprFromParseError (SynExpr.IfThenElse ((SynIfThenElseStart.If m), arbExpr("ifGuard1", mEnd), m, arbExpr("thenBody1", mEnd), None, None, spIfToThen, true, m, m)) }
 
   | LAZY declExpr %prec expr_lazy 
       { SynExpr.Lazy ($2, unionRanges (rhs parseState 1) $2.Range) }
@@ -3986,13 +3986,14 @@ patternResult:
 
 ifExprCases: 
   | ifExprThen ifExprElifs 
-      { let exprThen, mThen = $1 
-        (fun exprGuard mIf -> 
-            let mIfToThen = unionRanges mIf mThen
-            let lastBranch : SynExpr = match $2 with None -> exprThen | Some e -> e
-            let mIfToEndOfLastBranch = unionRanges mIf lastBranch.Range
+      { let exprThen, mThen = $1
+        let mElse, elseExpr = $2
+        (fun exprGuard ifStart ->
+            let mIfToThen = unionRanges ifStart.Range mThen
+            let lastBranch : SynExpr = match elseExpr with None -> exprThen | Some e -> e
+            let mIfToEndOfLastBranch = unionRanges ifStart.Range lastBranch.Range
             let spIfToThen = DebugPointAtBinding.Yes(mIfToThen)
-            SynExpr.IfThenElse (exprGuard, exprThen, $2, spIfToThen, false, mIfToThen, mIfToEndOfLastBranch)) }
+            SynExpr.IfThenElse (ifStart, exprGuard, mThen, exprThen, mElse, elseExpr, spIfToThen, false, mIfToThen, mIfToEndOfLastBranch)) }
 
 ifExprThen: 
   | THEN  declExpr %prec prec_then_if 
@@ -4007,24 +4008,27 @@ ifExprThen:
 
 ifExprElifs: 
   | /* EMPTY */
-      { None }
+      { None, None }
 
   | ELSE declExpr 
-      { Some $2 }
+      { let mElse = rhs parseState 1
+        Some mElse, Some $2 }
 
   | OELSE  OBLOCKBEGIN typedSeqExpr oblockend 
-      { Some $3 }
+      { let mElse = rhs parseState 1
+        Some mElse, Some $3 }
 
   | OELSE  OBLOCKBEGIN typedSeqExpr recover 
-      { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElse())
-        Some (exprFromParseError $3) }
+      { let mElse = rhs parseState 1
+        if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileElse())
+        Some mElse, Some (exprFromParseError $3) }
 
   | ELIF declExpr ifExprCases 
       { let mElif = rhs parseState 1 
-        Some ($3 $2 mElif) }
+        None, Some ($3 $2 (SynIfThenElseStart.Elif mElif)) }
 
   | ELIF declExpr recover 
-      { Some (exprFromParseError $2) }
+      { None, Some (exprFromParseError $2) }
 
 tupleExpr: 
   | tupleExpr COMMA declExpr   
