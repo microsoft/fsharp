@@ -129,5 +129,25 @@ type X () =
   
   .maxstack  6
   .locals (int32 V_0)
-"""]
+""" ]
+
+    [<Fact>]
+    let ``Zero init performed to get defaults despite the attribute``() =
+        FSharp """
+module SkipLocalsInit
+
+[<System.Runtime.CompilerServices.SkipLocalsInit>]
+let z () =
+    let mutable a = Unchecked.defaultof<System.DateTime>
+    a
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+.locals (valuetype [runtime]System.DateTime V_0)
+IL_0000:  ldloca.s   V_0
+IL_0002:  initobj    [runtime]System.DateTime
+IL_0008:  ldloc.0
+IL_0009:  ret
+        """]
 #endif
