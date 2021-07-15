@@ -47,6 +47,15 @@ type SyntaxVisitorBase<'T> =
       abstract VisitInheritSynMemberDefn: path: SyntaxVisitorPath * componentInfo: SynComponentInfo * typeDefnKind: SynTypeDefnKind * synType: SynType * members: SynMemberDefns * range: range -> 'T option
       default VisitInheritSynMemberDefn: path: SyntaxVisitorPath * componentInfo: SynComponentInfo * typeDefnKind: SynTypeDefnKind * synType: SynType * members: SynMemberDefns * range: range -> 'T option
 
+      abstract VisitRecordDefn: path: SyntaxVisitorPath * fields: SynField list * range -> 'T option
+      default VisitRecordDefn: path: SyntaxVisitorPath * fields: SynField list * range -> 'T option
+
+      abstract VisitUnionDefn: path: SyntaxVisitorPath * cases: SynUnionCase list * range -> 'T option
+      default VisitUnionDefn: path: SyntaxVisitorPath * cases: SynUnionCase list * range -> 'T option
+
+      abstract VisitEnumDefn: path: SyntaxVisitorPath * cases: SynEnumCase list * range -> 'T option
+      default VisitEnumDefn: path: SyntaxVisitorPath * cases: SynEnumCase list * range -> 'T option
+
       abstract VisitInterfaceSynMemberDefnType: path: SyntaxVisitorPath * synType: SynType -> 'T option
       default VisitInterfaceSynMemberDefnType: path: SyntaxVisitorPath * synType: SynType -> 'T option
 

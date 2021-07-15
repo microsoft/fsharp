@@ -72,6 +72,24 @@ type SyntaxVisitorBase<'T>() =
         ignore (path, componentInfo, typeDefnKind, synType, members, range)
         None
 
+    /// VisitRecordDefn allows overriding behavior when visiting record definitions (by default do nothing)
+    abstract VisitRecordDefn: path: SyntaxVisitorPath * fields: SynField list * range -> 'T option
+    default _.VisitRecordDefn(path, fields, range) =
+        ignore (path, fields, range)
+        None
+
+    /// VisitUnionDefn allows overriding behavior when visiting union definitions (by default do nothing)
+    abstract VisitUnionDefn: path: SyntaxVisitorPath * cases: SynUnionCase list * range -> 'T option
+    default _.VisitUnionDefn(path, cases, range) =
+        ignore (path, cases, range)
+        None
+
+    /// VisitEnumDefn allows overriding behavior when visiting enum definitions (by default do nothing)
+    abstract VisitEnumDefn: path: SyntaxVisitorPath * cases: SynEnumCase list * range -> 'T option
+    default _.VisitEnumDefn(path, cases, range) =
+        ignore (path, cases, range)
+        None
+
     /// VisitInterfaceSynMemberDefnType allows overriding behavior for visiting interface member in types (by default - do nothing)
     abstract VisitInterfaceSynMemberDefnType: path: SyntaxVisitorPath * synType: SynType -> 'T option
     default _.VisitInterfaceSynMemberDefnType(path, synType) =
@@ -706,10 +724,16 @@ module SyntaxTraversal =
                     yield! synMemberDefns |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit
                 | SynTypeDefnRepr.Simple(synTypeDefnSimpleRepr, _range) -> 
                     match synTypeDefnSimpleRepr with
-                    | SynTypeDefnSimpleRepr.TypeAbbrev(_,synType,m) ->
-                        yield dive synTypeDefnRepr synTypeDefnRepr.Range (fun _ -> visitor.VisitTypeAbbrev(path, synType,m))
+                    | SynTypeDefnSimpleRepr.Record(_synAccessOption, fields, m) ->
+                        yield dive () synTypeDefnRepr.Range (fun () -> visitor.VisitRecordDefn(path, fields, m))
+                    | SynTypeDefnSimpleRepr.Union(_synAccessOption, cases, m) ->
+                        yield dive () synTypeDefnRepr.Range (fun () -> visitor.VisitUnionDefn(path, cases, m))
+                    | SynTypeDefnSimpleRepr.Enum(cases, m) ->
+                        yield dive () synTypeDefnRepr.Range (fun () -> visitor.VisitEnumDefn(path, cases, m))
+                    | SynTypeDefnSimpleRepr.TypeAbbrev(_, synType, m) ->
+                        yield dive synTypeDefnRepr synTypeDefnRepr.Range (fun _ -> visitor.VisitTypeAbbrev(path, synType, m))
                     | _ ->
-                        () // enums/DUs/record definitions don't have any SynExprs inside them
+                        ()
                 yield! synMemberDefns |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
             ] |> pick tRange tydef
 
