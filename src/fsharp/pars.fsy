@@ -5336,8 +5336,13 @@ opName:
   | LPAREN error rparen  
      {  reportParseErrorAt (lhs parseState) (FSComp.SR.parsErrorParsingAsOperatorName()); ident(CompileOpName "****", rhs parseState 2) }
 
+  /* (*) is a special case, since we need to distinguish it from the comments, so we compensate the position of operator itself, since parens are getting captured here as well, we do it so things like nameof(*) are demangled properly to '*' instead of op_Multiply */
   | LPAREN_STAR_RPAREN
-     {  ident(CompileOpName "*", rhs parseState 1) }
+     {  let m = rhs parseState 1
+        let p1 = mkPos m.StartLine (m.StartColumn + 1)
+        let p2 = mkPos m.EndLine (m.EndColumn - 1)
+        let r = mkFileIndexRange m.FileIndex p1 p2
+        ident(CompileOpName "*", r) }
 
   /* active pattern name */
   | LPAREN activePatternCaseNames BAR rparen 
