@@ -8,6 +8,7 @@ namespace FSharp.Compiler
 
 open System
 open System.Collections.Generic
+open System.Reflection
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
@@ -85,163 +86,185 @@ module internal ExtensionTyping =
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 
 
-    and [<AllowNullLiteral; Sealed; Class>] 
+    and [<AllowNullLiteral; Class>]
         ProvidedType =
+        new : x: System.Type * ctxt: ProvidedTypeContext -> ProvidedType
         inherit ProvidedMemberInfo
-        member IsSuppressRelocate : bool
-        member IsErased : bool
-        member IsGenericType : bool
-        member Namespace : string
-        member FullName : string
-        member IsArray : bool
-        member GetInterfaces : unit -> ProvidedType[]
-        member Assembly : ProvidedAssembly
-        member BaseType : ProvidedType
-        member GetNestedType : string -> ProvidedType
-        member GetNestedTypes : unit -> ProvidedType[]
-        member GetAllNestedTypes : unit -> ProvidedType[]
-        member GetMethods : unit -> ProvidedMethodInfo[]
-        member GetFields : unit -> ProvidedFieldInfo[]
-        member GetField : string -> ProvidedFieldInfo
-        member GetProperties : unit -> ProvidedPropertyInfo[]
-        member GetProperty : string -> ProvidedPropertyInfo
-        member GetEvents : unit -> ProvidedEventInfo[]
-        member GetEvent : string -> ProvidedEventInfo
-        member GetConstructors : unit -> ProvidedConstructorInfo[]
-        member GetStaticParameters : ITypeProvider -> ProvidedParameterInfo[]
-        member GetGenericTypeDefinition : unit -> ProvidedType
-        member IsVoid : bool
-        member IsGenericParameter : bool
-        member IsValueType : bool
-        member IsByRef : bool
-        member IsPointer : bool
-        member IsEnum : bool
-        member IsInterface : bool
-        member IsClass : bool
-        member IsMeasure: bool
-        member IsSealed : bool
-        member IsAbstract : bool
-        member IsPublic : bool
-        member IsNestedPublic : bool
-        member GenericParameterPosition : int
-        member GetElementType : unit -> ProvidedType
-        member GetGenericArguments : unit -> ProvidedType[]
-        member GetArrayRank : unit -> int
+        abstract member IsSuppressRelocate : bool
+        abstract member IsErased : bool
+        abstract member IsGenericType : bool
+        abstract member Namespace : string
+        abstract member FullName : string
+        abstract member IsArray : bool
+        abstract member GetInterfaces : unit -> ProvidedType[]
+        abstract member Assembly : ProvidedAssembly
+        abstract member BaseType : ProvidedType
+        abstract member GetNestedType : string -> ProvidedType
+        abstract member GetNestedTypes : unit -> ProvidedType[]
+        abstract member GetAllNestedTypes : unit -> ProvidedType[]
+        abstract member GetMethods : unit -> ProvidedMethodInfo[]
+        abstract member GetFields : unit -> ProvidedFieldInfo[]
+        abstract member GetField : string -> ProvidedFieldInfo
+        abstract member GetProperties : unit -> ProvidedPropertyInfo[]
+        abstract member GetProperty : string -> ProvidedPropertyInfo
+        abstract member GetEvents : unit -> ProvidedEventInfo[]
+        abstract member GetEvent : string -> ProvidedEventInfo
+        abstract member GetConstructors : unit -> ProvidedConstructorInfo[]
         member RawSystemType : System.Type
-        member GetEnumUnderlyingType : unit -> ProvidedType
-        member MakePointerType: unit -> ProvidedType
-        member MakeByRefType: unit -> ProvidedType
-        member MakeArrayType: unit -> ProvidedType
-        member MakeArrayType: rank: int -> ProvidedType
-        member MakeGenericType: args: ProvidedType[] -> ProvidedType
-        member AsProvidedVar : name: string -> ProvidedVar
+        abstract member GetStaticParameters : ITypeProvider -> ProvidedParameterInfo[]
+        abstract member ApplyStaticArguments: ITypeProvider * string[] * obj[] -> ProvidedType
+        abstract member GetGenericTypeDefinition : unit -> ProvidedType
+        abstract member IsVoid : bool
+        abstract member IsGenericParameter : bool
+        abstract member IsValueType : bool
+        abstract member IsByRef : bool
+        abstract member IsPointer : bool
+        abstract member IsEnum : bool
+        abstract member IsInterface : bool
+        abstract member IsClass : bool
+        abstract member IsMeasure: bool
+        abstract member IsSealed : bool
+        abstract member IsAbstract : bool
+        abstract member IsPublic : bool
+        abstract member IsNestedPublic : bool
+        abstract member GenericParameterPosition : int
+        abstract member GetElementType : unit -> ProvidedType
+        abstract member GetGenericArguments : unit -> ProvidedType[]
+        abstract member GetArrayRank : unit -> int
+        abstract member GetEnumUnderlyingType : unit -> ProvidedType
+        abstract member MakePointerType: unit -> ProvidedType
+        abstract member MakeByRefType: unit -> ProvidedType
+        abstract member MakeArrayType: unit -> ProvidedType
+        abstract member MakeArrayType: rank: int -> ProvidedType
+        abstract member MakeGenericType: args: ProvidedType[] -> ProvidedType
+        abstract member AsProvidedVar: nm: string -> ProvidedVar
         static member Void : ProvidedType
         static member CreateNoContext : Type -> ProvidedType
         member TryGetILTypeRef : unit -> ILTypeRef option
         member TryGetTyconRef : unit -> obj option
-        static member ApplyContext : ProvidedType * ProvidedTypeContext -> ProvidedType
-        member Context : ProvidedTypeContext 
-        interface IProvidedCustomAttributeProvider
-        static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool 
+        abstract member ApplyContext : ProvidedTypeContext -> ProvidedType
+        abstract member Context : ProvidedTypeContext
+        static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool
 
-    and [<AllowNullLiteral>] 
+    and [<AllowNullLiteral>]
         IProvidedCustomAttributeProvider =
+        abstract GetCustomAttributes : provider: ITypeProvider -> seq<CustomAttributeData>
         abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
-        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option 
+        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option
         abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
         abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
-        
-    and [<AllowNullLiteral; Sealed; Class>] 
-        ProvidedAssembly = 
-        member GetName : unit -> System.Reflection.AssemblyName
-        member FullName : string
-        member GetManifestModuleContents : ITypeProvider -> byte[]
+
+    and [<AllowNullLiteral; Class>]
+        ProvidedAssembly =
+        new: x: System.Reflection.Assembly -> ProvidedAssembly
+        abstract member GetName : unit -> System.Reflection.AssemblyName
+        abstract member FullName : string
+        abstract member GetManifestModuleContents : ITypeProvider -> byte[]
         member Handle : System.Reflection.Assembly
 
-    and [<AllowNullLiteral;AbstractClass>] 
-        ProvidedMemberInfo = 
-        member Name :string
-        member DeclaringType : ProvidedType
-        interface IProvidedCustomAttributeProvider 
+    and [<AllowNullLiteral;AbstractClass>]
+        ProvidedMemberInfo =
+        abstract member Name :string
+        abstract member DeclaringType : ProvidedType
+        abstract GetCustomAttributes : provider: ITypeProvider -> seq<CustomAttributeData>
+        abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
+        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option
+        abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
+        abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
+        interface IProvidedCustomAttributeProvider
 
-    and [<AllowNullLiteral;AbstractClass>] 
-        ProvidedMethodBase = 
+    and [<AllowNullLiteral;AbstractClass>]
+        ProvidedMethodBase =
         inherit ProvidedMemberInfo
-        member IsGenericMethod : bool
-        member IsStatic : bool
-        member IsFamily : bool
-        member IsFamilyAndAssembly : bool
-        member IsFamilyOrAssembly : bool
-        member IsVirtual : bool
-        member IsFinal : bool
-        member IsPublic : bool
-        member IsAbstract : bool
-        member IsHideBySig : bool
-        member IsConstructor : bool
-        member GetParameters : unit -> ProvidedParameterInfo[]
-        member GetGenericArguments : unit -> ProvidedType[]
-        member GetStaticParametersForMethod : ITypeProvider -> ProvidedParameterInfo[]
+        member Context : ProvidedTypeContext
+        abstract member IsGenericMethod : bool
+        abstract member IsStatic : bool
+        abstract member IsFamily : bool
+        abstract member IsFamilyAndAssembly : bool
+        abstract member IsFamilyOrAssembly : bool
+        abstract member IsVirtual : bool
+        abstract member IsFinal : bool
+        abstract member IsPublic : bool
+        abstract member IsAbstract : bool
+        abstract member IsHideBySig : bool
+        abstract member IsConstructor : bool
+        abstract member GetParameters : unit -> ProvidedParameterInfo[]
+        abstract member GetGenericArguments : unit -> ProvidedType[]
+        abstract member GetStaticParametersForMethod : ITypeProvider -> ProvidedParameterInfo[]
+        abstract member ApplyStaticArgumentsForMethod : provider: ITypeProvider * fullNameAfterArguments: string * staticArgs: obj[] -> ProvidedMethodBase
         static member TaintedGetHashCode : Tainted<ProvidedMethodBase> -> int
-        static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool 
+        static member TaintedEquals : Tainted<ProvidedMethodBase> * Tainted<ProvidedMethodBase> -> bool
 
-    and [<AllowNullLiteral; Sealed; Class>] 
-        ProvidedMethodInfo = 
+    and [<AllowNullLiteral; Class>]
+        ProvidedMethodInfo =
+        new: x: System.Reflection.MethodInfo * ctxt: ProvidedTypeContext -> ProvidedMethodInfo
         inherit ProvidedMethodBase
-        member ReturnType : ProvidedType
-        member MetadataToken : int
+        member Handle: System.Reflection.MethodInfo
+        abstract member ReturnType : ProvidedType
+        abstract member MetadataToken : int
 
-    and [<AllowNullLiteral; Sealed; Class>] 
-        ProvidedParameterInfo = 
-        member Name :string
-        member ParameterType : ProvidedType
-        member IsIn : bool
-        member IsOut : bool
-        member IsOptional : bool
-        member RawDefaultValue : obj
-        member HasDefaultValue : bool
-        interface IProvidedCustomAttributeProvider 
+    and [<AllowNullLiteral; Class>]
+        ProvidedParameterInfo =
+        new: x: System.Reflection.ParameterInfo * ctxt: ProvidedTypeContext -> ProvidedParameterInfo
+        abstract member Name :string
+        abstract member ParameterType : ProvidedType
+        abstract member IsIn : bool
+        abstract member IsOut : bool
+        abstract member IsOptional : bool
+        abstract member RawDefaultValue : obj
+        abstract member HasDefaultValue : bool
+        abstract GetCustomAttributes : provider: ITypeProvider -> seq<CustomAttributeData>
+        abstract GetHasTypeProviderEditorHideMethodsAttribute : provider:ITypeProvider -> bool
+        abstract GetDefinitionLocationAttribute : provider:ITypeProvider -> (string * int * int) option
+        abstract GetXmlDocAttributes : provider:ITypeProvider -> string[]
+        abstract GetAttributeConstructorArgs: provider:ITypeProvider * attribName:string -> (obj option list * (string * obj option) list) option
+        interface IProvidedCustomAttributeProvider
 
-    and [<AllowNullLiteral; Class; Sealed>] 
-        ProvidedFieldInfo = 
+    and [<AllowNullLiteral; Class>]
+        ProvidedFieldInfo =
         inherit ProvidedMemberInfo
-        member IsInitOnly : bool
-        member IsStatic : bool
-        member IsSpecialName : bool
-        member IsLiteral : bool
-        member GetRawConstantValue : unit -> obj
-        member FieldType : ProvidedType
-        member IsPublic : bool
-        member IsFamily : bool
-        member IsFamilyAndAssembly : bool
-        member IsFamilyOrAssembly : bool
-        member IsPrivate : bool
-        static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool 
+        new: x: System.Reflection.FieldInfo * ctxt: ProvidedTypeContext -> ProvidedFieldInfo
+        abstract member IsInitOnly : bool
+        abstract member IsStatic : bool
+        abstract member IsSpecialName : bool
+        abstract member IsLiteral : bool
+        abstract member GetRawConstantValue : unit -> obj
+        abstract member FieldType : ProvidedType
+        abstract member IsPublic : bool
+        abstract member IsFamily : bool
+        abstract member IsFamilyAndAssembly : bool
+        abstract member IsFamilyOrAssembly : bool
+        abstract member IsPrivate : bool
+        static member TaintedEquals : Tainted<ProvidedFieldInfo> * Tainted<ProvidedFieldInfo> -> bool
 
-    and [<AllowNullLiteral; Class; Sealed>] 
-        ProvidedPropertyInfo = 
+    and [<AllowNullLiteral; Class>]
+        ProvidedPropertyInfo =
+        new: x: System.Reflection.PropertyInfo * ctxt: ProvidedTypeContext -> ProvidedPropertyInfo
         inherit ProvidedMemberInfo
-        member GetGetMethod : unit -> ProvidedMethodInfo
-        member GetSetMethod : unit -> ProvidedMethodInfo
-        member GetIndexParameters : unit -> ProvidedParameterInfo[]
-        member CanRead : bool
-        member CanWrite : bool
-        member PropertyType : ProvidedType
+        abstract member GetGetMethod : unit -> ProvidedMethodInfo
+        abstract member GetSetMethod : unit -> ProvidedMethodInfo
+        abstract member GetIndexParameters : unit -> ProvidedParameterInfo[]
+        abstract member CanRead : bool
+        abstract member CanWrite : bool
+        abstract member PropertyType : ProvidedType
         static member TaintedGetHashCode : Tainted<ProvidedPropertyInfo> -> int
-        static member TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool 
+        static member TaintedEquals : Tainted<ProvidedPropertyInfo> * Tainted<ProvidedPropertyInfo> -> bool
 
-    and [<AllowNullLiteral; Class; Sealed>] 
-        ProvidedEventInfo = 
+    and [<AllowNullLiteral; Class>]
+        ProvidedEventInfo =
         inherit ProvidedMemberInfo
-        member GetAddMethod : unit -> ProvidedMethodInfo
-        member GetRemoveMethod : unit -> ProvidedMethodInfo
-        member EventHandlerType : ProvidedType
+        new: x: System.Reflection.EventInfo * ctxt: ProvidedTypeContext -> ProvidedEventInfo
+        abstract member GetAddMethod : unit -> ProvidedMethodInfo
+        abstract member GetRemoveMethod : unit -> ProvidedMethodInfo
+        abstract member EventHandlerType : ProvidedType
         static member TaintedGetHashCode : Tainted<ProvidedEventInfo> -> int
-        static member TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool 
+        static member TaintedEquals : Tainted<ProvidedEventInfo> * Tainted<ProvidedEventInfo> -> bool
 
-    and [<AllowNullLiteral; Class; Sealed>] 
-        ProvidedConstructorInfo = 
+    and [<AllowNullLiteral; Class>]
+        ProvidedConstructorInfo =
+        new: x: System.Reflection.ConstructorInfo * ctxt: ProvidedTypeContext -> ProvidedConstructorInfo
         inherit ProvidedMethodBase
-      
+
     and ProvidedExprType =
         | ProvidedNewArrayExpr of ProvidedType * ProvidedExpr[]
 #if PROVIDED_ADDRESS_OF
@@ -266,19 +289,23 @@ module internal ExtensionTyping =
         | ProvidedVarSetExpr of ProvidedVar * ProvidedExpr
         | ProvidedIfThenElseExpr of ProvidedExpr * ProvidedExpr * ProvidedExpr
         | ProvidedVarExpr of ProvidedVar
-        
-    and [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
-        ProvidedExpr =
-        member Type : ProvidedType
-        /// Convert the expression to a string for diagnostics
-        member UnderlyingExpressionString : string
-        member GetExprType : unit -> ProvidedExprType option
 
-    and [<RequireQualifiedAccess; Class; Sealed; AllowNullLiteral>]
+
+    and [<RequireQualifiedAccess; Class; AllowNullLiteral>]
+        ProvidedExpr =
+        new: x: Quotations.Expr * ctxt: ProvidedTypeContext -> ProvidedExpr
+        abstract member Type : ProvidedType
+        /// Convert the expression to a string for diagnostics
+        abstract member UnderlyingExpressionString : string
+        abstract member GetExprType : unit -> ProvidedExprType option
+        member Handle: Quotations.Expr
+
+    and [<RequireQualifiedAccess; Class; AllowNullLiteral>]
         ProvidedVar =
-        member Type : ProvidedType
-        member Name : string
-        member IsMutable : bool
+        new: x: Quotations.Var * ctxt: ProvidedTypeContext -> ProvidedVar
+        abstract member Type : ProvidedType
+        abstract member Name : string
+        abstract member IsMutable : bool
         override Equals : obj -> bool
         override GetHashCode : unit -> int
 

@@ -3453,7 +3453,7 @@ module EstablishTypeDefinitionCores =
             let ctxt = ProvidedTypeContext.Create(lookupILTypeRef, lookupTyconRef)
 
             // Create a new provided type which captures the reverse-remapping tables.
-            let theRootTypeWithRemapping = theRootType.PApply ((fun x -> ProvidedType.ApplyContext(x, ctxt)), m)
+            let theRootTypeWithRemapping = theRootType.PApply ((fun x -> x.ApplyContext(ctxt)), m)
 
             let isRootGenerated, rootProvAssemStaticLinkInfoOpt = 
                 let stRootAssembly = theRootTypeWithRemapping.PApply((fun st -> st.Assembly), m)

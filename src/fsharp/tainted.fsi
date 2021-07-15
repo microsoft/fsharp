@@ -111,6 +111,8 @@ module internal Tainted =
     /// Failure in call to equality operation will be blamed on type provider of first operand
     val EqTainted : Tainted<'T> -> Tainted<'T> -> bool when 'T : equality and 'T : not struct
 
+    val PhysicallyEqTainted : Tainted<'T> -> Tainted<'T> -> bool when 'T : equality
+
     /// Compute the hash value for the tainted value
     val GetHashCodeTainted : Tainted<'T> -> int when 'T : equality
 

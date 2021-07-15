@@ -5486,7 +5486,7 @@ and remapTyconRepr g tmenv repr =
                  ProvidedType = 
                      info.ProvidedType.PApplyNoFailure (fun st -> 
                          let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box) 
-                         ProvidedType.ApplyContext (st, ctxt)) }
+                         st.ApplyContext(ctxt)) }
 #endif
     | TNoRepr _ -> repr
     | TAsmRepr _ -> repr
