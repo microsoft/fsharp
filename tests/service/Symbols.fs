@@ -1445,3 +1445,26 @@ else
             assertRange (9, 8) (9, 12) mElse2
 
         | _ -> Assert.Fail "Could not get valid AST"
+        
+    [<Test>]
+    let ``Comment between else and if`` () =
+        let parseResults = 
+            getParseResults
+                """
+if a then
+    b
+else (* some long comment here *) if c then
+    d"""
+
+        match parseResults with
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.DoExpr(
+                expr = SynExpr.IfThenElse(ifKeyword = SynIfThenElseStart.If mIf1
+                                          elseKeyword = Some mElse
+                                          elseExpr = Some (SynExpr.IfThenElse(ifKeyword = SynIfThenElseStart.If mIf2))))
+        ]) ])) ->
+            assertRange (2, 0) (2, 2) mIf1
+            assertRange (4, 0) (4, 4) mElse
+            assertRange (4, 34) (4, 36) mIf2
+
+        | _ -> Assert.Fail "Could not get valid AST"

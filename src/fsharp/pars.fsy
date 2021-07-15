@@ -270,7 +270,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token ODO              /* LexFilter #light converts 'DO' tokens to 'ODO' */
 %token ODO_BANG         /* LexFilter #light converts 'DO_BANG' tokens to 'ODO_BANG' */
 %token OTHEN            /* LexFilter #light converts 'THEN' tokens to 'OTHEN' */
-%token OELSE            /* LexFilter #light converts 'ELSE' tokens to 'OELSE' */
+%token OELSE /* LexFilter #light converts 'ELSE' tokens to 'OELSE' except if immeditely followed by 'if', when they become 'ELIF' */
 %token OWITH            /* LexFilter #light converts SOME (but not all) 'WITH' tokens to 'OWITH' */ 
 %token OFUNCTION        /* LexFilter #light converts 'FUNCTION' tokens to 'OFUNCTION' */ 
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
@@ -4024,8 +4024,15 @@ ifExprElifs:
         Some mElse, Some (exprFromParseError $3) }
 
   | ELIF declExpr ifExprCases 
-      { let mElif = rhs parseState 1 
-        None, Some ($3 $2 (SynIfThenElseStart.Elif mElif)) }
+      { let mElif = rhs parseState 1
+        // check if the elif is not a merged else if token.
+        let mElse, startIf  =
+            if mElif.EndColumn - mElif.StartColumn > 4 then
+                Some (mkRange mElif.FileName mElif.Start (mkPos mElif.StartLine (mElif.StartColumn + 4))), 
+                SynIfThenElseStart.If (mkRange mElif.FileName (mkPos mElif.EndLine (mElif.EndColumn - 2)) mElif.End)
+            else
+                None, SynIfThenElseStart.Elif mElif
+        mElse, Some ($3 $2 startIf) }
 
   | ELIF declExpr recover 
       { None, Some (exprFromParseError $2) }

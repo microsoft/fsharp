@@ -579,7 +579,14 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
         // EOF token is processed as if on column -1 
         // This forces the closure of all contexts. 
         | Parser.EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne
-        | _ -> tokenTup.LexbufState.StartPos 
+        | _ -> tokenTup.LexbufState.StartPos
+
+    let endPosOfTokenTup (tokenTup: TokenTup) = 
+        match tokenTup.Token with
+        // EOF token is processed as if on column -1 
+        // This forces the closure of all contexts. 
+        | Parser.EOF _ -> tokenTup.LexbufState.StartPos.ColumnMinusOne
+        | _ -> tokenTup.LexbufState.EndPos 
 
     //----------------------------------------------------------------------------
     // TokenTup pool
@@ -2126,10 +2133,28 @@ type LexFilterImpl (lightStatus: LightSyntaxStatus, compilingFsLib, lexer, lexbu
             returnToken tokenLexbufState OTHEN 
 
         | ELSE, _ -> 
-            if debug then dprintf "ELSE: replacing ELSE with OELSE, pushing CtxtSeqBlock, CtxtElse(%a)\n" outputPos tokenStartPos
-            pushCtxt tokenTup (CtxtElse tokenStartPos)
-            pushCtxtSeqBlock(true, AddBlockEnd)
-            returnToken tokenLexbufState OELSE
+            let lookaheadTokenTup = peekNextTokenTup()
+            let lookaheadTokenStartPos = startPosOfTokenTup lookaheadTokenTup
+            let lookaheadTokenEndPos = endPosOfTokenTup lookaheadTokenTup
+            match peekNextToken() with 
+            | IF when isSameLine() ->
+                // We convert ELSE IF to ELIF since it then opens the block at the right point,
+                // In particular the case
+                //    if e1 then e2
+                //    else if e3 then e4
+                //    else if e5 then e6 
+                popNextTokenTup() |> pool.Return
+                if debug then dprintf "ELSE IF: replacing ELSE IF with ELIF, pushing CtxtIf, CtxtVanilla(%a)\n" outputPos tokenStartPos
+                pushCtxt tokenTup (CtxtIf tokenStartPos)
+                // Combine the original range of both tokens as the range for the ELIF keyword.
+                let correctedTokenLexbufState = LexbufState(tokenStartPos, lookaheadTokenEndPos, false)
+                returnToken correctedTokenLexbufState ELIF
+
+            | _ -> 
+                if debug then dprintf "ELSE: replacing ELSE with OELSE, pushing CtxtSeqBlock, CtxtElse(%a)\n" outputPos lookaheadTokenStartPos
+                pushCtxt tokenTup (CtxtElse tokenStartPos)
+                pushCtxtSeqBlock(true, AddBlockEnd)
+                returnToken tokenLexbufState OELSE
 
         | (ELIF | IF), _ -> 
             if debug then dprintf "IF, pushing CtxtIf(%a)\n" outputPos tokenStartPos
