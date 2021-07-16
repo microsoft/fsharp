@@ -49,6 +49,14 @@ type Suggestions = (string -> unit) -> unit
 
 let NoSuggestions : Suggestions = ignore
 
+let assembleSuggestionsMessage (suggestions: string seq) (output: System.Text.StringBuilder) =
+  output.Append(FSComp.SR.undefinedNameSuggestionsIntro()) |> ignore
+  for value in suggestions do
+      output.AppendLine() |> ignore
+      output.Append "   " |> ignore
+      output.Append(value) |> ignore
+
+
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option with
     override _.Message = "Processing of a script fragment has stopped because an exception has been raised"

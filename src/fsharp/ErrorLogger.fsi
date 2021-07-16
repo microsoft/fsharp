@@ -34,6 +34,8 @@ type Suggestions = (string -> unit) -> unit
 
 val NoSuggestions: Suggestions
 
+val assembleSuggestionsMessage: suggestions: string seq -> output: System.Text.StringBuilder -> unit
+
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option
 

@@ -4476,6 +4476,7 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
     if not otherArgs.IsEmpty then
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(), m))
 
+
     let indexedStaticParameters = staticParameters |> Array.toList |> List.indexed
     for (n, _) in namedArgs do
          match indexedStaticParameters |> List.filter (fun (j, sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
@@ -4483,7 +4484,21 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
              if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText, n.idRange))
              else
-                 error (Error(FSComp.SR.etNoStaticParameterWithName n.idText, n.idRange))
+                let potentiallyNamedArgumentNames =
+                   let namedArguments = namedArgs |> List.map(fun (name,_) -> name.idText) |> Set.ofList
+                   staticParameters 
+                   |> Array.map(fun p -> p.PUntaint((fun p -> p.Name), n.idRange))
+                   |> Array.skip unnamedArgs.Length
+                   |> Array.filter (not << namedArguments.Contains)
+
+                let errorId, message = 
+                  let writer = new System.Text.StringBuilder()
+                  let errorId, messagePrelude = FSComp.SR.etNoStaticParameterWithName n.idText
+                  let _ = writer.AppendLine messagePrelude
+                  if potentiallyNamedArgumentNames.Length > 0 then 
+                    assembleSuggestionsMessage potentiallyNamedArgumentNames writer
+                  errorId, writer.ToString()
+                error (Error((errorId, message), n.idRange))
          | [_] -> ()
          | _ -> error (Error(FSComp.SR.etMultipleStaticParameterWithName n.idText, n.idRange))
 
