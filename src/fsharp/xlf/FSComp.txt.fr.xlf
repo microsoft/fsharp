@@ -177,6 +177,11 @@
         <target state="translated">assouplissement de la mise en retrait avec des espaces blancs</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="new">whitespace relaxation v2</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="translated">modèle de trait de soulignement unique</target>

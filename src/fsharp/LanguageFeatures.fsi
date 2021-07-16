@@ -9,6 +9,7 @@ type LanguageFeature =
     | SingleUnderscorePattern
     | WildCardInForLoop
     | RelaxWhitespace
+    | RelaxWhitespace2
     | NameOf
     | ImplicitYield
     | OpenTypeDeclaration

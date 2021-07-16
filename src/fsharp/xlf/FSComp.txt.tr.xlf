@@ -177,6 +177,11 @@
         <target state="translated">boşluk genişlemesi</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRelaxWhitespace2">
+        <source>whitespace relaxation v2</source>
+        <target state="new">whitespace relaxation v2</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
         <source>single underscore pattern</source>
         <target state="translated">tek alt çizgi deseni</target>

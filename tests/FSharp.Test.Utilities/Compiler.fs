@@ -19,11 +19,12 @@ open System.Text.RegularExpressions
 
 
 module rec Compiler =
+    type BaselineFile = { FilePath: string; Content: string option }
 
     type Baseline =
         { SourceFilename: string option
-          OutputBaseline: string option
-          ILBaseline:     string option }
+          OutputBaseline: BaselineFile
+          ILBaseline:     BaselineFile }
 
     type TestType =
         | Text of string
@@ -515,17 +516,15 @@ module rec Compiler =
         | _ -> failwith "FSI running only supports F#."
 
 
-    let private createBaselineErrors (baseline: Baseline) (actualErrors: string) extension : unit =
-        match baseline.SourceFilename with
-        | Some f -> FileSystem.OpenFileForWriteShim(Path.ChangeExtension(f, extension)).Write(actualErrors)
-        | _ -> ()
+    let private createBaselineErrors (baselineFile: BaselineFile) (actualErrors: string) : unit =
+        FileSystem.OpenFileForWriteShim(baselineFile.FilePath + ".err").Write(actualErrors)
 
     let private verifyFSBaseline (fs) : unit =
         match fs.Baseline with
         | None -> failwith "Baseline was not provided."
         | Some bsl ->
             let errorsExpectedBaseLine =
-                match bsl.OutputBaseline with
+                match bsl.OutputBaseline.Content with
                 | Some b -> b.Replace("\r\n","\n")
                 | None ->  String.Empty
 
@@ -534,7 +533,7 @@ module rec Compiler =
             let errorsActual = (typecheckDiagnostics |> Array.map (sprintf "%A") |> String.concat "\n").Replace("\r\n","\n")
 
             if errorsExpectedBaseLine <> errorsActual then
-                createBaselineErrors bsl errorsActual "fs.bsl.err"
+                createBaselineErrors bsl.OutputBaseline errorsActual
 
             Assert.AreEqual(errorsExpectedBaseLine, errorsActual)
 
@@ -562,13 +561,13 @@ module rec Compiler =
                 | None -> failwith "Operation didn't produce any output!"
                 | Some p ->
                     let expectedIL =
-                        match bsl.ILBaseline with
+                        match bsl.ILBaseline.Content with
                         | Some b -> b.Replace("\r\n","\n")
                         | None ->  String.Empty
                     let (success, errorMsg, actualIL) = ILChecker.verifyILAndReturnActual p expectedIL
 
                     if not success then
-                        createBaselineErrors bsl actualIL "fs.il.err"
+                        createBaselineErrors bsl.ILBaseline actualIL
                         Assert.Fail(errorMsg)
 
     let verifyILBaseline (cUnit: CompilationUnit) : CompilationUnit =
@@ -610,13 +609,15 @@ module rec Compiler =
 
         let private assertErrors (what: string) libAdjust (source: ErrorInfo list) (expected: ErrorInfo list) : unit =
             let errors = source |> List.map (fun error -> { error with Range = adjustRange error.Range libAdjust })
-
+            
             let inline checkEqual k a b =
              if a <> b then
                  Assert.AreEqual(a, b, sprintf "%s: Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A\nExpected errors:\n%A" what k a b errors expected)
+            // For lists longer than 100 errors:
+            errors |> List.iter System.Diagnostics.Debug.WriteLine
 
             // TODO: Check all "categories", collect all results and print alltogether.
-            checkEqual "Errors count"  expected.Length errors.Length
+            checkEqual "Errors count" expected.Length errors.Length
 
             (errors, expected)
             ||> List.iter2 (fun actualError expectedError ->
