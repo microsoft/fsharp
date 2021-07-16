@@ -276,6 +276,9 @@ let SearchEntireHierarchyOfType f g amap m ty =
             | None -> if f ty then Some ty else None
             | Some _ -> acc)
         g amap m ty None
+        
+let AllPrimarySuperTypesOfType g amap m allowMultiIntfInst ty =
+    FoldPrimaryHierarchyOfType (ListSet.insert (typeEquiv g)) g amap m allowMultiIntfInst ty []
 
 /// Get all super types of the type, including the type itself
 let AllSuperTypesOfType g amap m allowMultiIntfInst ty =
@@ -299,6 +302,20 @@ let HasHeadType g tcref ty2 =
     match tryTcrefOfAppTy g ty2 with
     | ValueSome tcref2 -> tyconRefEq g tcref tcref2
     | ValueNone -> false
+  
+let isSubTypeOf g amap m typeToSearchFrom typeToLookFor =
+    ExistsInEntireHierarchyOfType (typeEquiv g typeToLookFor) g amap m AllowMultiIntfInstantiations.Yes typeToSearchFrom
+
+let isSuperTypeOf g amap m typeToSearchFrom typeToLookFor =
+    isSubTypeOf g amap m typeToLookFor typeToSearchFrom 
+    
+let getCommonAncestorOfTys g amap tys m = 
+    let superTypes = List.map (AllPrimarySuperTypesOfType g amap m AllowMultiIntfInstantiations.No) tys
+    List.fold (ListSet.intersect (typeEquiv g)) (List.head superTypes) (List.tail superTypes) |> List.head
+
+/// choose if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
+let ChooseSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor =
+    SearchEntireHierarchyOfType (HaveSameHeadType g typeToLookFor)  g amap m typeToSearchFrom
 
 /// Check if a type exists somewhere in the hierarchy which has the same head type as the given type (note, the given type need not have a head type at all)
 let ExistsSameHeadTypeInHierarchy g amap m typeToSearchFrom typeToLookFor =

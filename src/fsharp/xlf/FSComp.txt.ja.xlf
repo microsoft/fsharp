@@ -32,6 +32,11 @@
         <target state="translated">使用可能なオーバーロード:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csErasedUnionTypeNotContained">
+        <source>The erased union type '{0}' is not compatible with the erased union type '{1}'</source>
+        <target state="new">The erased union type '{0}' is not compatible with the erased union type '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">ジェネリック コンストラクトでは、ジェネリック型パラメーターが構造体または参照型として認識されている必要があります。型の注釈の追加を検討してください。</target>
@@ -88,8 +93,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <source>additional type-directed conversions</source>
+        <target state="new">additional type-directed conversions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -115,6 +120,11 @@
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">ドットなしの float32 リテラル</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErasedUnions">
+        <source>erased unions</source>
+        <target state="new">erased unions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">

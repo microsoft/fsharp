@@ -463,6 +463,11 @@ type SynType =
         fields:(Ident * SynType) list *
         range: range
 
+    /// Erased union type definition, type X = (A | B)
+    | ErasedUnion of
+        erasedUnionCases: SynErasedUnionCase list *
+        range: range/// 
+
     /// F# syntax: type[]
     | Array of
         rank: int *
@@ -1539,6 +1544,17 @@ type SynUnionCase =
         range: range
 
     /// Gets the syntax range of this construct
+    member Range: range
+
+[<NoEquality; NoComparison>]
+type SynErasedUnionCase =
+
+    /// The untyped, unchecked syntax tree for one case in a union definition.
+    | SynErasedUnionCase of
+        typ: SynType *
+        xmlDoc: PreXmlDoc *
+        range: range
+
     member Range: range
 
 /// Represents the syntax tree for the right-hand-side of union definition, excluding members,

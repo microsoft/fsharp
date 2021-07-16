@@ -32,6 +32,7 @@ type LanguageFeature =
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | ErasedUnions
     | AdditionalTypeDirectedConversions
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
@@ -80,6 +81,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StringInterpolation, languageVersion50
 
             // F# preview
+            LanguageFeature.ErasedUnions, previewVersion
             LanguageFeature.AdditionalTypeDirectedConversions, previewVersion
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
@@ -158,6 +160,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.NullableOptionalInterop -> FSComp.SR.featureNullableOptionalInterop()
         | LanguageFeature.DefaultInterfaceMemberConsumption -> FSComp.SR.featureDefaultInterfaceMemberConsumption()
         | LanguageFeature.WitnessPassing -> FSComp.SR.featureWitnessPassing()
+        | LanguageFeature.ErasedUnions -> FSComp.SR.featureErasedUnions()
         | LanguageFeature.AdditionalTypeDirectedConversions -> FSComp.SR.featureAdditionalImplicitConversions()
         | LanguageFeature.InterfacesWithMultipleGenericInstantiation -> FSComp.SR.featureInterfacesWithMultipleGenericInstantiation()
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()

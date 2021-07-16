@@ -62,6 +62,9 @@ val SearchEntireHierarchyOfType: f:(TType -> bool) -> g:TcGlobals -> amap:Import
 /// Get all super types of the type, including the type itself
 val AllSuperTypesOfType: g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> TType list
 
+/// Get all super types of the type, including the type itself
+val AllPrimarySuperTypesOfType: g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> TType list
+
 /// Get all interfaces of a type, including the type itself if it is an interface
 val AllInterfacesOfType: g:TcGlobals -> amap:ImportMap -> m:range -> allowMultiIntfInst:AllowMultiIntfInstantiations -> ty:TType -> TType list
 
@@ -76,6 +79,15 @@ val ExistsSameHeadTypeInHierarchy: g:TcGlobals -> amap:ImportMap -> m:range -> t
 
 /// Check if a type exists somewhere in the hierarchy which has the given head type.
 val ExistsHeadTypeInEntireHierarchy: g:TcGlobals -> amap:ImportMap -> m:range -> typeToSearchFrom:TType -> tcrefToLookFor:TyconRef -> bool
+
+/// Check if one (nominal) type is a subtype of another 
+val isSubTypeOf: g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
+
+/// Check if one (nominal) type is a supertype of another 
+val isSuperTypeOf: g: TcGlobals -> amap: ImportMap -> m: range -> typeToSearchFrom: TType -> typeToLookFor: TType -> bool
+
+/// Get the common ancestor of a set of nominal types
+val getCommonAncestorOfTys: g: TcGlobals -> amap: ImportMap -> tys: TTypes -> m: range -> TType
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
 val ImportILTypeFromMetadata: amap:ImportMap -> m:range -> scoref:ILScopeRef -> tinst:TType list -> minst:TType list -> ilty:ILType -> TType

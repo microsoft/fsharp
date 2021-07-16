@@ -32,6 +32,11 @@
         <target state="translated">사용 가능한 오버로드:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csErasedUnionTypeNotContained">
+        <source>The erased union type '{0}' is not compatible with the erased union type '{1}'</source>
+        <target state="new">The erased union type '{0}' is not compatible with the erased union type '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">제네릭 구문을 사용하려면 구조체 또는 참조 형식의 제네릭 형식 매개 변수가 필요합니다. 형식 주석을 추가하세요.</target>
@@ -88,8 +93,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <source>additional type-directed conversions</source>
+        <target state="new">additional type-directed conversions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -115,6 +120,11 @@
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">점이 없는 float32 리터럴</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErasedUnions">
+        <source>erased unions</source>
+        <target state="new">erased unions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">

@@ -41,6 +41,9 @@ module ItemKeyTags =
 
     [<Literal>]
     let typeUnionCase = "#U#"
+    
+    [<Literal>]
+    let typeErasedUnionCase = "#G#"
 
     [<Literal>]
     let typeMeasureVar = "#p#"
@@ -243,6 +246,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeString ItemKeyTags.typeUnionCase
                 writeEntityRef tcref
                 writeString nm
+        | TType_erased_union (_, tinst) ->
+            writeString ItemKeyTags.typeErasedUnionCase
+            tinst |> List.iter (writeType false)
 
     and writeMeasure isStandalone (ms: Measure) =
         match ms with

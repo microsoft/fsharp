@@ -536,6 +536,9 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     | TType_ucase (ucref, args) ->
         let cuspec, idx = GenUnionCaseSpec amap m tyenv ucref args
         EraseUnions.GetILTypeForAlternative cuspec idx
+        
+    | TType_erased_union (erasedUnionInfo, _) ->
+        GenTypeArgAux amap m tyenv erasedUnionInfo.CommonAncestorTy
 
     | TType_forall (tps, tau) ->
         let tps = DropErasedTypars tps

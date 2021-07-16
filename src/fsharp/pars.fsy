@@ -5086,6 +5086,7 @@ atomTypeOrAnonRecdType:
              | (SynField([], false, Some id, ty, false, _xmldoc, None, _m)) -> Some (id, ty) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        SynType.AnonRecd (isStruct, flds2, rhs parseState 1) }  
+  | erasedUnionType { SynType.ErasedUnion ($1, (rhs parseState 1, $1 |> List.map(fun (SynErasedUnionCase(range = m)) -> m)) ||> List.fold unionRanges) }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */
@@ -5158,6 +5159,21 @@ atomType:
   | appTypeCon DOT ends_coming_soon_or_recover
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedNameAfterToken())
        $1 } 
+
+/* The core of an erased union type definition */
+erasedUnionType:
+  /* Note the next three rules are required to disambiguate this from type x = y */
+  /* Attributes can only appear on a single constructor if you've used a | */
+  | LPAREN attrErasedUnionCaseDecl barAndgrabXmlDoc attrErasedUnionCaseDecls rparen
+     { ($2 (grabXmlDoc(parseState, 1))) :: $4 $3 }
+
+attrErasedUnionCaseDecls:
+  | attrErasedUnionCaseDecl barAndgrabXmlDoc attrErasedUnionCaseDecls { (fun xmlDoc -> $1 xmlDoc  :: $3 $2) }
+  | attrErasedUnionCaseDecl { (fun xmlDoc -> [ $1 xmlDoc ]) }
+
+/* The core of an anon union case definition */
+attrErasedUnionCaseDecl:
+  | typ { let mDecl = rhs parseState 3 in (fun xmlDoc -> SynErasedUnionCase ($1, xmlDoc, mDecl)) }
 
 typeArgsNoHpaDeprecated:
   | typeArgsActual

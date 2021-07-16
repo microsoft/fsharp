@@ -6,6 +6,7 @@ module internal FSharp.Compiler.TypeRelations
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library 
+open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -78,6 +79,9 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
 
     | TType_fun (d1, r1), TType_fun (d2, r2)   -> 
         (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) d1 d2 && (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) r1 r2
+        
+    | TType_erased_union (_, l1), TType_erased_union (_, l2)     -> 
+        List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
     | TType_measure _, TType_measure _ ->
         true
@@ -94,6 +98,7 @@ let TypesFeasiblyEquivStripMeasures g amap m ty1 ty2 =
     TypesFeasiblyEquivalent true 0 g amap m ty1 ty2
 
 /// The feasible coercion relation. Part of the language spec.
+/// Test whether ty2 :> ty1, for erased union (A|B :> A)
 let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 = 
     if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
     let ty1 = stripTyEqns g ty1
@@ -107,7 +112,12 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
     | TType_tuple _, TType_tuple _
     | TType_anon _, TType_anon _
     | TType_fun _, TType_fun _ -> TypesFeasiblyEquiv ndeep g amap m ty1 ty2
-
+    | TType_erased_union (_, l1), TType_erased_union (_, l2) ->
+        ListSet.isSupersetOf (fun x1 x2 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce x2) l1 l2
+    | _, TType_erased_union (_, l2) ->
+        List.forall (TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce) l2
+    | TType_erased_union (_, l1), _ ->
+        List.exists (fun x1 -> TypeFeasiblySubsumesType ndeep g amap m x1 canCoerce ty2) l1
     | TType_measure _, TType_measure _ ->
         true
 

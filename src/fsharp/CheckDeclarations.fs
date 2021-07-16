@@ -4121,7 +4121,8 @@ module EstablishTypeDefinitionCores =
 
             let rec accInAbbrevType ty acc = 
                 match stripTyparEqns ty with 
-                | TType_anon (_,l) 
+                | TType_anon (_,l)
+                | TType_erased_union (_, l)
                 | TType_tuple (_, l) -> accInAbbrevTypes l acc
                 | TType_ucase (UnionCaseRef(tc, _), tinst) 
                 | TType_app (tc, tinst) -> 

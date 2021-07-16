@@ -32,6 +32,11 @@
         <target state="translated">Kullanılabilir aşırı yüklemeler:\n{0}</target>
         <note />
       </trans-unit>
+      <trans-unit id="csErasedUnionTypeNotContained">
+        <source>The erased union type '{0}' is not compatible with the erased union type '{1}'</source>
+        <target state="new">The erased union type '{0}' is not compatible with the erased union type '{1}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="csGenericConstructRequiresStructOrReferenceConstraint">
         <source>A generic construct requires that a generic type parameter be known as a struct or reference type. Consider adding a type annotation.</source>
         <target state="translated">Genel yapı, genel bir tür parametresinin yapı veya başvuru türü olarak bilinmesini gerektirir. Tür ek açıklaması eklemeyi düşünün.</target>
@@ -88,8 +93,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
-        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
-        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <source>additional type-directed conversions</source>
+        <target state="new">additional type-directed conversions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureAndBang">
@@ -115,6 +120,11 @@
       <trans-unit id="featureDotlessFloat32Literal">
         <source>dotless float32 literal</source>
         <target state="translated">noktasız float32 sabit değeri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureErasedUnions">
+        <source>erased unions</source>
+        <target state="new">erased unions</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
