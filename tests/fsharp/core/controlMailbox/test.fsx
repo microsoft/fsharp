@@ -67,6 +67,14 @@ module MailboxProcessorBasicTests =
 
 
         check 
+            "c32398u6: MailboxProcessor null"
+            (let mb1 = new MailboxProcessor<int>(fun inbox -> async { return () })
+             mb1.StartImmediate();
+             100)
+            100
+
+
+        check 
             "c32398u7: MailboxProcessor Receive/PostAndReply"
             (let mb1 = new MailboxProcessor<AsyncReplyChannel<int>>(fun inbox -> async { let! msg = inbox.Receive() 
                                                                                          do msg.Reply(100) })

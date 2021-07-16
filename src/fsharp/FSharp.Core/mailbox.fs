@@ -350,7 +350,7 @@ namespace Microsoft.FSharp.Control
         member _.UnsafeMessageQueueContents = mailbox.UnsafeContents
 #endif
 
-        member x.Start() =
+        member private x.PrepareStart() =
             if started then
                 raise (new InvalidOperationException(SR.GetString(SR.mailboxProcessorAlreadyStarted)))
             else
@@ -359,13 +359,18 @@ namespace Microsoft.FSharp.Control
                 // Protect the execution and send errors to the event.
                 // Note that exception stack traces are lost in this design - in an extended design
                 // the event could propagate an ExceptionDispatchInfo instead of an Exception.
-                let p =
-                    async { try
-                                do! body x
-                            with exn ->
-                                errorEvent.Trigger exn }
+                async { try
+                            do! body x
+                        with exn ->
+                            errorEvent.Trigger exn }
 
-                Async.Start(computation=p, cancellationToken=cancellationToken)
+        member x.Start() =
+            let p = x.PrepareStart()
+            Async.Start(computation=p, cancellationToken=cancellationToken)
+
+        member x.StartImmediate() =
+            let p = x.PrepareStart()
+            Async.StartImmediate(computation=p, cancellationToken=cancellationToken)
 
         member _.Post message = mailbox.Post message
 
@@ -437,4 +442,9 @@ namespace Microsoft.FSharp.Control
         static member Start(body, ?cancellationToken) =
             let mailboxProcessor = new MailboxProcessor<'Msg>(body, ?cancellationToken=cancellationToken)
             mailboxProcessor.Start()
+            mailboxProcessor
+
+        static member StartImmediate(body, ?cancellationToken) =
+            let mailboxProcessor = new MailboxProcessor<'Msg>(body, ?cancellationToken=cancellationToken)
+            mailboxProcessor.StartImmediate()
             mailboxProcessor
