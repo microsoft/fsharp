@@ -121,6 +121,7 @@ exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displa
 exception ErrorFromAddingConstraint             of displayEnv: DisplayEnv * exn * range
 exception UnresolvedConversionOperator          of displayEnv: DisplayEnv * TType * TType * range
 exception UnresolvedOverloading                 of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
+exception FuncIsBetterOverloadResolutionDeprecation of displayEnv:DisplayEnv * method: MethInfo * m:range
 exception NonRigidTypar                         of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
 exception ArgDoesNotMatchError                  of error: ErrorsFromAddingSubsumptionConstraint * calledMeth: CalledMeth<Expr> * calledArg: CalledArg * callerArg: CallerArg<Expr>

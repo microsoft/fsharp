@@ -508,6 +508,29 @@ type CalledMeth<'T>
     /// The argument analysis for each set of curried arguments
     member x.ArgSets = argSets
 
+    member x.GetCallerArgAt index =
+      // Arrays are better...
+      let mutable currentIndex = 0
+      let mutable result = ValueNone
+      for argSet in argSets do
+        for arg in argSet.UnnamedCallerArgs do
+          if currentIndex = index then
+            result <- ValueSome arg
+          currentIndex <- currentIndex + 1
+        if ValueOption.isSome result then () else
+        for arg in argSet.AssignedNamedArgs do
+          if currentIndex = index then
+            result <- ValueSome arg.CallerArg
+          currentIndex <- currentIndex + 1
+        if ValueOption.isSome result then () else
+        for arg in argSet.ParamArrayCallerArgs do
+          if currentIndex = index then
+            result <- ValueSome arg
+          currentIndex <- currentIndex + 1
+
+      match result with
+      | ValueNone -> failwithf $"{nameof CalledMeth}.{nameof x.GetCallerArgAt}: wrong index requested %A{argSets}"
+      | ValueSome callerArg -> callerArg
     /// The return type after implicit deference of byref returns is taken into account
     member x.CalledReturnTypeAfterByrefDeref = 
         let retTy = methodRetTy

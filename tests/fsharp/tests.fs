@@ -3163,6 +3163,9 @@ module OverloadResolution =
         let [<Test>] ``neg_System.Threading.Tasks.Task.Run.OverloadList``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Threading.Tasks.Task.Run.OverloadList"
         let [<Test>] ``neg_System.Drawing.Graphics.DrawRectangleOverloadList.fsx``() = singleNegTest (testConfig "typecheck/overloads") "neg_System.Drawing.Graphics.DrawRectangleOverloadList"
 
+    module ``ad hoc code overload error messages or not``=
+        let [<Test>] ``neg_at_somepoint_in_the_future_func-is-better-or-not.fsx`` () = singleNegTest (testConfig "typecheck/overloads") "neg_at_somepoint_in_the_future_func-is-better-or-not"
+
     module ``ad hoc code overload error messages``=
         let [<Test>] ``neg_many_many_overloads`` () = singleNegTest (testConfig "typecheck/overloads") "neg_many_many_overloads"
         let [<Test>] ``neg_interface_generics`` () = singleNegTest (testConfig "typecheck/overloads") "neg_interface_generics"

@@ -234,6 +234,8 @@ exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerAr
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
+exception FuncIsBetterOverloadResolutionDeprecation of displayEnv: DisplayEnv * method: MethInfo * m:range
+
 type TcValF = (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType)
 
 type ConstraintSolverState = 
@@ -2643,9 +2645,10 @@ and ResolveOverloading
                 /// Compare types under the feasibly-subsumes ordering
                 let compareTypes ty1 ty2 = 
                     (ty1, ty2) ||> compareCond (fun x1 x2 -> TypeFeasiblySubsumesType ndeep csenv.g csenv.amap m x2 CanCoerce x1) 
-                    
+                
+                let mutable funcIsBetterSpecialCasingArgPosition = ValueNone
                 /// Compare arguments under the feasibly-subsumes ordering and the adhoc Func-is-better-than-other-delegates rule
-                let compareArg (calledArg1: CalledArg) (calledArg2: CalledArg) =
+                let compareArg argIndex (calledArg1: CalledArg) (calledArg2: CalledArg) =
                     let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
                     if c <> 0 then c else
 
@@ -2658,8 +2661,9 @@ and ResolveOverloading
                                 tcref1.DisplayName = "Func" &&  
                                 (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
-                                isDelegateTy g ty2 -> true
-
+                                isDelegateTy g ty2 ->
+                                  funcIsBetterSpecialCasingArgPosition <- ValueSome (argIndex,calledArg1)
+                                  true
                             // T is always better than inref<T>
                             | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
                                 true
@@ -2722,7 +2726,7 @@ and ResolveOverloading
                                        []
                                 else 
                                     []) @
-                               ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
+                               ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.mapi2 compareArg) 
                            // "all args are at least as good, and one argument is actually better"
                            if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
                                1
@@ -2755,7 +2759,7 @@ and ResolveOverloading
                     
                     // F# 5.0 rule - prior to F# 5.0 named arguments (on the caller side) were not being taken 
                     // into account when comparing overloads.  So adding a name to an argument might mean 
-                    // overloads ould no longer be distinguished.  We thus look at *all* arguments (whether
+                    // overloads could no longer be distinguished.  We thus look at *all* arguments (whether
                     // optional or not) as an additional comparison technique.
                     let c = 
                         if g.langVersion.SupportsFeature(Features.LanguageFeature.NullableOptionalInterop) then
@@ -2763,7 +2767,7 @@ and ResolveOverloading
                                 let args1 = candidate.AllCalledArgs |> List.concat
                                 let args2 = other.AllCalledArgs |> List.concat
                                 if args1.Length = args2.Length then 
-                                    (args1, args2) ||> List.map2 compareArg
+                                    (args1, args2) ||> List.mapi2 compareArg
                                 else
                                     []
                             // "all args are at least as good, and one argument is actually better"
@@ -2794,7 +2798,18 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
+                | [(calledMeth, warns, t)] -> 
+                  let calledMeth = calledMeth
+                  match funcIsBetterSpecialCasingArgPosition with
+                  | ValueNone -> ()
+                  | ValueSome (argIndex, _calledArg) ->
+                    let callerArg = calledMeth.GetCallerArgAt argIndex
+                    match callerArg.Expr with 
+                    | Expr.Lambda _ ->
+                      // https://github.com/dotnet/fsharp/issues/11534
+                      warning (FuncIsBetterOverloadResolutionDeprecation(denv,calledMeth.Method,m))
+                    | _ -> ()
+                  Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methods = 
                         let getMethodSlotsAndErrors methodSlot errors =

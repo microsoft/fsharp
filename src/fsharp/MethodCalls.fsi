@@ -213,6 +213,9 @@ type CalledMeth<'T> =
     member amap: ImportMap
     member infoReader: InfoReader
   
+    /// Get the CallerArg at index
+    member GetCallerArgAt: index: int -> CallerArg<'T>
+
 val NamesOfCalledArgs: calledArgs:CalledArg list -> Ident list
 
 type ArgumentAnalysis =

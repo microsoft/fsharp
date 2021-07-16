@@ -195,16 +195,17 @@ let GetRangeOfDiagnostic(err: PhasedDiagnostic) =
       | DeprecatedCommandLineOptionNoDescription(_, m)
       | InternalCommandLineOption(_, m)
       | HashIncludeNotAllowedInNonScript m
-      | HashReferenceNotAllowedInNonScript m
-      | HashDirectiveNotAllowedInNonScript m
-      | FileNameNotResolved(_, _, m)
-      | LoadedSourceNotFoundIgnoring(_, m)
-      | MSBuildReferenceResolutionWarning(_, _, m)
-      | MSBuildReferenceResolutionError(_, _, m)
-      | AssemblyNotResolved(_, m)
-      | HashLoadedSourceHasIssues(_, _, m)
-      | HashLoadedScriptConsideredSource m ->
-          Some m
+      | HashReferenceNotAllowedInNonScript m 
+      | HashDirectiveNotAllowedInNonScript m  
+      | FileNameNotResolved(_, _, m) 
+      | LoadedSourceNotFoundIgnoring(_, m) 
+      | MSBuildReferenceResolutionWarning(_, _, m) 
+      | MSBuildReferenceResolutionError(_, _, m) 
+      | AssemblyNotResolved(_, m) 
+      | HashLoadedSourceHasIssues(_, _, m) 
+      | HashLoadedScriptConsideredSource m
+      | FuncIsBetterOverloadResolutionDeprecation(m=m) ->
+        Some m
       // Strip TargetInvocationException wrappers
       | :? System.Reflection.TargetInvocationException as e ->
           RangeFromException e.InnerException
@@ -1376,6 +1377,10 @@ let OutputPhasedErrorR (os: StringBuilder) (err: PhasedDiagnostic) (canSuggestNa
       | FunctionValueUnexpected (denv, ty, _) ->
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           let errorText = FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)
+          os.Append errorText |> ignore
+
+      | FuncIsBetterOverloadResolutionDeprecation (method=method) ->
+          let _,errorText = FSComp.SR.funcIsBetterOverloadResolutionDeprecation(method.DisplayName)
           os.Append errorText |> ignore
 
       | UnitTypeExpected (denv, ty, _) ->
