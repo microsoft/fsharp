@@ -35,7 +35,7 @@ module async =
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Diagnostics/async)
-    //<Expects status="error" span="(7,18-7,19)" id="FS0001">All branches of an 'if' expression must return values of the same type as the first branch</Expects>
+    //<Expects status="error" span="(7,18-7,19)" id="FS0001">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../resources/tests/Diagnostics/async", Includes=[|"ReturnBangNonAsync_IfThenElse.fs"|])>]
     let ``async - ReturnBangNonAsync_IfThenElse.fs - --warnaserror+ --test:ErrorRanges --flaterrors`` compilation =
         compilation
@@ -44,7 +44,7 @@ module async =
         |> compile
         |> shouldFail
         |> withErrorCode 0001
-        |> withDiagnosticMessageMatches "All branches of an 'if' expression must return values of the same type as the first branch"
+        |> withDiagnosticMessageMatches "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch"
         |> ignore
 
     // This test was automatically generated (moved from FSharpQA suite - Diagnostics/async)

@@ -20,6 +20,7 @@ type LanguageFeature =
     | NullableOptionalInterop
     | DefaultInterfaceMemberConsumption
     | WitnessPassing
+    | AdditionalTypeDirectedConversions
     | InterfacesWithMultipleGenericInstantiation
     | StringInterpolation
     | OverloadsForCustomOperations

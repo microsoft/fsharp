@@ -87,6 +87,11 @@
         <target state="translated">程序集属性“{0}”引用了无法加载或不存在的设计器程序集“{1}”。报告的异常是: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">适用的计算表达式</target>
@@ -362,6 +367,11 @@
         <target state="translated">无法确定此脚本的 .NET SDK。如果脚本在使用 "global.json" 的目录中，请确保已安装相关的 .NET SDK。目录“{1}”中 "{0} --version" 的输出为“{2}”，退出代码为“{3}”。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
         <target state="translated">无法确定此脚本的 .NET SDK。找不到 dotnet.exe，请确保安装了 .NET SDK。</target>
@@ -405,6 +415,16 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">在开放类型声明中不允许使用 Byref 类型。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed">
+        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed2">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -553,12 +573,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">列表构造函数表达式的所有元素必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">数组构造函数表达式的所有元素必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
@@ -573,12 +593,12 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">if 表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">模式匹配表达式的所有分支必须返回相同类型的值。第一个分支返回“{0}”类型的值，但此分支返回“{1}”类型的值。</target>
         <note />
       </trans-unit>

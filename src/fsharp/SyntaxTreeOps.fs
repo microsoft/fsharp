@@ -564,7 +564,8 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
     let rhsExpr = List.foldBack (fun (c, e1) e2 -> SynExpr.LibraryOnlyStaticOptimization (c, e1, e2, mRhs)) staticOptimizations rhsExpr
     let rhsExpr, retTyOpt =
         match retInfo with
-        | Some (SynReturnInfo((ty, SynArgInfo(rAttribs, _, _)), tym)) -> SynExpr.Typed (rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs) )
+        | Some (SynReturnInfo((ty, SynArgInfo(rAttribs, _, _)), tym)) ->
+            SynExpr.Typed (rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs) )
         | None -> rhsExpr, None
     rhsExpr, retTyOpt
 

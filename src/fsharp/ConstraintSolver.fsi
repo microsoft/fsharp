@@ -107,6 +107,17 @@ type OverloadResolutionFailure =
                         * candidates: OverloadInformation list // methodNames may be different (with operators?), this is refactored from original logic to assemble overload failure message
                         * cx: TraitConstraintInfo option
 
+/// Represents known information prior to checking an expression or pattern, e.g. it's expected type
+type OverallTy = 
+    /// Each branch of the expression must have the type indicated
+    | MustEqual of TType
+
+    /// Each branch of the expression must convert to the type indicated
+    | MustConvertTo of ty: TType
+
+    /// Represents a point where no subsumption/widening is possible
+    member Commit: TType 
+
 exception ConstraintSolverTupleDiffLengths              of displayEnv: DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of displayEnv: DisplayEnv * contextInfo: ContextInfo * TType * TType * range * range
 exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEnv * TType * TType * range * range * ContextInfo
@@ -142,9 +153,9 @@ type OptionalTrace =
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
-val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: TType option -> CalledMeth<Expr> option * OperationResult<unit>
+val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: OverallTy option -> CalledMeth<Expr> option * OperationResult<unit>
 
-val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
+val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> OverallTy -> OperationResult<bool> 
 
 /// Remove the global constraints where these type variables appear in the support of the constraint 
 val EliminateConstraintsForGeneralizedTypars: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit 

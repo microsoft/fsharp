@@ -443,7 +443,3 @@ module OverloadedTypeNamesIncludingNonGenericTypeNoConstructors =
     let t3 = 3 |> OverloadedClassName.S // NO ERROR EXPECTED
     let t4 = 3 |> OverloadedClassName.S2 // expected error -  The field, constructor or member 'S2' is not defined
 
-module OptionTypeOpImplicitsIgnored =
-    let x1 : int option = 3
-    let x2 : string option = "a"
-

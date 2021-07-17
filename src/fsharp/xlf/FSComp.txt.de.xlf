@@ -87,6 +87,11 @@
         <target state="translated">Das Assemblyattribut "{0}" verweist auf eine Designerassembly "{1}", die entweder nicht geladen werden kann oder nicht vorhanden ist. Gemeldete Ausnahme: {2} – {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">applikative Berechnungsausdrücke</target>
@@ -372,6 +377,11 @@
         <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Unerwarteter Fehler: {0}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Dieses Feature wird in dieser Version von F# nicht unterstützt. Möglicherweise müssen Sie "/langversion:preview" hinzufügen, um dieses Feature zu verwenden.</target>
@@ -405,6 +415,16 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Byref-Typen sind in einer Deklaration für offene Typen nicht zulässig.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed">
+        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed2">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -553,12 +573,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">Alle Elemente eines Listenkonstruktorausdrucks müssen den gleichen Typ aufweisen. Es wurde erwartet, dass dieser Ausdruck den Typ "{0}" aufweist, hier liegt aber der Typ "{1}" vor.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">Alle Elemente eines Arraykonstruktorausdrucks müssen den gleichen Typ aufweisen. Es wurde erwartet, dass dieser Ausdruck den Typ "{0}" aufweist, hier liegt aber der Typ "{1}" vor.</target>
         <note />
       </trans-unit>
@@ -573,12 +593,12 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">Alle Branches eines if-Ausdrucks müssen den gleichen Typ aufweisen. Es wurde erwartet, dass dieser Ausdruck den Typ "{0}" aufweist, hier liegt aber der Typ "{1}" vor.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">Alle Branches eines Musterübereinstimmungsausdrucks müssen Werte des gleichen Typs zurückgeben. Der erste Branch hat einen Wert vom Typ "{0}" zurückgegeben, aber dieser Branch gab einen Wert vom Typ "{1}" zurück.</target>
         <note />
       </trans-unit>

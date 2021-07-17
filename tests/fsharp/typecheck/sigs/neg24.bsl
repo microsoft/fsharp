@@ -37,8 +37,4 @@ neg24.fs(313,38,313,39): typecheck error FS0020: The result of this expression h
 
 neg24.fs(313,47,313,48): typecheck error FS0020: The result of this expression has type 'int' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.
 
-neg24.fs(331,24,331,25): typecheck error FS0001: The 'if' expression needs to have type 'obj' to satisfy context type requirements. It currently has type 'int'.
-
-neg24.fs(337,30,337,31): typecheck error FS0001: The 'if' expression needs to have type 'obj' to satisfy context type requirements. It currently has type 'int'.
-
 neg24.fs(337,37,337,42): typecheck error FS0020: The result of this expression has type 'obj' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.

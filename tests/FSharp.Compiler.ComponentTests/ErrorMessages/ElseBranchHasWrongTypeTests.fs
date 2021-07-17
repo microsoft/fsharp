@@ -18,7 +18,7 @@ let y =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 5, Col 10, Line 5, Col 13,
-                                 "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'.")
+                                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'int'.")
 
     [<Fact>]
     let ``Else branch is a function that returns int while if branch is string``() =
@@ -32,7 +32,7 @@ let y =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 6, Col 10, Line 6, Col 14,
-                                 "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'.")
+                                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'int'.")
 
 
     [<Fact>]
@@ -50,7 +50,7 @@ let y =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 9, Col 10, Line 9, Col 13,
-                                 "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'.")
+                                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'int'.")
 
 
     [<Fact>]
@@ -70,7 +70,7 @@ let y =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 11, Col 10, Line 11, Col 13,
-                                 "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'int'.")
+                                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'int'.")
 
 
     [<Fact>]
@@ -151,7 +151,7 @@ let y : bool =
         |> shouldFail
         |> withDiagnostics [
             (Error 1, Line 4, Col 19, Line 4, Col 22, "The 'if' expression needs to have type 'bool' to satisfy context type requirements. It currently has type 'string'.")
-            (Error 1, Line 5, Col 10, Line 5, Col 13, "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'.")]
+            (Error 1, Line 5, Col 10, Line 5, Col 13, "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'bool'. This branch returns a value of type 'string'.")]
 
 
     [<Fact>]
@@ -166,6 +166,6 @@ else
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error   1,  Line 5, Col 19, Line 5, Col 22, "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'.")
-            (Error   1,  Line 6, Col 10, Line 6, Col 13, "All branches of an 'if' expression must return values of the same type as the first branch, which here is 'bool'. This branch returns a value of type 'string'.")
+            (Error   1,  Line 5, Col 19, Line 5, Col 22, "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'bool'. This branch returns a value of type 'string'.")
+            (Error   1,  Line 6, Col 10, Line 6, Col 13, "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'bool'. This branch returns a value of type 'string'.")
             (Warning 20, Line 3, Col 1,  Line 6, Col 13, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")]

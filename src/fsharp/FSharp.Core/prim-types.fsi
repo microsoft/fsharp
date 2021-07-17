@@ -2394,6 +2394,8 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="value">The input value</param>
         ///
+        /// <remarks>The F# compiler ignored this method when determining possible type-directed conversions. Instead, use <c>Some</c> or <c>None</c> explicitly.</remarks>
+        ///
         /// <returns>An option representing the value.</returns>
         /// <exclude />
         static member op_Implicit : value:'T -> 'T option
@@ -2468,6 +2470,8 @@ namespace Microsoft.FSharp.Core
         /// <summary>Implicitly converts a value into an optional that is a 'ValueSome' value.</summary>
         ///
         /// <param name="value">The input value</param>
+        ///
+        /// <remarks>The F# compiler ignored this method when determining possible type-directed conversions. Instead, use <c>Some</c> or <c>None</c> explicitly.</remarks>
         ///
         /// <returns>A voption representing the value.</returns>
         /// <exclude />

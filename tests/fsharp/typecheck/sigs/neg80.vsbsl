@@ -3,6 +3,6 @@ neg80.fsx(79,5,79,6): parse error FS0010: Unexpected symbol '|' in pattern match
 
 neg80.fsx(79,5,79,6): parse error FS0010: Unexpected symbol '|' in pattern matching
 
-neg80.fsx(79,6,79,6): typecheck error FS0001: All branches of a pattern match expression must return values of the same type as the first branch, which here is 'string'. This branch returns a value of type 'unit'.
+neg80.fsx(79,6,79,6): typecheck error FS0001: All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is 'string'. This branch returns a value of type 'unit'.
 
 neg80.fsx(76,11,76,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value 'Horizontal (_, _)' may indicate a case not covered by the pattern(s).

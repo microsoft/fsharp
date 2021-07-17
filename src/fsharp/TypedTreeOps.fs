@@ -3279,6 +3279,11 @@ let mkNullableTy (g: TcGlobals) ty = TType_app (g.system_Nullable_tcref, [ty])
 
 let mkListTy (g: TcGlobals) ty = TType_app (g.list_tcr_nice, [ty])
 
+let isValueOptionTy (g: TcGlobals) ty = 
+    match tryTcrefOfAppTy g ty with 
+    | ValueNone -> false
+    | ValueSome tcref -> tyconRefEq g g.valueoption_tcr_canon tcref
+
 let isOptionTy (g: TcGlobals) ty = 
     match tryTcrefOfAppTy g ty with 
     | ValueNone -> false

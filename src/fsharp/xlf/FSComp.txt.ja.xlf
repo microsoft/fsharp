@@ -87,6 +87,11 @@
         <target state="translated">アセンブリ属性 '{0}' は、デザイナー アセンブリ '{1}' を参照していますが、これは読み込むことができないか、存在していません。報告された例外: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">適用できる計算式</target>
@@ -362,6 +367,11 @@
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。ディレクトリ '{1}' の '{0} --version' からの出力は '{2}' で、終了コードは '{3}' でした。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。dotnet.exe が見つかりませんでした。 .NET SDK がインストールされていることをご確認ください。</target>
@@ -405,6 +415,16 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Byref 型は、オープン型宣言では使用できません。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed">
+        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed2">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -553,12 +573,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">リスト コンストラクター式のすべての要素は同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">配列コンストラクター式の要素はすべて同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
@@ -573,12 +593,12 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">if' 式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">パターン マッチ式のすべてのブランチは、同じ型の値を返す必要があります。最初のブランチが返した値の型は '{0}' ですが、このブランチが返した値の型は '{1}' です。</target>
         <note />
       </trans-unit>

@@ -87,6 +87,11 @@
         <target state="translated">'{0}' 어셈블리 특성이 로드할 수 없거나 존재하지 않는 디자이너 어셈블리'{1}'을(를) 참조합니다. 보고된 예외: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">적용 가능한 계산 식</target>
@@ -362,6 +367,11 @@
         <target state="translated">이 스크립트에 대한 .NET SDK를 확인할 수 없습니다. 스크립트가 'global.json'을 사용하는 디렉터리에 있는 경우 관련 .NET SDK가 설치되어 있는지 확인하세요. '{1}' 디렉터리에 있는 '{0} --version'의 출력은 '{2}'이고 종료 코드는 '{3}'입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="scriptSdkNotDeterminedNoHost">
         <source>The .NET SDK for this script could not be determined. dotnet.exe could not be found ensure a .NET SDK is installed.</source>
         <target state="translated">이 스크립트의 .NET SDK를 확인할 수 없습니다. dotnet.exe를 찾을 수 없습니다. .NET SDK가 설치되어 있는지 확인하세요.</target>
@@ -405,6 +415,16 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Byref 형식은 개방형 형식 선언에서 허용되지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed">
+        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed2">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -553,12 +573,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">목록 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">배열 생성자의 모든 요소는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
@@ -573,12 +593,12 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">if' 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">패턴 일치 식의 모든 분기는 동일한 형식의 값을 반환해야 합니다. 첫 번째 분기는 '{0}' 형식의 값을 반환했지만 이 분기는 '{1}' 형식의 값을 반환했습니다.</target>
         <note />
       </trans-unit>

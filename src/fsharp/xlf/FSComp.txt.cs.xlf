@@ -87,6 +87,11 @@
         <target state="translated">Atribut sestavení {0} odkazuje na navržené sestavení {1}, které se nedá načíst nebo neexistuje. Ohlášená výjimka: {2} – {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAdditionalImplicitConversions">
+        <source>implicit upcasts and other conversions for function returns, bindings and other expressions</source>
+        <target state="new">implicit upcasts and other conversions for function returns, bindings and other expressions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAndBang">
         <source>applicative computation expressions</source>
         <target state="translated">aplikativní výpočetní výrazy</target>
@@ -372,6 +377,11 @@
         <target state="translated">Sadu .NET SDK pro tento skript nešlo určit. Pokud se skript nachází v adresáři používajícím global.json, zkontrolujte, jestli je nainstalovaná odpovídající sada .NET SDK. Neočekávaná chyba {0}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousImplicitConversion">
+        <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
+        <target state="new">This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAndBangNotSupported">
         <source>This feature is not supported in this version of F#. You may need to add /langversion:preview to use this feature.</source>
         <target state="translated">Tato funkce se v této verzi jazyka F# nepodporuje. Abyste mohli tuto funkci používat, možná bude nutné přidat /langversion:preview.</target>
@@ -405,6 +415,16 @@
       <trans-unit id="tcIllegalByrefsInOpenTypeDeclaration">
         <source>Byref types are not allowed in an open type declaration.</source>
         <target state="translated">Typy Byref nejsou v deklaraci otevřeného typu povolené.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed">
+        <source>This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses an implicit conversion to convert type '{0}' to type '{1}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcImplicitConversionUsed2">
+        <source>This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</source>
+        <target state="new">This expression uses the implicit conversion '{0}' to convert type '{1}' to type '{2}'. Warnings are enabled for implicit conversions. Consider using an explicit conversion or disabling this warning.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterpolationMixedWithPercent">
@@ -553,12 +573,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">Všechny elementy výrazu konstruktoru seznamu musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="translated">Všechny elementy výrazu konstruktoru pole musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
@@ -573,12 +593,12 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">Všechny větve výrazu if musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
         <target state="translated">Všechny větve výrazu porovnání vzorů musí vracet hodnoty stejného typu. První větev vrátila hodnotu typu {0}, ale tato větev vrátila hodnotu typu {1}.</target>
         <note />
       </trans-unit>

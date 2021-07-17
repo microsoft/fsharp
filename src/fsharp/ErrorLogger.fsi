@@ -256,7 +256,7 @@ val CompleteD: OperationResult<unit>
 
 val ResultD: x:'a -> OperationResult<'a>
 
-val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> exn list option
+val CheckNoErrorsAndGetWarnings: res:OperationResult<'a> -> (exn list * 'a) option
 
 val ( ++ ): res:OperationResult<'a> -> f:('a -> OperationResult<'b>) -> OperationResult<'b>
 
@@ -302,7 +302,13 @@ val TryD: f:(unit -> OperationResult<'a>) -> g:(exn -> OperationResult<'a>) -> O
 
 val RepeatWhileD: nDeep:int -> body:(int -> OperationResult<bool>) -> OperationResult<unit>
 
-val AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+val inline AtLeastOneD: f:('a -> OperationResult<bool>) -> l:'a list -> OperationResult<bool>
+
+val inline AtLeastOne2D: f:('a -> 'b -> OperationResult<bool>) -> xs:'a list -> ys:'b list -> OperationResult<bool>
+
+val inline MapReduceD: mapper:('a -> OperationResult<'b>) -> zero: 'b -> reducer: ('b -> 'b -> 'b) -> l:'a list -> OperationResult<'b>
+
+val inline MapReduce2D: mapper:('a -> 'b -> OperationResult<'c>) -> zero: 'c -> reducer: ('c -> 'c -> 'c) -> xs:'a list -> ys:'b list -> OperationResult<'c>
 
 module OperationResult =
     val inline ignore: res:OperationResult<'a> -> OperationResult<unit>

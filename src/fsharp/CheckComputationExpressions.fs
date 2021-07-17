@@ -213,8 +213,9 @@ let RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects cenv env tpenv
         with e -> ())
 
 /// Used for all computation expressions except sequence expressions
-let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) = 
-
+let TcComputationExpression cenv env (overallTy: OverallTy) tpenv (mWhole, interpExpr: Expr, builderTy, comp: SynExpr) = 
+    let overallTy = overallTy.Commit
+    
     //dprintfn "TcComputationExpression, comp = \n%A\n-------------------\n" comp
     let ad = env.eAccessRights
 
@@ -1639,7 +1640,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | SynExpr.YieldOrReturn ((_, true), _, _) -> { env with eContextInfo = ContextInfo.ReturnInComputationExpression }
         | _ -> env
 
-    let lambdaExpr, tpenv= TcExpr cenv (builderTy --> overallTy) env tpenv lambdaExpr
+    let lambdaExpr, tpenv= TcExpr cenv (MustEqual (builderTy --> overallTy)) env tpenv lambdaExpr
     // beta-var-reduce to bind the builder using a 'let' binding
     let coreExpr = mkApps cenv.g ((lambdaExpr, tyOfExpr cenv.g lambdaExpr), [], [interpExpr], mBuilderVal)
 
@@ -1701,10 +1702,10 @@ let compileSeqExprMatchClauses (cenv: cenv) env inputExprMark (pat: Pattern, vsp
 /// These are later detected by state machine compilation. 
 ///
 /// Also "ienumerable extraction" is performed on arguments to "for".
-let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m = 
+let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m = 
 
     let genEnumElemTy = NewInferenceType ()
-    UnifyTypes cenv env m overallTy (mkSeqTy cenv.g genEnumElemTy)
+    UnifyTypes cenv env m overallTy.Commit (mkSeqTy cenv.g genEnumElemTy)
 
     // Allow subsumption at 'yield' if the element type is nominal prior to the analysis of the body of the sequence expression
     let flex = not (isTyparTy cenv.g genEnumElemTy)
@@ -1762,7 +1763,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             Some(tcSequenceExprBody env genOuterTy tpenv (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)))
 
         | SynExpr.While (spWhile, guardExpr, innerComp, _m) -> 
-            let guardExpr, tpenv = TcExpr cenv cenv.g.bool_ty env tpenv guardExpr
+            let guardExpr, tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) env tpenv guardExpr
             let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp
     
             let guardExprMark = guardExpr.Range
@@ -1779,7 +1780,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
 
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, spFinally) ->
             let innerExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp
-            let (unwindExpr: Expr), tpenv = TcExpr cenv cenv.g.unit_ty env tpenv unwindExpr
+            let unwindExpr, tpenv = TcExpr cenv (MustEqual cenv.g.unit_ty) env tpenv unwindExpr
             
             // We attach the debug points to the lambda expressions so we can fetch it out again in LowerComputedListOrArraySeqExpr
             let mTry = 
@@ -1820,7 +1821,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 Some(Expr.Sequential(stmt1, innerExpr2, NormalSeq, sp, m), tpenv)
 
         | SynExpr.IfThenElse (guardExpr, thenComp, elseCompOpt, spIfToThen, _isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
-            let guardExpr', tpenv = TcExpr cenv cenv.g.bool_ty env tpenv guardExpr
+            let guardExpr', tpenv = TcExpr cenv (MustEqual cenv.g.bool_ty) env tpenv guardExpr
             let thenExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv thenComp
             let elseComp = (match elseCompOpt with Some c -> c | None -> SynExpr.ImplicitZero mIfToThen)
             let elseExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv elseComp
@@ -1829,7 +1830,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
         // 'let x = expr in expr'
         | SynExpr.LetOrUse (_, false (* not a 'use' binding *), _, _, _) ->
             TcLinearExprs 
-                (fun ty envinner tpenv e -> tcSequenceExprBody envinner ty tpenv e) 
+                (fun overallTy envinner tpenv e -> tcSequenceExprBody envinner overallTy.Commit tpenv e) 
                 cenv env overallTy 
                 tpenv 
                 true
@@ -1843,7 +1844,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             let inputExprTy = NewInferenceType ()
             let pat', _, vspecs, envinner, tpenv = TcMatchPattern cenv bindPatTy env tpenv (pat, None)
             UnifyTypes cenv env m inputExprTy bindPatTy
-            let (inputExpr: Expr), tpenv = TcExpr cenv inputExprTy env tpenv rhsExpr
+            let inputExpr, tpenv = TcExpr cenv (MustEqual inputExprTy) env tpenv rhsExpr
             let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
             let mBind = 
                 match spBind with 
@@ -1894,7 +1895,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
 
         | _ -> None
                 
-    and tcSequenceExprBody env genOuterTy tpenv comp =
+    and tcSequenceExprBody env (genOuterTy: TType) tpenv comp =
         let res, tpenv = tcSequenceExprBodyAsSequenceOrStatement env genOuterTy tpenv comp 
         match res with 
         | Choice1Of2 expr -> 
@@ -1924,11 +1925,11 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 let stmt, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
                 Choice2Of2 stmt, tpenv
 
-    let coreExpr, tpenv = tcSequenceExprBody env overallTy tpenv comp
+    let coreExpr, tpenv = tcSequenceExprBody env overallTy.Commit tpenv comp
     let delayedExpr = mkDelayedExpr coreExpr.Range coreExpr
     delayedExpr, tpenv
 
-let TcSequenceExpressionEntry (cenv: cenv) env overallTy tpenv (isArrayOrList, isNotNakedRefCell, comp) m =
+let TcSequenceExpressionEntry (cenv: cenv) env (overallTy: OverallTy) tpenv (isArrayOrList, isNotNakedRefCell, comp) m =
     let implicitYieldEnabled = cenv.g.langVersion.SupportsFeature LanguageFeature.ImplicitYield
     let validateObjectSequenceOrRecordExpression = not implicitYieldEnabled
     if not isArrayOrList then 
@@ -1974,16 +1975,18 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 
 
-        let genCollElemTy = NewInferenceType ()
+      let genCollElemTy = NewInferenceType ()
 
-        let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+      let genCollTy = (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
 
-        UnifyTypes cenv env m overallTy genCollTy
-
+      // Propagating type directed conversion, e.g. for 
+      //     let x : seq<int64>  = [ yield 1; if true then yield 2 ]
+      TcPropagatingExprLeafThenConvert cenv overallTy genCollTy env (* canAdhoc  *) m (fun () ->
+        
         let exprty = mkSeqTy cenv.g genCollElemTy
 
         // Check the comprehension
-        let expr, tpenv = TcExpr cenv exprty env tpenv comp
+        let expr, tpenv = TcExpr cenv (MustEqual exprty) env tpenv comp
 
         let expr = mkCoerceIfNeeded cenv.g exprty (tyOfExpr cenv.g expr) expr
 
@@ -1996,7 +1999,7 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
                 // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
                 mkCallSeq cenv.g m genCollElemTy expr
                    
-        let expr = mkCoerceExpr(expr, exprty, expr.Range, overallTy)
+        let expr = mkCoerceExpr(expr, exprty, expr.Range, overallTy.Commit)
 
         let expr = 
             if isArray then 
@@ -2004,4 +2007,4 @@ let TcArrayOrListSequenceExpression (cenv: cenv) env overallTy tpenv (isArray, c
             else 
                 mkCallSeqToList cenv.g m genCollElemTy expr
                 
-        expr, tpenv
+        expr, tpenv)

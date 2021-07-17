@@ -543,9 +543,9 @@ let ResultD x = OkResult([], x)
 
 let CheckNoErrorsAndGetWarnings res = 
     match res with 
-    | OkResult (warns, _) -> Some warns
+    | OkResult (warns, res2) -> Some (warns, res2)
     | ErrorResult _ -> None 
-
+    
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue. 
 let (++) res f = 
     match res with 
@@ -616,7 +616,13 @@ let TryD f g =
 
 let rec RepeatWhileD nDeep body = body nDeep ++ (fun x -> if x then RepeatWhileD (nDeep+1) body else CompleteD) 
 
-let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
+let inline AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
+
+let inline AtLeastOne2D f xs ys = List.zip xs ys |> AtLeastOneD (fun (x,y) -> f x y)
+
+let inline MapReduceD mapper zero reducer l = MapD mapper l ++ (fun res -> ResultD (match res with [] -> zero | _ -> List.reduce reducer res))
+
+let inline MapReduce2D mapper zero reducer xs ys = List.zip xs ys |> MapReduceD (fun (x,y) -> mapper x y) zero reducer
 
 [<RequireQualifiedAccess>]
 module OperationResult =

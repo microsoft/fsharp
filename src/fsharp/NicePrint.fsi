@@ -58,7 +58,9 @@ val prettyLayoutOfMethInfoFreeStyle: infoReader:InfoReader -> m:range -> denv:Di
 
 val prettyLayoutOfPropInfoFreeStyle: g:TcGlobals -> amap:ImportMap -> m:range -> denv:DisplayEnv -> d:PropInfo -> Layout
 
-val stringOfMethInfo: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> d:MethInfo -> string
+val stringOfMethInfo: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> minfo:MethInfo -> string
+
+val multiLineStringOfMethInfos: infoReader:InfoReader -> m:range -> denv:DisplayEnv -> minfos:MethInfo list -> string
 
 val stringOfParamData: denv:DisplayEnv -> paramData:ParamData -> string
 
