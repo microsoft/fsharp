@@ -10,6 +10,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -36,16 +37,19 @@ val NewInferenceTypes: 'a list -> TType list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-val FreshenAndFixupTypars: range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
+val FreshenAndFixupTypars : ITraitContext option -> range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypeInst: range -> Typars -> Typars * TyparInst * TType list
+/// Make new type inference variables for the use of a generic construct at a particular location
+val FreshenTypeInst : ITraitContext option -> range -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypars: range -> Typars -> TType list
+/// Make new type inference variables for the use of a generic construct at a particular location
+val FreshenTypars : ITraitContext option -> range -> Typars -> TType list
 
-val FreshenMethInfo: range -> MethInfo -> TType list
+/// Make new type inference variables for the use of a method at a particular location
+val FreshenMethInfo : ITraitContext option -> range -> MethInfo -> TType list
 
 [<RequireQualifiedAccess>] 
-/// Information about the context of a type equation.
+/// Information about the context of a type equation, for better error reporting
 type ContextInfo =
 
     /// No context was given.
@@ -205,6 +209,13 @@ val CodegenWitnessArgForTraitConstraint : TcValF -> TcGlobals -> ImportMap -> ra
 /// to its constraints and applies that solution by using a constraint.
 val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
 
-val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool
+/// Apply defaults arising from 'default' constraints in FSharp.Core
+/// for any unsolved free inference type variables.
+val ApplyDefaultsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar list -> unit
 
-val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
+/// Choose solutions for any remaining unsolved free inference type variables.
+val ChooseSolutionsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar list -> unit
+
+val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> ITraitContext option -> MethInfo -> TType -> bool
+
+val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> bool -> unit

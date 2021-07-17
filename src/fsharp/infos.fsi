@@ -98,11 +98,11 @@ val ImportReturnTypeFromMetadata: amap:ImportMap -> m:range -> ilty:ILType -> ca
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-val CopyTyparConstraints: m:range -> tprefInst:TypedTreeOps.TyparInst -> tporig:Typar -> TyparConstraint list
+val CopyTyparConstraints: traitCtxt: ITraitContext option -> m:range -> tprefInst:TypedTreeOps.TyparInst -> tporig:Typar -> TyparConstraint list
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
-val FixupNewTypars: m:range -> formalEnclosingTypars:Typars -> tinst:TType list -> tpsorig:Typars -> tps:Typars -> TypedTreeOps.TyparInst * TTypes
+val FixupNewTypars: traitCtxt: ITraitContext option -> m:range -> formalEnclosingTypars:Typars -> tinst:TType list -> tpsorig:Typars -> tps:Typars -> TypedTreeOps.TyparInst * TTypes
 
 type ValRef with
     /// Indicates if an F#-declared function or member value is a CLIEvent property compiled as a .NET event
@@ -371,6 +371,8 @@ type MethInfo =
     | ProvidedMeth of amap: Import.ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
 #endif
 
+    interface ITraitExtensionMember
+
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member ApparentEnclosingAppType: TType
 
@@ -556,7 +558,7 @@ type MethInfo =
     member GetParamTypes: amap:ImportMap * m:range * minst:TType list -> TType list list
 
     /// Get the signature of an abstract method slot.
-    member GetSlotSig: amap:ImportMap * m:range -> SlotSig
+    member GetSlotSig: amap:ImportMap * m:range * traitCtxt: ITraitContext option -> SlotSig
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member HasParamArrayArg: amap:ImportMap * m:range * minst:TType list -> bool

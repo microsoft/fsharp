@@ -72,11 +72,11 @@ neg60.fs(71,36,71,40): typecheck error FS0043: The type 'System.Nullable<int>' d
 
 neg60.fs(77,16,77,19): typecheck error FS0043: The type 'System.Nullable<int>' does not support the operator '?>='. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.
 
-neg60.fs(78,16,78,19): typecheck error FS0043: None of the types 'System.Nullable<int>, int' support the operator '?>='. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.
+neg60.fs(78,16,78,19): typecheck error FS0043: The types 'System.Nullable<int>, int' do not support the operator '?>='. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.
 
-neg60.fs(79,18,79,21): typecheck error FS0001: The type ''a * 'b' does not match the type 'int'
+neg60.fs(79,18,79,21): typecheck error FS0001: Expecting a type supporting the operator '+' but given a tuple type
 
-neg60.fs(79,15,79,16): typecheck error FS0043: The type ''a * 'b' does not match the type 'int'
+neg60.fs(79,15,79,16): typecheck error FS0043: Expecting a type supporting the operator '+' but given a tuple type
 
 neg60.fs(80,22,80,25): typecheck error FS0001: Expecting a type supporting the operator '+' but given a tuple type
 

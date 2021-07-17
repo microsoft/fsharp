@@ -111,4 +111,4 @@ neg74.fsx(242,1,242,3): parse error FS0058: Possible incorrect indentation: this
 
 neg74.fsx(254,1,254,1): parse error FS0010: Incomplete structured construct at or before this point in implementation file
 
-neg74.fsx(183,52,183,53): typecheck error FS0043: The type 'unit' does not match the type 'float<AU/s>'
+neg74.fsx(183,52,183,53): typecheck error FS0043: The types 'float<AU/s>, unit' do not support the operator '+'

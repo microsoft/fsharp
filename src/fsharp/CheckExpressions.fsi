@@ -51,7 +51,8 @@ type UngeneralizableItem
 /// resolution environment, the ungeneralizable items from earlier in the scope
 /// and other information about the scope.
 type TcEnv =
-    { /// Name resolution information 
+    { 
+      /// Name resolution information 
       eNameResEnv: NameResolutionEnv 
 
       /// The list of items in the environment that may contain free inference 
@@ -103,6 +104,9 @@ type TcEnv =
     member DisplayEnv : DisplayEnv
     member NameEnv : NameResolution.NameResolutionEnv
     member AccessRights : AccessorDomain
+    member TraitContext : ITraitContext option
+
+    interface ITraitContext
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to 
@@ -157,7 +161,7 @@ exception InvalidInternalsVisibleToAssemblyName of (*badName*)string * (*fileNam
 
 val TcFieldInit : range -> ILFieldInit -> Const
 
-val LightweightTcValForUsingInBuildMethodCall : g : TcGlobals -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
+val LightweightTcValForUsingInBuildMethodCall: g: TcGlobals -> traitCtxt: ITraitContext option -> vref:ValRef -> vrefFlags : ValUseFlag -> vrefTypeInst : TTypes -> m : range -> Expr * TType
 
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)
@@ -572,7 +576,7 @@ val FixupLetrecBind: cenv:TcFileState -> denv:DisplayEnv -> generalizedTyparsFor
 
 /// Produce a fresh view of an object type, e.g. 'List<T>' becomes 'List<?>' for new
 /// inference variables with the given rigidity.
-val FreshenObjectArgType: cenv: TcFileState -> m: range -> rigid: TyparRigidity -> tcref: TyconRef -> isExtrinsic: bool -> declaredTyconTypars: Typar list -> TType * Typar list * TyparInst * TType * TType
+val FreshenObjectArgType: cenv:TcFileState -> traitFreshner:ITraitContext option -> m:range -> rigid:TyparRigidity -> tcref:TyconRef -> isExtrinsic:bool -> declaredTyconTypars:Typar list -> TType * Typar list * TyparInst * TType * TType    
 
 /// Get the accumulated module/namespace type for the current module/namespace being processed.
 val GetCurrAccumulatedModuleOrNamespaceType: env: TcEnv -> ModuleOrNamespaceType

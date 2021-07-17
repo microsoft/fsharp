@@ -57,6 +57,7 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.MethodCalls
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
@@ -113,30 +114,27 @@ let NewByRefKindInferenceType (g: TcGlobals) m =
 
 let NewInferenceTypes l = l |> List.map (fun _ -> NewInferenceType ()) 
 
-// QUERY: should 'rigid' ever really be 'true'? We set this when we know 
-// we are going to have to generalize a typar, e.g. when implementing a 
-// abstract generic method slot. But we later check the generalization 
-// condition anyway, so we could get away with a non-rigid typar. This 
-// would sort of be cleaner, though give errors later. 
-let FreshenAndFixupTypars m rigid fctps tinst tpsorig = 
-    let copy_tyvar (tp: Typar) =  NewCompGenTypar (tp.Kind, rigid, tp.StaticReq, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
+let FreshenAndFixupTypars (traitCtxt: ITraitContext option) m rigid fctps tinst tpsorig = 
+    let copy_tyvar (tp: Typar) = NewCompGenTypar (tp.Kind, rigid, tp.StaticReq, (if rigid=TyparRigidity.Rigid then TyparDynamicReq.Yes else TyparDynamicReq.No), false)
     let tps = tpsorig |> List.map copy_tyvar 
-    let renaming, tinst = FixupNewTypars m fctps tinst tpsorig tps
+    let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-let FreshenTypeInst m tpsorig = FreshenAndFixupTypars m TyparRigidity.Flexible [] [] tpsorig 
+let FreshenTypeInst traitCtxt m tpsorig =
+    FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible [] [] tpsorig 
 
-let FreshMethInst m fctps tinst tpsorig = FreshenAndFixupTypars m TyparRigidity.Flexible fctps tinst tpsorig 
+let FreshenMethInst traitCtxt m fctps tinst tpsorig =
+    FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig 
 
-let FreshenTypars m tpsorig = 
+let FreshenTypars traitCtxt m tpsorig = 
     match tpsorig with 
     | [] -> []
     | _ -> 
-        let _, _, tptys = FreshenTypeInst m tpsorig
+        let _, _, tptys = FreshenTypeInst traitCtxt m tpsorig
         tptys
 
-let FreshenMethInfo m (minfo: MethInfo) =
-    let _, _, tptys = FreshMethInst m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
+let FreshenMethInfo traitCtxt m (minfo: MethInfo) =
+    let _, _, tptys = FreshenMethInst traitCtxt m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tptys
 
 //-------------------------------------------------------------------------
@@ -324,9 +322,44 @@ let rec occursCheck g un ty =
 /// During code gen we run with permitWeakResolution on, but we only apply it where one of the argument types for the built-in constraint resolution is
 /// a variable type.
 type PermitWeakResolution = 
-    | Yes
+
+    /// Represents the point where we are generalizing inline code
+    | LegacyYesAtInlineGeneralization
+    
+    /// Represents points where we are choosing a default solution to trait constraints
+    | YesAtChooseSolution
+
+    /// Represents invocations of the constraint solver during codegen or inlining to determine witnesses
+    | LegacyYesAtCodeGen
+
+    /// No weak resolution allowed
     | No
-    member x.Permit = match x with Yes -> true | No -> false
+
+    /// Determine if the weak resolution flag means we perform overload resolution
+    /// based on weak information.
+    member x.PerformWeakOverloadResolution (g: TcGlobals) =
+        if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
+            match x with
+            | YesAtChooseSolution -> true
+            | LegacyYesAtCodeGen
+            | LegacyYesAtInlineGeneralization
+            | No -> false
+        else
+            //legacy 
+            match x with
+            | YesAtChooseSolution
+            | LegacyYesAtCodeGen
+            | LegacyYesAtInlineGeneralization -> true
+            | No -> false
+
+// Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
+let GetMeasureOfType g ty =
+    match ty with 
+    | AppTy g (tcref, [tyarg]) ->
+        match stripTyEqns g tyarg with  
+        | TType_measure ms when not (measureEquiv g ms Measure.One) -> Some (tcref, ms)
+        | _ -> None
+    | _ -> None
 
 let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
@@ -371,9 +404,28 @@ let isFpTy g ty =
 let isDecimalTy g ty = 
     typeEquivAux EraseMeasures g g.decimal_ty ty 
 
+// int*, int*<_> float*, float<_>*, enums
+//
+// Addition is supported on these via built-in resolution.  Note even on enums, so
+//    System.DayOfWeek.Monday + System.DayOfWeek.Tuesday
+// is allowed 
 let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
 
+// int*, int*<_> float*, float<_>*, enums, decimal, decimal<_>
+//
+// This is used for one side of multiplication supported via built-in resolution
 let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
+
+// decimal<_> but not decimal
+let IsUnitizedDecimalType g ty = 
+    Option.isSome (GetMeasureOfType g ty) && isDecimalTy g ty
+
+// int*, int*<_> float*, float<_>*, enums, decimal<_> but NOT plain decimal
+//
+// This is used for other side of multiplication supported via built-in resolution
+
+let IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g ty = 
+    IsNonDecimalNumericOrIntegralEnumType g ty || IsUnitizedDecimalType g ty
 
 let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
 
@@ -384,20 +436,97 @@ let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g 
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
-let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
+let IsAddSubModType nm g ty =
+    IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
 
 /// Checks the argument type for a built-in solution to a bitwise operator constraint
 let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
 
-/// Check the other type in a built-in solution for a binary operator.
-/// For weak resolution, require a relevant primitive on one side.
-/// For strong resolution, a variable type is permitted.
-let IsBinaryOpOtherArgType g permitWeakResolution ty = 
+// For weak resolution, require a relevant primitive on one side
+// For strong resolution
+//    - if there are relevant methods require an exact primitive on the other side.
+//    - if there are no relevant methods just require a non-variable type on the other side.
+let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 = 
+    p1 ty1 && 
+    
     match permitWeakResolution with 
+    // During regular inference we apply a builtin resolution if either there are no relevant methods to solve traits (and the type is nominal), or if
+    // there are relevant methods we check that the type is precisely correct
     | PermitWeakResolution.No -> 
-        not (isTyparTy g ty) 
+        if isNil minfos then 
+            // compat path
+            not (isTyparTy g ty2) &&
+            // All built-in rules only apply in cases where left and right operator types are equal (after
+            // erasing units)
+            typeEquivAux EraseMeasures g ty1 ty2
+        else
+            // normal path - for builtin binary op solutions we check the underlying types are equivalent
+            p2 ty2 &&
+            // all built-in rules only apply in cases where left and right operator types are equal (after
+            // erasing units)
+            typeEquivAux EraseMeasures g ty1 ty2
 
-    | PermitWeakResolution.Yes -> true
+    // During regular canonicalization (weak resolution) we don't do any check on the other type at all - we 
+    // ignore the possibility that method overloads may resolve the constraint
+    | PermitWeakResolution.LegacyYesAtInlineGeneralization
+    | PermitWeakResolution.YesAtChooseSolution -> 
+        // weak resolution lets the other type be a variable type
+        isTyparTy g ty2 || 
+        // If the other type is not a variable type, it is nominal,
+        // and all built-in rules only apply in cases where left and right operator types are equal (after
+        // erasing units)
+        typeEquivAux EraseMeasures g ty1 ty2
+    
+    // During codegen we only apply a builtin resolution if both the types are correct
+    | PermitWeakResolution.LegacyYesAtCodeGen ->
+        p2 ty2 &&
+        // All built-in rules only apply in cases where left and right operator types are equal (after
+        // erasing units)
+        typeEquivAux EraseMeasures g ty1 ty2
+    
+let IsSymmetricBinaryOpArgTypePair p permitWeakResolution minfos g ty1 ty2 = 
+    IsBinaryOpArgTypePair p p permitWeakResolution minfos g ty1 ty2 ||
+    IsBinaryOpArgTypePair p p permitWeakResolution minfos g ty2 ty1
+    
+/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that a
+/// type supports the op_Addition, op_Subtraction or op_Modulus static members
+let IsAddSubModTypePair nm permitWeakResolution minfos g ty1 ty2 =
+    IsSymmetricBinaryOpArgTypePair (IsAddSubModType nm g) permitWeakResolution minfos g ty1 ty2  
+
+/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
+/// a type supports the op_LessThan, op_LessThanOrEqual, op_GreaterThan, op_GreaterThanOrEqual, op_Equality or op_Inequality static members
+let IsRelationalOpArgTypePair permitWeakResolution minfos g ty1 ty2 =
+    IsSymmetricBinaryOpArgTypePair (IsRelationalType g) permitWeakResolution minfos g ty1 ty2  
+
+/// Checks if the knowledge we have of the argument types is enough to commit to a path that simulates that
+/// a type supports the op_BitwiseAnd, op_BitwiseOr or op_ExclusiveOr static members
+let IsBitwiseOpArgTypePair permitWeakResolution minfos g ty1 ty2 =
+    IsSymmetricBinaryOpArgTypePair (IsBitwiseOpType g) permitWeakResolution minfos g ty1 ty2  
+
+// So 
+//    decimal<_> * decimal<_>
+//    decimal<_> * decimal
+//    decimal * decimal<_>
+// are supported via built-in resolution, but
+//    decimal * decimal
+// is not since there is an op_Multiply call available for that.
+//
+// Note 
+//     System.DayOfWeek.Monday * System.DayOfWeek.Tuesday
+// is allowed for enums, somewhat weirdly but that's how it is
+//
+let IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty1 ty2 =
+    IsBinaryOpArgTypePair 
+        (IsNumericOrIntegralEnumType g) 
+        (IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g)
+        permitWeakResolution 
+        minfos 
+        g 
+        ty1 ty2  
+
+let IsMulDivTypeArgPair permitWeakResolution minfos g ty1 ty2 =
+    IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty1 ty2 || 
+    IsMulDivTypeArgPairOneWay permitWeakResolution minfos g ty2 ty1
 
 /// Checks the argument type for a built-in solution to a get_Sign constraint.
 let IsSignType g ty =
@@ -1211,8 +1340,9 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 ///    will deal with the problem. 
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
-and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
-    let (TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln)) = traitInfo
+and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload (permitWeakResolution: PermitWeakResolution) ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
+    let (TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln, traitCtxt)) = traitInfo
+    let traitAD = match traitCtxt with None -> AccessorDomain.AccessibleFromEverywhere | Some c -> (c.AccessRights :?> AccessorDomain)
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
     let g = csenv.g
@@ -1227,7 +1357,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     let tys = ListSet.setify (typeAEquiv g aenv) tys
 
     // Rebuild the trait info after removing duplicates 
-    let traitInfo = TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln)
+    let traitInfo = TTrait(tys, nm, memFlags, traitObjAndArgTys, rty, sln, traitCtxt)
     let rty = GetFSharpViewOfReturnType g rty    
     
     // Assert the object type if the constraint is for an instance member    
@@ -1235,6 +1365,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         match tys, traitObjAndArgTys with 
         | [ty], (h :: _) -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace h ty 
         | _ -> do! ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
+
     // Trait calls are only supported on pseudo type (variables) 
     for e in tys do
         do! SolveTypStaticReq csenv trace TyparStaticReq.HeadType e
@@ -1245,45 +1376,10 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
         
     let! res = 
      trackErrors {
-      match minfos, tys, memFlags.IsInstance, nm, argtys with 
-      | _, _, false, ("op_Division" | "op_Multiply"), [argty1;argty2]
+      match tys, memFlags.IsInstance, nm, argtys with 
+      | _, false, ("op_Division" | "op_Multiply"), [argty1;argty2]
           when 
-               // This simulates the existence of 
-               //    float * float -> float
-               //    float32 * float32 -> float32
-               //    float<'u> * float<'v> -> float<'u 'v>
-               //    float32<'u> * float32<'v> -> float32<'u 'v>
-               //    decimal<'u> * decimal<'v> -> decimal<'u 'v>
-               //    decimal<'u> * decimal -> decimal<'u>
-               //    float32<'u> * float32<'v> -> float32<'u 'v>
-               //    int * int -> int
-               //    int64 * int64 -> int64
-               //
-               // The rule is triggered by these sorts of inputs when permitWeakResolution=false
-               //    float * float 
-               //    float * float32 // will give error 
-               //    decimal<m> * decimal<m>
-               //    decimal<m> * decimal  <-- Note this one triggers even though "decimal" has some possibly-relevant methods
-               //    float * Matrix // the rule doesn't trigger for this one since Matrix has overloads we can use and we prefer those instead
-               //    float * Matrix // the rule doesn't trigger for this one since Matrix has overloads we can use and we prefer those instead
-               //
-               // The rule is triggered by these sorts of inputs when permitWeakResolution=true
-               //    float * 'a 
-               //    'a * float 
-               //    decimal<'u> * 'a
-                  (let checkRuleAppliesInPreferenceToMethods argty1 argty2 = 
-                     // Check that at least one of the argument types is numeric
-                     IsNumericOrIntegralEnumType g argty1 && 
-                     // Check the other type is nominal, unless using weak resolution
-                     IsBinaryOpOtherArgType g permitWeakResolution argty2 &&
-                     // This next condition checks that either 
-                     //   - Neither type contributes any methods OR
-                     //   - We have the special case "decimal<_> * decimal". In this case we have some 
-                     //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (isNil minfos || (Option.isSome (getMeasureOfType g argty1) && isDecimalTy g argty2)) in
-
-                   checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
-                   checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
+               IsMulDivTypeArgPair permitWeakResolution minfos g argty1 argty2 ->
                    
           match getMeasureOfType g argty1 with
           | Some (tcref, ms1) -> 
@@ -1307,52 +1403,48 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
               return TTraitBuiltIn
 
-      | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
-          when // Ignore any explicit +/- overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
-                (   IsAddSubModType nm g argty1 && IsBinaryOpOtherArgType g permitWeakResolution argty2
-                 || IsAddSubModType nm g argty2 && IsBinaryOpOtherArgType g permitWeakResolution argty1)) -> 
+      | _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
+          when  IsAddSubModTypePair nm permitWeakResolution minfos g argty1 argty2 -> 
+
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
-      | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
-          when // Ignore any explicit overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
-                (   IsRelationalType g argty1 && IsBinaryOpOtherArgType g permitWeakResolution argty2
-                 || IsRelationalType g argty2 && IsBinaryOpOtherArgType g permitWeakResolution argty1)) -> 
+      | _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
+          when IsRelationalOpArgTypePair permitWeakResolution minfos g argty1 argty2 ->
+
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.bool_ty
           return TTraitBuiltIn
 
       // We pretend for uniformity that the numeric types have a static property called Zero and One 
       // As with constants, only zero is polymorphic in its units
-      | [], [ty], false, "get_Zero", [] 
+      | [ty], false, "get_Zero", [] 
           when IsNumericType g ty || isCharTy g ty -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ty
           return TTraitBuiltIn
 
-      | [], [ty], false, "get_One", [] 
+      | [ty], false, "get_One", [] 
           when IsNumericType g ty || isCharTy g ty -> 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ty
           return TTraitBuiltIn
 
-      | [], _, false, "DivideByInt", [argty1;argty2] 
+      | _, false, "DivideByInt", [argty1;argty2] 
           when isFpTy g argty1 || isDecimalTy g argty1 -> 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           return TTraitBuiltIn
 
       // We pretend for uniformity that the 'string' and 'array' types have an indexer property called 'Item' 
-      | [], [ty], true, "get_Item", [argty1] 
+      | [ty], true, "get_Item", [argty1] 
           when isStringTy g ty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty1 g.int_ty 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.char_ty
           return TTraitBuiltIn
 
-      | [], [ty], true, "get_Item", argtys
+      | [ty], true, "get_Item", argtys
           when isArrayTy g ty -> 
 
           if rankOfArrayTy g ty <> argtys.Length then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2))
@@ -1362,7 +1454,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty ety
           return TTraitBuiltIn
 
-      | [], [ty], true, "set_Item", argtys
+      | [ty], true, "set_Item", argtys
           when isArrayTy g ty -> 
           
           if rankOfArrayTy g ty <> argtys.Length - 1 then do! ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2))
@@ -1373,55 +1465,54 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace ety etys
           return TTraitBuiltIn
 
-      | [], _, false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argty1;argty2] 
-          when    IsBitwiseOpType g argty1 && IsBinaryOpOtherArgType g permitWeakResolution argty2
-               || IsBitwiseOpType g argty2 && IsBinaryOpOtherArgType g permitWeakResolution argty1 -> 
+      | _, false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argty1;argty2] 
+          when IsBitwiseOpArgTypePair permitWeakResolution minfos g argty1 argty2 -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
           return TTraitBuiltIn
 
-      | [], _, false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
-          when    IsIntegerOrIntegerEnumTy g argty1  -> 
+      | _, false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
+          when IsIntegerOrIntegerEnumTy g argty1  -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
           return TTraitBuiltIn
 
-      | _, _, false, "op_UnaryPlus", [argty] 
+      | _, false, "op_UnaryPlus", [argty] 
           when IsNumericOrIntegralEnumType g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, "op_UnaryNegation", [argty] 
+      | _, false, "op_UnaryNegation", [argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, true, "get_Sign", [] 
+      | _, true, "get_Sign", [] 
           when IsSignType g tys.Head -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty g.int32_ty
           return TTraitBuiltIn
 
-      | _, _, false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
+      | _, false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
           when IsIntegerOrIntegerEnumTy g argty  -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty
           return TTraitBuiltIn
 
-      | _, _, false, "Abs", [argty] 
+      | _, false, "Abs", [argty] 
           when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, "Sqrt", [argty1] 
+      | _, false, "Sqrt", [argty1] 
           when isFpTy g argty1 ->
           match getMeasureOfType g argty1 with
             | Some (tcref, _) -> 
@@ -1433,14 +1524,15 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
               return TTraitBuiltIn
 
-      | _, _, false, ("Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10" | "Log" | "Sqrt"), [argty] 
+      | _, false, ("Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10" | "Log" | "Sqrt"), [argty] 
           when isFpTy g argty -> 
 
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty
           return TTraitBuiltIn
 
-      | _, _, false, "op_Explicit", [argty] 
+      // Simulate solutions to op_Implicit and op_Explicit
+      | _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (IsNonDecimalNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
@@ -1453,7 +1545,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
 
-      | _, _, false, "op_Explicit", [argty] 
+      | _, false, "op_Explicit", [argty] 
           when (// The input type. 
                 (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
                 // The output type
@@ -1461,16 +1553,17 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
 
           return TTraitBuiltIn
 
-      | [], _, false, "Pow", [argty1; argty2] 
+      | _, false, "Pow", [argty1; argty2] 
           when isFpTy g argty1 -> 
           
           do! SolveDimensionlessNumericType csenv ndeep m2 trace argty1
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
-          do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
+          do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1 
           return TTraitBuiltIn
 
-      | _, _, false, "Atan2", [argty1; argty2] 
+      | _, false, "Atan2", [argty1; argty2] 
           when isFpTy g argty1 -> 
+
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argty2 argty1
           match getMeasureOfType g argty1 with
           | None -> do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace rty argty1
@@ -1489,11 +1582,11 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   let propName = nm.[4..]
                   let props = 
                     tys |> List.choose (fun ty -> 
-                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, AccessibleFromEverywhere) FindMemberFlag.IgnoreOverrides m ty with
+                        match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, traitAD) FindMemberFlag.IgnoreOverrides m ty with
                         | Some (RecdFieldItem rfinfo) 
                               when (isGetProp || rfinfo.RecdField.IsMutable) && 
                                    (rfinfo.IsStatic = not memFlags.IsInstance) && 
-                                   IsRecdFieldAccessible amap m AccessibleFromEverywhere rfinfo.RecdFieldRef &&
+                                   IsRecdFieldAccessible amap m traitAD rfinfo.RecdFieldRef &&
                                    not rfinfo.LiteralValue.IsSome && 
                                    not rfinfo.RecdField.IsCompilerGenerated -> 
                             Some (rfinfo, isSetProp)
@@ -1553,18 +1646,20 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   minfos 
                     // curried members may not be used to satisfy constraints
                     |> List.choose (fun minfo ->
-                          if minfo.IsCurried then None else
-                          let callerArgs = 
-                            { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
-                              Named = [ [ ] ] }
-                          let minst = FreshenMethInfo m minfo
-                          let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                          Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, callerArgs, false, false, None)))
+                          if minfo.IsCurried then 
+                              None 
+                          else
+                              let callerArgs = 
+                                { Unnamed = [ (argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))) ]
+                                  Named = [ [ ] ] }
+                              let minst = FreshenMethInfo traitCtxt m minfo
+                              let callerObjTys = if memFlags.IsInstance then [ List.head traitObjAndArgTys  ] else []
+                              Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo traitCtxt, m, traitAD, minfo, minst, minst, None, callerObjTys, callerArgs, false, false, None)))
               
               let methOverloadResult, errors = 
                   trace.CollectThenUndoOrCommit
                       (fun (a, _) -> Option.isSome a)
-                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty AccessibleFromEverywhere calledMethGroup false (Some rty))
+                      (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) CallerArgs.Empty traitAD calledMethGroup false (Some rty))
 
               match anonRecdPropSearch, recdPropSearch, methOverloadResult with 
               | Some (anonInfo, tinst, i), None, None -> 
@@ -1602,17 +1697,19 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   // If there's nothing left to learn then raise the errors.
                   // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
                   // reasons we use the more restrictive isNil frees.
-                  if (permitWeakResolution.Permit && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
+                  if (permitWeakResolution.PerformWeakOverloadResolution g && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
                       do! errors  
-                  // Otherwise re-record the trait waiting for canonicalization 
                   else
                       do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
-
-                  match errors with
-                  | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
-                      return! ErrorD AbortForFailedOverloadResolution
-                  | _ -> 
+                  
+                  if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
                       return TTraitUnsolved
+                  else
+                      match errors with
+                      | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
+                          return! ErrorD AbortForFailedOverloadResolution
+                      | _ -> 
+                          return TTraitUnsolved
      }
     return! RecordMemberConstraintSolution csenv.SolverState m trace traitInfo res
   }
@@ -1625,7 +1722,7 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
         ResultD false
 
     | TTraitSolved (minfo, minst) -> 
-        let sln = MemberConstraintSolutionOfMethInfo css m minfo minst
+        let sln = MemberConstraintSolutionOfMethInfo css m traitInfo.TraitContext minfo minst
         TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
@@ -1644,7 +1741,7 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
         ResultD true
 
 /// Convert a MethInfo into the data we save in the TAST
-and MemberConstraintSolutionOfMethInfo css m minfo minst = 
+and MemberConstraintSolutionOfMethInfo css m traitCtxt minfo minst = 
 #if !NO_EXTENSIONTYPING
 #else
     // to prevent unused parameter warning
@@ -1656,8 +1753,8 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
        let iltref = ilMeth.ILExtensionMethodDeclaringTyconRef |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
        ILMethSln(ilMeth.ApparentEnclosingType, iltref, mref, minst)
 
-    | FSMeth(_, ty, vref, _) ->  
-       FSMethSln(ty, vref, minst)
+    | FSMeth(_, ty, vref, extInfo) ->  
+       FSMethSln(ty, vref, minst, extInfo.IsSome)
 
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
@@ -1668,7 +1765,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
         let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
         let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.ApparentEnclosingType] else []) |> List.unzip
-        let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
+        let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, traitCtxt, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
         let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
 
         // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
@@ -1693,11 +1790,20 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
     let prev = traitInfo.Solution 
     trace.Exec (fun () -> traitInfo.Solution <- Some sln) (fun () -> traitInfo.Solution <- prev)
 
+and GetRelevantExtensionMethodsForTrait m (infoReader: InfoReader) (traitInfo: TraitConstraintInfo) =
+    match traitInfo.TraitContext with 
+    | None -> []
+    | Some traitCtxt -> 
+        [ for extMethInfo in traitCtxt.SelectExtensionMethods(traitInfo, m, infoReader=infoReader) do
+              yield (extMethInfo :?> MethInfo) ]
+
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
-and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argtys, rty, soln) as traitInfo): MethInfo list =
+and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argtys, rty, soln, traitCtxt) as traitInfo) : MethInfo list =
+    //let traitAD = traitCtxt.AccessRights :?> AccessorDomain
+    
     let results = 
-        if permitWeakResolution.Permit || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
+        if permitWeakResolution.PerformWeakOverloadResolution csenv.g || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1710,6 +1816,17 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             // We merge based on whether minfos use identical metadata or not. 
             let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
             
+            // Get the extension method that may be relevant to solving the constraint as MethInfo objects.
+            // Extension members are not used when canonicalizing prior to generalization (permitWeakResolution=true)
+            let extMInfos = 
+                if MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then 
+                    GetRelevantExtensionMethodsForTrait csenv.m csenv.InfoReader traitInfo
+                else []
+
+            let extMInfos = extMInfos |> ListSet.setify MethInfo.MethInfosUseIdenticalDefinitions 
+
+            let minfos = minfos @ extMInfos
+
             /// Check that the available members aren't hiding a member from the parent (depth 1 only)
             let relevantMinfos = minfos |> List.filter(fun minfo -> not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance)
             minfos
@@ -1722,17 +1839,17 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln))
+        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln, traitCtxt))
     else
         results
 
 
 /// The nominal support of the member constraint 
-and GetSupportOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
+and GetSupportOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _, _)) =
     tys |> List.choose (tryAnyParTyOption csenv.g)
     
 /// Check if the support is fully solved.  
-and SupportOfMemberConstraintIsFullySolved (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
+and SupportOfMemberConstraintIsFullySolved (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _, _)) =
     tys |> List.forall (isAnyParTy csenv.g >> not)
 
 // This may be relevant to future bug fixes, see https://github.com/Microsoft/visualfsharp/issues/3814
@@ -1741,7 +1858,7 @@ and SupportOfMemberConstraintIsFullySolved (csenv: ConstraintSolverEnv) (TTrait(
 //     tys |> List.exists (isAnyParTy csenv.g >> not)
     
 /// Get all the unsolved typars (statically resolved or not) relevant to the member constraint
-and GetFreeTyparsOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _)) =
+and GetFreeTyparsOfMemberConstraint (csenv: ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _, _)) =
     freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
 
 and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
@@ -1769,7 +1886,7 @@ and SolveRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep permitWeak
                 | ValueNone -> 
                     ResultD false)) 
 
-and SolveRelevantMemberConstraintsForTypar (csenv: ConstraintSolverEnv) ndeep permitWeakResolution (trace: OptionalTrace) tp =
+and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep (permitWeakResolution: PermitWeakResolution) (trace:OptionalTrace) tp =
     let cxst = csenv.SolverState.ExtraCxs
     let tpn = tp.Stamp
     let cxs = cxst.FindAll tpn
@@ -1783,8 +1900,9 @@ and SolveRelevantMemberConstraintsForTypar (csenv: ConstraintSolverEnv) ndeep pe
         let csenv = { csenv with m = m2 }
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
-and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps =
-    SolveRelevantMemberConstraints csenv ndeep PermitWeakResolution.Yes trace tps
+and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps isInline =
+    let permitWeakResolution = (if isInline then PermitWeakResolution.LegacyYesAtInlineGeneralization else PermitWeakResolution.YesAtChooseSolution)
+    SolveRelevantMemberConstraints csenv ndeep permitWeakResolution trace tps
   
 and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) traitInfo support (frees: Typar list) =
     let g = csenv.g
@@ -1801,7 +1919,7 @@ and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
         let cxs = cxst.FindAll tpn
 
         // check the constraint is not already listed for this type variable
-        if not (cxs |> List.exists (fun (traitInfo2, _) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
+        if not (cxs |> List.exists (fun (traitInfo2, _valRefs) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
             trace.Exec (fun () -> csenv.SolverState.ExtraCxs.Add (tpn, (traitInfo, m2))) (fun () -> csenv.SolverState.ExtraCxs.Remove tpn)
     )
 
@@ -1828,8 +1946,8 @@ and AddConstraint (csenv: ConstraintSolverEnv) ndeep m2 trace tp newConstraint  
     // may require type annotations. See FSharp 1.0 bug 6477.
     let consistent tpc1 tpc2 =
         match tpc1, tpc2 with           
-        | (TyparConstraint.MayResolveMember(TTrait(tys1, nm1, memFlags1, argtys1, rty1, _), _), 
-           TyparConstraint.MayResolveMember(TTrait(tys2, nm2, memFlags2, argtys2, rty2, _), _))  
+        | (TyparConstraint.MayResolveMember(TTrait(tys1, nm1, memFlags1, argtys1, rty1, _, _), _), 
+           TyparConstraint.MayResolveMember(TTrait(tys2, nm2, memFlags2, argtys2, rty2, _, _), _))  
               when (memFlags1 = memFlags2 &&
                     nm1 = nm2 &&
                     // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
@@ -2549,15 +2667,20 @@ and ResolveOverloading
 
           // - Always take the return type into account for
           //      -- op_Explicit, op_Implicit
-          //      -- candidate method sets that potentially use tupling of unfilled out args
-          let alwaysCheckReturn = isOpConversion || candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs)
+          //      -- candidate method sets that potentially use tupling of unfilled out args or overloading on return type
+          let alwaysCheckReturn =
+              isOpConversion ||
+              candidates |> List.exists (fun cmeth -> 
+                 cmeth.HasOutArgs ||
+                 (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions &&
+                  AttributeChecking.MethInfoHasAttribute g m g.attrib_AllowOverloadByReturnTypeAttribute cmeth.Method))
 
           // Exact match rule.
           //
           // See what candidates we have based on current inferred type information 
           // and _exact_ matches of argument types. 
           match candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
-                     let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
+                     let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs)) 
                      CanMemberSigsMatchUpToCheck 
                          csenv 
                          permitOptArgs 
@@ -2574,7 +2697,7 @@ and ResolveOverloading
             // Now determine the applicable methods.
             // Subsumption on arguments is allowed.
             let applicable = candidates |> FilterEachThenUndo (fun newTrace candidate -> 
-                               let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m candidate.Method candidate.CalledTyArgs)) cx
+                               let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext candidate.Method candidate.CalledTyArgs))
                                CanMemberSigsMatchUpToCheck 
                                    csenv 
                                    permitOptArgs
@@ -2610,7 +2733,7 @@ and ResolveOverloading
                     candidates 
                     |> List.choose (fun calledMeth -> 
                             match CollectThenUndo (fun newTrace -> 
-                                         let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
+                                         let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs))
                                          CanMemberSigsMatchUpToCheck 
                                              csenv 
                                              permitOptArgs
@@ -2831,7 +2954,7 @@ and ResolveOverloading
         calledMethOpt, 
         trackErrors {
                         do! errors
-                        let cxsln = Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs)) cx
+                        let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs))
                         match calledMethTrace with
                         | NoTrace ->
                            return!
@@ -3106,32 +3229,6 @@ let CreateCodegenState tcVal g amap =
       ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
       InfoReader = new InfoReader(g, amap) }
 
-/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
-let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    return GenWitnessExpr amap g m traitInfo argExprs
-  }
-
-/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let ftps, _renaming, tinst = FreshenTypeInst m typars
-    let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
-    do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
-    return MethodCalls.GenWitnessArgs amap g m traitInfos
-  }
-
-/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
-let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
-    let css = CreateCodegenState tcVal g amap
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
-    return MethodCalls.GenWitnessExprLambda amap g m traitInfo
-  }
-
 /// For some code like "let f() = ([] = [])", a free choice is made for a type parameter
 /// for an interior type variable.  This chooses a solution for a type parameter subject
 /// to its constraints and applies that solution by using a constraint.
@@ -3157,18 +3254,102 @@ let CheckDeclaredTypars denv css m typars1 typars2 =
             ErrorD (ErrorFromAddingConstraint(denv, res, m)))
     |> RaiseOperationResult
 
-let CanonicalizePartialInferenceProblem css denv m tps =
+let CanonicalizePartialInferenceProblem css denv m tps isInline =
     // Canonicalize constraints prior to generalization 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
     TryD_IgnoreAbortForFailedOverloadResolution
-        (fun () -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps)
+        (fun () -> CanonicalizeRelevantMemberConstraints csenv 0 NoTrace tps isInline)
         (fun res -> ErrorD (ErrorFromAddingConstraint(denv, res, m))) 
     |> RaiseOperationResult
+
+/// Apply defaults arising from 'default' constraints in FSharp.Core
+/// for any unsolved free inference type variables.
+/// Defaults get applied before the module signature is checked and before the implementation conditions on virtuals/overrides. 
+/// Defaults get applied in priority order. Defaults listed last get priority 0 (lowest), 2nd last priority 1 etc. 
+let ApplyDefaultsForUnsolved css denv (unsolved: Typar list) =
+
+    // The priority order comes from the order of declaration of the defaults in FSharp.Core.
+    for priority = 10 downto 0 do
+        unsolved |> List.iter (fun tp -> 
+            if not tp.IsSolved then 
+                // Apply the first default. If we're defaulting one type variable to another then 
+                // the defaults will be propagated to the new type variable. 
+                ApplyTyparDefaultAtPriority denv css priority tp)
+
+    // OK, now apply defaults for any unsolved HeadTypeStaticReq 
+    unsolved |> List.iter (fun tp ->     
+        if not tp.IsSolved then 
+            if (tp.StaticReq <> TyparStaticReq.None) then
+                ChooseTyparSolutionAndSolve css denv tp)
+
+/// Choose solutions for any remaining unsolved free inference type variables.
+let ChooseSolutionsForUnsolved css denv (unsolved: Typar list) =
+    unsolved |> List.iter (fun tp -> 
+        if (tp.Rigidity <> TyparRigidity.Rigid) && not tp.IsSolved then 
+            ChooseTyparSolutionAndSolve css denv tp)
+
+let ApplyDefaultsAfterWitnessGeneration (g: TcGlobals) amap css denv sln = 
+    // The process of generating witnesses can cause free inference type variables to arise from use
+    // of generic methods as extension constraint solutions. We eliminate these using the same
+    // sequence (ApplyDefault, ChooseSolutions) used at the end of type inference.
+    if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
+        sln |> Option.iter (fun slnExpr -> 
+            // Apply all defaults
+            let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+            ApplyDefaultsForUnsolved css denv unsolved
+
+            // Search again and choose solutions
+            let unsolved2 = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+            ChooseSolutionsForUnsolved css denv unsolved2)
+
+/// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
+let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let sln = GenWitnessExpr amap g m traitInfo argExprs
+    ApplyDefaultsAfterWitnessGeneration g amap css denv sln
+    return sln
+  }
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+     // TODO: check traitCtxtNone here, feels wrong. We should simply not be re-freshening here during codegen.
+     // This is invoked every time codegen or quotation calls a witness-accepting
+     // method. TBH the witnesses need to be generated during type checking and passed all the way down,
+     // or at least be left in the tree as WitnessArg nodes.
+    let ftps, _renaming, tinst = FreshenTypeInst traitCtxtNone m typars
+    let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
+    do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
+    let witnessArgs = MethodCalls.GenWitnessArgs amap g m traitInfos
+    for witnessArg in witnessArgs do
+        match witnessArg with 
+        | Choice1Of2 _traitInfo -> ()
+        | Choice2Of2 sln -> ApplyDefaultsAfterWitnessGeneration g amap css denv (Some sln)
+    return witnessArgs
+  }
+
+/// Generate the lambda argument passed for a use of a generic construct that accepts trait witnesses
+let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
+    let css = CreateCodegenState tcVal g amap
+    let denv = DisplayEnv.Empty g
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let witnessLambda = MethodCalls.GenWitnessExprLambda amap g m traitInfo
+    match witnessLambda with 
+    | Choice1Of2 _traitInfo -> ()
+    | Choice2Of2 sln -> ApplyDefaultsAfterWitnessGeneration g amap css denv (Some sln)
+    return witnessLambda
+  }
 
 /// An approximation used during name resolution for intellisense to eliminate extension members which will not
 /// apply to a particular object argument. This is given as the isApplicableMeth argument to the partial name resolution
 /// functions in nameres.fs.
-let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy = 
+let IsApplicableMethApprox g amap m traitCtxt (minfo: MethInfo) availObjTy = 
     // Prepare an instance of a constraint solver
     // If it's an instance method, then try to match the object argument against the required object argument
     if minfo.IsExtensionMember then 
@@ -3179,7 +3360,7 @@ let IsApplicableMethApprox g amap m (minfo: MethInfo) availObjTy =
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
               InfoReader = new InfoReader(g, amap) }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        let minst = FreshenMethInfo m minfo
+        let minst = FreshenMethInfo traitCtxt m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
             let reqdObjTy = if isByrefTy g reqdObjTy then destByrefTy g reqdObjTy else reqdObjTy // This is to support byref extension methods.

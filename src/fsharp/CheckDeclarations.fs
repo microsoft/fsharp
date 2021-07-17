@@ -1594,8 +1594,7 @@ module MutRecBindingChecking =
                         AddLocalTyconRefs true g cenv.amap tcref.Range [tcref] initialEnvForTycon
 
                 // Make fresh version of the class type for type checking the members and lets *
-                let _, copyOfTyconTypars, _, objTy, thisTy = FreshenObjectArgType cenv tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
-
+                let _, copyOfTyconTypars, _, objTy, thisTy = FreshenObjectArgType cenv envForTycon.TraitContext tcref.Range TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
 
                 // The basic iteration over the declarations in a single type definition
                 let initialInnerState = (None, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)
@@ -2916,7 +2915,7 @@ module TcExceptionDeclarations =
           match reprIdOpt with 
           | Some longId ->
               let resolution =
-                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default longId 
+                  ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.TraitContext env.NameEnv TypeNameResolutionInfo.Default longId 
                   |> ForceRaise
               match resolution with
               | _, Item.ExnCase exnc, [] -> 
@@ -3403,7 +3402,7 @@ module EstablishTypeDefinitionCores =
         | None -> None
         | Some (tc, args, m) -> 
             let ad = envinner.AccessRights
-            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified envinner.NameEnv ad tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
+            match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified envinner.NameEnv ad envinner.TraitContext tc TypeNameResolutionStaticArgsInfo.DefiniteEmpty PermitDirectReferenceToGeneratedType.Yes with
             | Result (_, tcrefBeforeStaticArguments) when 
                   tcrefBeforeStaticArguments.IsProvided && 
                   not tcrefBeforeStaticArguments.IsErased -> 
@@ -3847,7 +3846,7 @@ module EstablishTypeDefinitionCores =
                         let info = RecdFieldInfo(thisTyInst, thisTyconRef.MakeNestedRecdFieldRef fspec)
                         let nenv' = AddFakeNameToNameEnv fspec.Name nenv (Item.RecdField info) 
                         // Name resolution gives better info for tooltips
-                        let item = Item.RecdField(FreshenRecdFieldRef cenv.nameResolver m (thisTyconRef.MakeNestedRecdFieldRef fspec))
+                        let item = Item.RecdField(FreshenRecdFieldRef cenv.nameResolver envinner.TraitContext m (thisTyconRef.MakeNestedRecdFieldRef fspec))
                         CallNameResolutionSink cenv.tcSink (fspec.Range, nenv, item, emptyTyparInst, ItemOccurence.Binding, ad)
                         // Environment is needed for completions
                         CallEnvSink cenv.tcSink (fspec.Range, nenv', ad)
@@ -4497,7 +4496,7 @@ module TcDeclarations =
 
             // This records a name resolution of the type at the location
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
-            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No 
+            ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad envForDecls.TraitContext longPath resInfo PermitDirectReferenceToGeneratedType.No 
                |> ignore
 
             mkLocalTyconRef tycon
@@ -4505,7 +4504,7 @@ module TcDeclarations =
           | _ ->
             let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             let _, tcref =
-                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.NameEnv ad envForDecls.TraitContext longPath resInfo PermitDirectReferenceToGeneratedType.No with
                 | Result res -> res
                 | res when inSig && longPath.Length = 1 ->
                     errorR(Deprecated(FSComp.SR.tcReservedSyntaxForAugmentation(), m))
@@ -5649,7 +5648,7 @@ let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsV
     let env = (env, autoOpens) ||> List.fold (ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap ccu scopem)
     env
 
-let emptyTcEnv g =
+let emptyTcEnv g : TcEnv =
     let cpath = compPathInternal // allow internal access initially
     { eNameResEnv = NameResolutionEnv.Empty g
       eUngeneralizableItems = []
@@ -5704,7 +5703,7 @@ let ApplyDefaults (cenv: cenv) g denvAtEnd m mexpr extraAttribs =
     try
         let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfModuleDef g cenv.amap denvAtEnd (mexpr, extraAttribs)
 
-        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved
+        ConstraintSolver.CanonicalizePartialInferenceProblem cenv.css denvAtEnd m unsolved false
 
         // The priority order comes from the order of declaration of the defaults in FSharp.Core.
         for priority = 10 downto 0 do
@@ -5795,21 +5794,23 @@ let MakeInitialEnv env =
 let TypeCheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
        (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) 
-       env 
+       (env: TcEnv) 
        (rootSigOpt: ModuleOrNamespaceType option)
        (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland)) =
 
  let infoReader = InfoReader(g, amap)
 
  cancellable {
+    let envinner, mtypeAcc = MakeInitialEnv env 
+
+    let tcVal = LightweightTcValForUsingInBuildMethodCall g envinner.TraitContext
+    
     let cenv = 
         cenv.Create (g, isScript, niceNameGen, amap, topCcu, false, Option.isSome rootSigOpt,
-            conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+            conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
             tcSequenceExpressionEntry=TcSequenceExpressionEntry,
             tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
             tcComputationExpression=TcComputationExpression)    
-
-    let envinner, mtypeAcc = MakeInitialEnv env 
 
     let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
     let! mexpr, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None defs
@@ -5873,7 +5874,7 @@ let TypeCheckOneImplFile
 
             try  
                 let reportErrors = not (checkForErrors())
-                let tcVal = LightweightTcValForUsingInBuildMethodCall g
+                let tcVal = LightweightTcValForUsingInBuildMethodCall g envAtEnd.TraitContext
                 PostTypeCheckSemanticChecks.CheckTopImpl 
                    (g, cenv.amap, reportErrors, cenv.infoReader, 
                     env.eInternalsVisibleCompPaths, cenv.topCcu, tcVal, envAtEnd.DisplayEnv, 
@@ -5908,15 +5909,17 @@ let TypeCheckOneImplFile
 /// Check an entire signature file
 let TypeCheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (_, qualNameOfFile, _, _, sigFileFrags)) = 
  cancellable {     
+    let envinner, mtypeAcc = MakeInitialEnv tcEnv 
+
+    let tcVal = LightweightTcValForUsingInBuildMethodCall g envinner.TraitContext
+
     let cenv = 
         cenv.Create 
             (g, false, niceNameGen, amap, topCcu, true, false, conditionalDefines, tcSink,
-             (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+             tcVal, isInternalTestSpanStackReferring,
              tcSequenceExpressionEntry=TcSequenceExpressionEntry,
              tcArrayOrListSequenceExpression=TcArrayOrListSequenceExpression,
              tcComputationExpression=TcComputationExpression)
-
-    let envinner, mtypeAcc = MakeInitialEnv tcEnv 
 
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
     let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs

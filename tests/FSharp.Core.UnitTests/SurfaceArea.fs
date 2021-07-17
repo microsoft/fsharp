@@ -644,6 +644,7 @@ Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean Value
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Boolean get_Value()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Void .ctor()
 Microsoft.FSharp.Core.AllowNullLiteralAttribute: Void .ctor(Boolean)
+Microsoft.FSharp.Core.AllowOverloadByReturnTypeAttribute: Void .ctor()
 Microsoft.FSharp.Core.AutoOpenAttribute: System.String Path
 Microsoft.FSharp.Core.AutoOpenAttribute: System.String get_Path()
 Microsoft.FSharp.Core.AutoOpenAttribute: Void .ctor()

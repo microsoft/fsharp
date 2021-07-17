@@ -387,11 +387,19 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
             fsi_flags = sprintf "%s %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
             }
 
+    let ERRFILE, BSLFILE = 
+        let vbsl = sprintf "%s.%s.bsl" testname version
+        if fileExists cfg vbsl then 
+            sprintf "%s.%s.err" testname version, vbsl
+        else
+            sprintf "%s.err" testname, sprintf "%s.bsl" testname
+
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
-    let VSBSLFILE =
-        if (sprintf "%s.vsbsl" testname) |> (fileExists cfg)
-        then sprintf "%s.vsbsl" testname
-        else sprintf "%s.bsl" testname
+    let VSERRFILE, VSBSLFILE = 
+        if fileExists cfg (sprintf "%s.vsbsl" testname) then 
+            sprintf "%s.vserr" testname, sprintf "%s.vsbsl" testname
+        else
+            ERRFILE, BSLFILE
 
     let sources = [
         let src = [ testname + ".mli"; testname + ".fsi"; testname + ".ml"; testname + ".fs"; testname +  ".fsx";
@@ -408,10 +416,8 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
         ]
 
-    if fileExists cfg (testname + "-pre.fs")
-        then
-            fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"]
-        else ()
+    if fileExists cfg (testname + "-pre.fs") then
+        fsc cfg "%s -a -o:%s-pre.dll" cfg.fsc_flags testname [testname + "-pre.fs"] 
 
     if fileExists cfg (testname + "-pre.fsx") then
         fsi_script cfg "--exec %s %s %s"
@@ -426,28 +432,28 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
         if cfg.fsc_flags.Contains("--warnaserror-") then String.Empty
         else "--warnaserror"
 
-    fscAppendErrExpectFail cfg  (sprintf "%s.err" testname) """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
+    fscAppendErrExpectFail cfg  ERRFILE """%s --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll""" cfg.fsc_flags warnaserror testname sources
 
-    let diff = fsdiff cfg (sprintf "%s.err" testname) (sprintf "%s.bsl" testname)
+    let diff = fsdiff cfg ERRFILE BSLFILE
 
-    fscAppendErrExpectFail cfg (sprintf "%s.vserr" testname) "%s --test:ContinueAfterParseFailure --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags warnaserror testname sources
+    fscAppendErrExpectFail cfg VSERRFILE "%s --test:ContinueAfterParseFailure --vserrors %s --nologo --maxerrors:10000 -a -o:%s.dll" cfg.fsc_flags warnaserror testname sources
 
-    let vbslDiff = fsdiff cfg (sprintf "%s.vserr" testname) VSBSLFILE
+    let vbslDiff = fsdiff cfg VSERRFILE VSBSLFILE
 
     match diff,vbslDiff with
-    | "","" ->
-        log "Good, output %s.err matched %s.bsl" testname testname
-        log "Good, output %s.vserr matched %s" testname VSBSLFILE
-    | l,"" ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname
-        failwithf "%s.err %s.bsl differ; %A" testname testname l
+    | "","" -> 
+        log "Good, output %s matched %s" ERRFILE BSLFILE
+        log "Good, output %s matched %s" VSERRFILE VSBSLFILE
+    | l,"" ->        
+        log "***** %s %s differed: a bug or baseline may need updating" ERRFILE BSLFILE
+        failwithf "%s %s differ; %A" ERRFILE BSLFILE l
     | "",l ->
-        log "Good, output %s.err matched %s.bsl" testname testname
-        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
-        failwithf "%s.vserr %s differ; %A" testname VSBSLFILE l
-    | l1,l2 ->
-        log "***** %s.err %s.bsl differed: a bug or baseline may need updating" testname testname
-        log "***** %s.vserr %s differed: a bug or baseline may need updating" testname VSBSLFILE
-        failwithf "%s.err %s.bsl differ; %A; %s.vserr %s differ; %A" testname testname l1 testname VSBSLFILE l2
+        log "Good, output %s matched %s" ERRFILE BSLFILE
+        log "***** %s %s differed: a bug or baseline may need updating" VSERRFILE VSBSLFILE
+        failwithf "%s %s differ; %A" VSERRFILE VSBSLFILE l
+    | l1,l2 ->    
+        log "***** %s %s differed: a bug or baseline may need updating" ERRFILE BSLFILE
+        log "***** %s %s differed: a bug or baseline may need updating" VSERRFILE VSBSLFILE
+        failwithf "%s %s differ; %A; %s %s differ; %A" ERRFILE BSLFILE l1 VSERRFILE VSBSLFILE l2
 
 let singleNegTest (cfg: TestConfig) testname = singleVersionedNegTest (cfg: TestConfig) "" testname

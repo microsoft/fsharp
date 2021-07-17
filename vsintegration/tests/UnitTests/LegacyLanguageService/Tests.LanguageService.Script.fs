@@ -1120,8 +1120,7 @@ type UsingMSBuild() as this =
        
         MoveCursorToEndOfMarker(file2,"#load @\"Fi")
         let ans = GetSquiggleAtCursor(file2)
-        AssertSquiggleIsErrorContaining(ans, "'string'")
-        AssertSquiggleIsErrorContaining(ans, "'int'")
+        AssertSquiggleIsErrorContaining(ans, "'int, string'")
         AssertSquiggleIsErrorNotContaining(ans, "foo")
 
     // In this bug the .fsx project directory was wrong so it couldn't reference a relative file.

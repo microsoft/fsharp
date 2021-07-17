@@ -8,14 +8,14 @@ open System
 
 open Internal.Utilities
 open Internal.Utilities.Text.Parsing
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
-open FSharp.Compiler.AbstractIL
-open Internal.Utilities.Library
+open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming

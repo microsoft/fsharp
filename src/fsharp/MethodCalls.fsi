@@ -258,11 +258,11 @@ val BuildMethodCall:
 val BuildObjCtorCall: g:TcGlobals -> m:range -> Expr
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * delegateTy:TType * invokeMethInfo:MethInfo * delArgTys:TType list * f:Expr * fty:TType * m:range -> Expr
+val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * traitCtxt: ITraitContext option * delegateTy:TType * invokeMethInfo:MethInfo * delArgTys:TType list * f:Expr * fty:TType * m:range -> Expr
 
-val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
+val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> traitCtxt: ITraitContext option -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
 
-val AdjustCallerArgExprForCoercions: g:TcGlobals -> amap:ImportMap -> infoReader:InfoReader -> ad:AccessorDomain -> isOutArg:bool -> calledArgTy:TType -> reflArgInfo:ReflectedArgInfo -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> 'a option * Expr
+val AdjustCallerArgExprForCoercions: g:TcGlobals -> amap:ImportMap -> traitCtxt: ITraitContext option -> infoReader:InfoReader -> ad:AccessorDomain -> isOutArg:bool -> calledArgTy:TType -> reflArgInfo:ReflectedArgInfo -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> 'a option * Expr
 
 /// Build the argument list for a method call. Adjust for param array, optional arguments, byref arguments and coercions.
 /// For example, if you pass an F# reference cell to a byref then we must get the address of the 
@@ -272,6 +272,7 @@ val AdjustCallerArgs:
     eCallerMemberName:string option ->
     infoReader:InfoReader ->
     ad:AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     calledMeth:CalledMeth<Expr> ->
     objArgs:Expr list ->
     lambdaVars:'a option ->
@@ -322,6 +323,7 @@ module ProvidedMethodCalls =
       tcVal:(ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
       g:TcGlobals *
       amap:ImportMap *
+      traitCtxt: ITraitContext option *
       mi:Tainted<ProvidedMethodBase> *
       objArgs:Expr list *
       mut:TypedTreeOps.Mutates *

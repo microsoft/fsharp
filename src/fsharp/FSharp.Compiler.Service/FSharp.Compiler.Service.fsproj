@@ -603,6 +603,12 @@
     <Compile Include="..\PatternMatchCompilation.fs">
       <Link>Logic\PatternMatchCompilation.fs</Link>
     </Compile>
+    <Compile Include="..\FindUnsolved.fsi">
+      <Link>Logic\FindUnsolved.fsi</Link>
+    </Compile>
+    <Compile Include="..\FindUnsolved.fs">
+      <Link>Logic\FindUnsolved.fs</Link>
+    </Compile>
     <Compile Include="..\ConstraintSolver.fsi">
       <Link>Logic\ConstraintSolver.fsi</Link>
     </Compile>
@@ -614,12 +620,6 @@
     </Compile>
     <Compile Include="..\CheckFormatStrings.fs">
       <Link>Logic\CheckFormatStrings.fs</Link>
-    </Compile>
-    <Compile Include="..\FindUnsolved.fsi">
-      <Link>Logic\FindUnsolved.fsi</Link>
-    </Compile>
-    <Compile Include="..\FindUnsolved.fs">
-      <Link>Logic\FindUnsolved.fs</Link>
     </Compile>
     <Compile Include="..\QuotationTranslator.fsi">
       <Link>Logic\QuotationTranslator.fsi</Link>

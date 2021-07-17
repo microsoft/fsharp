@@ -31,6 +31,8 @@ type AccessorDomain =
     /// An AccessorDomain which returns all items
     | AccessibleFromSomewhere
 
+    interface ITraitAccessorDomain
+
     // Hashing and comparison is used for the memoization tables keyed by an accessor domain.
     // It is dependent on a TcGlobals because of the TyconRef in the data structure
     static member CustomEquals: g:TcGlobals * ad1:AccessorDomain * ad2:AccessorDomain -> bool

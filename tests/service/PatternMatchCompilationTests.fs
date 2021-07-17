@@ -408,10 +408,10 @@ match box 1 with
     dumpErrors checkResults |> shouldEqual [
         "(5,34--5,35): The type 'obj' does not support the operator '+'"
         "(5,32--5,33): The type 'obj' does not support the operator '+'"
-        "(7,45--7,46): The type 'obj' does not match the type 'uint64'"
-        "(7,43--7,44): The type 'obj' does not match the type 'uint64'"
-        "(8,43--8,44): The type 'obj' does not match the type 'int8'"
-        "(8,41--8,42): The type 'obj' does not match the type 'int8'"
+        "(7,45--7,46): The types 'uint64, obj' do not support the operator '+'";
+        "(7,43--7,44): The types 'uint64, obj' do not support the operator '+'";
+        "(8,43--8,44): The types 'int8, obj' do not support the operator '+'";
+        "(8,41--8,42): The types 'int8, obj' do not support the operator '+'";
         "(3,6--3,11): Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s)."
     ]
     
@@ -1141,7 +1141,7 @@ Some "" |> eq<int>
         "(19,2--19,4): This expression was expected to have type 'obj' but here has type 'int'"
         "(21,2--21,7): This expression was expected to have type 'obj' but here has type 'bool'"
         "(23,2--23,6): This expression was expected to have type 'obj' but here has type 'bool'"
-        "(28,28--28,29): The type 'obj' does not match the type 'int'"
+        "(28,28--28,29): The types 'int, obj' do not support the operator '+'"
         "(41,5--41,6): The value or constructor 'm' is not defined."
         "(42,5--42,6): The value or constructor 'n' is not defined."
         "(43,5--43,6): The value or constructor 'o' is not defined."

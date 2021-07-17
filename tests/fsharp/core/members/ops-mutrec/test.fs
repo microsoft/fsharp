@@ -214,8 +214,8 @@ module BasicOverloadTests =
     // This gets type int -> int
     let f5 x = 1 - x
 
-    // This gets type DateTime -> DateTime -> TimeSpan, through non-conservative resolution.
-    let f6 x1 (x2:System.DateTime) = x1 - x2
+    // // This gets type DateTime -> DateTime -> TimeSpan, through non-conservative resolution.
+    // let f6 x1 (x2:System.DateTime) = x1 - x2
 
     // This gets type TimeSpan -> TimeSpan -> TimeSpan, through default type propagation
     let f7 x1 (x2:System.TimeSpan) = x1 - x2

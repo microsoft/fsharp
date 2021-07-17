@@ -6,11 +6,11 @@ Known return type: MonoidSample
 Known type parameters: < MonoidSample , Zero >
 
 Available overloads:
- - static member Zero.Zero :  ^t * Default1 ->  ^t when  ^t : (static member get_Zero : ->  ^t) // Argument at index 1 doesn't match
+ - static member Zero.Zero :  ^t * Default1 ->  ^t when  ^t : (static member get_Zero :  ^t) // Argument at index 1 doesn't match
  - static member Zero.Zero :  ^t * Default1 -> ('a1 -> 'a1) when  ^t : null and  ^t : struct // Argument at index 1 doesn't match
  - static member Zero.Zero :  ^t * Default2 ->  ^t when (FromInt32 or  ^t) : (static member FromInt32 :  ^t * FromInt32 -> (int32 ->  ^t)) // Argument at index 1 doesn't match
  - static member Zero.Zero :  ^t * Default2 -> ('a1 -> 'a1) when  ^t : null and  ^t : struct // Argument at index 1 doesn't match
- - static member Zero.Zero :  ^t * Default3 ->  ^t when  ^t : (static member get_Empty : ->  ^t) // Argument at index 1 doesn't match
+ - static member Zero.Zero :  ^t * Default3 ->  ^t when  ^t : (static member get_Empty :  ^t) // Argument at index 1 doesn't match
  - static member Zero.Zero : 'a array * Zero -> 'a array // Argument at index 1 doesn't match
  - static member Zero.Zero : 'a list * Zero -> 'a list // Argument at index 1 doesn't match
  - static member Zero.Zero : 'a option * Zero -> 'a option // Argument at index 1 doesn't match

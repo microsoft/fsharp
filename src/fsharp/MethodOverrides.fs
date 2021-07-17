@@ -812,7 +812,7 @@ module DispatchSlotChecking =
                                              | None -> () // not an F# slot
 
                                         // Get the slotsig of the overridden method 
-                                        let slotsig = dispatchSlot.GetSlotSig(amap, m)
+                                        let slotsig = dispatchSlot.GetSlotSig(amap, m, NameResolution.traitCtxtNone)
 
                                         // The slotsig from the overridden method is in terms of the type parameters on the parent type of the overriding method,
                                         // Modify map the slotsig so it is in terms of the type parameters for the overriding method 

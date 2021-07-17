@@ -392,7 +392,7 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int) =
 
     /// Lookup a type parameter
-    member _.Item (tp: Typar, m: range) =
+    member _.LookupTyparRepr (tp: Typar, m: range) =
         try reprs.[tp.Stamp]
         with :? KeyNotFoundException ->
           errorR(InternalError("Undefined or unsolved type variable: " + showL(typarL tp), m))
@@ -542,7 +542,7 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tps.IsEmpty then GenTypeAux amap m tyenv VoidNotOK ptrsOK tau
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv
 
-    | TType_var tp -> mkILTyvarTy tyenv.[tp, m]
+    | TType_var tp -> mkILTyvarTy (tyenv.LookupTyparRepr(tp, m))
 
     | TType_measure _ -> g.ilg.typ_Int32
 
@@ -4754,7 +4754,7 @@ and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv.[c, m]))
+    tps |> DropErasedTypars |> List.map (fun c -> mkILTyvarTy (tyenv.LookupTyparRepr(c, m)))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv isLocalTypeFunc thisVars expr m =

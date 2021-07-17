@@ -1067,7 +1067,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
   [
     CompilerOption
        ("stamps", tagNone,
-        OptionUnit ignore,
+        OptionSet DebugPrint.layoutStamps,
         Some(InternalCommandLineOption("--stamps", rangeCmdArgs)), None)
 
     CompilerOption

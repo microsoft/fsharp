@@ -43,6 +43,7 @@ open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.IlxGen
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.IO
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
@@ -793,9 +794,9 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
              | _ -> ""
 
-    let optimizedImpls, optimizationData, _ =
-        ApplyAllOptimizations
-            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile,
+    let optimizedImpls, optimizationData, _ = 
+        ApplyAllOptimizations 
+            (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), outfile, 
              importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)
@@ -834,7 +835,7 @@ let main4
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
 
     // Create the Abstract IL generator
-    let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
+    let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), generatedCcu)
 
     let codegenBackend = (if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend)
 

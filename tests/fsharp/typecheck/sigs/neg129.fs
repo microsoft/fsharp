@@ -1,5 +1,5 @@
 module Neg129
-
+// The code in this test starts to compile once FS-1043 is enabled.
 // Variation on test case mentioned in https://github.com/dotnet/fsharp/pull/6805#issuecomment-580368303
 //
 // This removes ^output as a type selector for the witness, but continues to pass a dummy ^output

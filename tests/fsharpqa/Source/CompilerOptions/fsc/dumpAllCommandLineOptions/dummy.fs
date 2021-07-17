@@ -48,7 +48,7 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=subsystemversion               kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=targetprofile                  kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=quotations-debug               kind=OptionSwitch</Expects>
-//<Expects status="success">section='NoSection                ' ! option=stamps                         kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=stamps                         kind=OptionSet</Expects>
 //<Expects status="success">section='NoSection                ' ! option=ranges                         kind=OptionSet</Expects>
 //<Expects status="success">section='NoSection                ' ! option=terms                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=termsfile                      kind=OptionUnit</Expects>

@@ -154,7 +154,7 @@ module DeclarationListHelpers =
         let denv = SimplerDisplayEnv denv 
         let xml = GetXmlCommentForItem infoReader m item.Item
         match item.Item with
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _, _)) }) -> 
             // operator with solution
             FormatItemDescriptionToToolTipElement isListItem infoReader m denv { item with Item = Item.Value vref }
 

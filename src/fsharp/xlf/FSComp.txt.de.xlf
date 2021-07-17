@@ -112,6 +112,11 @@
         <target state="translated">punktloses float32-Literal</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>extension constraint solutions</source>
+        <target state="new">extension constraint solutions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
         <source>more types support units of measure</source>
         <target state="translated">Maßeinheitenunterstützung durch weitere Typen</target>
@@ -1988,8 +1993,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">Der Operator '{1}' wird von keinem der Typen '{0}' unterstützt</target>
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="needs-review-translation">Der Operator '{1}' wird von keinem der Typen '{0}' unterstützt</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
@@ -1998,8 +2003,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">Der Operator '{1}' wird von keinem der Typen '{0}' unterstützt. Möglicherweise sollte das Modul 'Microsoft.FSharp.Linq.NullableOperators' geöffnet werden.</target>
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="needs-review-translation">Der Operator '{1}' wird von keinem der Typen '{0}' unterstützt. Möglicherweise sollte das Modul 'Microsoft.FSharp.Linq.NullableOperators' geöffnet werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">

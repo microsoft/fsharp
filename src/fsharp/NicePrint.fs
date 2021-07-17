@@ -678,21 +678,36 @@ module private PrintTypes =
                     WordL.arrow ^^
                     (layoutTyparRefWithInfo denv env tp)) |> longConstraintPrefix]
 
-    and private layoutTraitWithInfo denv env (TTrait(tys, nm, memFlags, argtys, rty, _)) =
+    and private layoutTraitWithInfo denv env (TTrait(supportTys, nm, memFlags, argtys, rty, _, _)) =
         let nm = DemangleOperatorName nm
         if denv.shortConstraints then 
             WordL.keywordMember ^^ wordL (tagMember nm)
         else
             let rty = GetFSharpViewOfReturnType denv.g rty
             let stat = layoutMemberFlags memFlags
-            let tys = ListSet.setify (typeEquiv denv.g) tys
-            let tysL = 
-                match tys with 
+            let supportTys = ListSet.setify (typeEquiv denv.g) supportTys
+            let supportTysL = 
+                match supportTys with 
                 | [ty] -> layoutTypeWithInfo denv env ty 
-                | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
-            tysL ^^ wordL (tagPunctuation ":") ---
-                bracketL (stat ++ wordL (tagMember nm) ^^ wordL (tagPunctuation ":") ---
-                        ((layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys --- wordL (tagPunctuation "->")) --- (layoutReturnType denv env rty)))
+                | _ -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) supportTys)
+
+            let argtys = 
+                if memFlags.IsInstance then 
+                    match argtys with 
+                    | [] | [_] -> [denv.g.unit_ty]
+                    | _ :: rest -> rest
+                else argtys
+
+            let rtyL = layoutReturnType denv env rty
+
+            let tyL =
+                match argtys with 
+                | [] -> rtyL
+                | _ ->
+                    let argtysL = layoutTypesWithInfoAndPrec denv env 2 (wordL (tagPunctuation "*")) argtys
+                    argtysL --- wordL (tagPunctuation "->") --- rtyL
+
+            supportTysL ^^ wordL (tagPunctuation ":")  --- bracketL (stat ++ wordL (tagMember nm) ^^ wordL (tagPunctuation ":") --- tyL)
 
 
     /// Layout a unit expression 

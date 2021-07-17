@@ -12,7 +12,7 @@ module OhOh =
 
         static member inline op_Explicit (x: int64): MyByte = MyByte (byte x)
         static member inline op_Explicit (x: float): MyByte = MyByte (byte x)        
-        static member inline op_Explicit (MyByte x): 'a = failwith "cannot convert"
+        //static member inline op_Explicit (MyByte x): 'a = failwith "cannot convert"
         
     /// testing testing
     let inline ( !>>> ) (a: ^a) min: ^b option =

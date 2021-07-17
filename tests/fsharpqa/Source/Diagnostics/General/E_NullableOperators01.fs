@@ -25,7 +25,7 @@ let _ = iq <? iq
 let _ = iq =? iq
 let _ = iq <>? iq
 
-//<Expects status="error" span="(7,12-7,15)" id="FS0043">None of the types 'System\.Nullable<int>, int' support the operator '\?>='\. Consider opening the module 'Microsoft\.FSharp\.Linq\.NullableOperators'\.$</Expects>
+//<Expects status="error" span="(7,12-7,15)" id="FS0043">The types 'System\.Nullable<int>, int' do not support the operator '\?>='\. Consider opening the module 'Microsoft\.FSharp\.Linq\.NullableOperators'\.$</Expects>
 //<Expects status="error" span="(8,12-8,14)" id="FS0043">The type 'System\.Nullable<int>' does not support the operator '\?>'\. Consider opening the module 'Microsoft\.FSharp\.Linq\.NullableOperators'\.$</Expects>
 //<Expects status="error" span="(9,12-9,15)" id="FS0043">The type 'System\.Nullable<int>' does not support the operator '\?<='\. Consider opening the module 'Microsoft\.FSharp\.Linq\.NullableOperators'\.$</Expects>
 //<Expects status="error" span="(10,12-10,14)" id="FS0043">The type 'System\.Nullable<int>' does not support the operator '\?<'\. Consider opening the module 'Microsoft\.FSharp\.Linq\.NullableOperators'\.$</Expects>

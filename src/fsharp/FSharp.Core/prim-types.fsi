@@ -279,6 +279,16 @@ namespace Microsoft.FSharp.Core
         /// <summary>The value of the attribute, indicating whether the type allows the null literal or not</summary>
         member Value: bool
 
+    /// <summary>Adding this attribute to a method allows that method to be overloaded by return type.</summary>
+    [<AttributeUsage (AttributeTargets.Method,AllowMultiple=false)>]  
+    [<Sealed>]
+    type AllowOverloadByReturnTypeAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>AllowOverloadByReturnTypeAttribute</returns>
+        new : unit -> AllowOverloadByReturnTypeAttribute
+
     /// <summary>Adding this attribute to a value causes it to be compiled as a CLI constant literal.</summary>
     ///
     /// <category>Attributes</category>

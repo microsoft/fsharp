@@ -1764,50 +1764,6 @@ module GenericPropertyConstraintSolvedByRecord =
     let v = print_foo_memb { foo=1 } 
 
 
-/// In this case, the presence of the Method(obj) overload meant overload resolution was being applied and resolving to that
-/// overload, even before the full signature of the trait constraint was known.
-module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown =
-    type X =
-        static member Method (a: obj) = 1
-        static member Method (a: int) = 2
-        static member Method (a: int64) = 3
-
-
-    let inline Test< ^t, ^a when ^t: (static member Method: ^a -> int)> (value: ^a) =
-        ( ^t: (static member Method: ^a -> int)(value))
-
-    let inline Test2< ^t> a = Test<X, ^t> a
-
-    // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
-    // The result should be 2.  
-    // This test has been added to pin down current behaviour pending a future bug fix.
-    check "slvde0vver90u1" (Test2<int> 0) 1
-    check "slvde0vver90u2" (Test2<int64> 0L) 1
-
-/// In this case, the presence of the "Equals" method on System.Object was causing method overloading to be resolved too
-/// early, when ^t was not yet known.  The underlying problem was that we were proceeding with weak resolution
-/// even for a single-support-type trait constraint.
-module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsNotDeterminedTooEarly =
-    type Test() =
-         member __.Equals (_: Test) = true
-
-    //let inline Equals(a: obj) (b: ^t) =
-    //    match a with
-    //    | :? ^t as x -> (^t: (member Equals: ^t -> bool) (b, x))
-    //    | _-> false
-
-    let a  = Test()
-    let b  = Test()
-
-    // NOTE, this is seen to be a bug, see https://github.com/Microsoft/visualfsharp/issues/3814
-    //
-    // The result should be true.  
-    //
-    // This test should be added to pin down current behaviour pending a future bug fix.
-    //
-    // However the code generated fails peverify.exe so even the pin-down test has been removed for now.
-    //check "cewjewcwec09ew" (Equals a b) false
-
 module SRTPFix = 
 
     open System
@@ -1981,6 +1937,20 @@ module TestConverter =
     test "cenwceoiwe2" ((id |> toConverter |> fromConverter |> toConverter2 |> implicitConv) 6 = 6)
 #endif
 
+// See https://github.com/dotnet/fsharp/issues/3814#issuecomment-441048460
+module TestAnotherCaseOfSRTP = 
+
+    type X =
+        static member Method (a: int) = 2
+        static member Method (a: int64) = 3
+
+
+    let inline Test< ^t, ^a when (^t or ^a): (static member Method: ^a -> int)> (value: ^a) =
+        ( (^t or ^a): (static member Method: ^a -> int)(value))
+        
+    let inline Test2< ^t when (X or  ^t) : (static member Method :  ^t -> int)> a = Test<X, ^t> a
+
+    check "fweew-0wve" (Test2<int> 0) 2
 
 #if TESTS_AS_APP
 let RUN() = !failures

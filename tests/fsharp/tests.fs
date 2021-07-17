@@ -650,6 +650,85 @@ module CoreTests =
 
         exec cfg ("." ++ "testcs.exe") ""
 
+    [<Test>]
+    let ``extconstraint-fsc preview`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
+
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        fsc cfg "%s -o:test.exe -r cslib.dll -g --optimize+" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``extconstraint-fsc-no-optimize preview`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:preview" }
+
+        csc cfg """/nologo  /target:library /out:cslib.dll""" ["cslib.cs"]
+
+        fsc cfg "%s -o:test-debug.exe -r cslib.dll -g --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test-debug.exe"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        exec cfg ("." ++ "test-debug.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``extconstraint-fsi preview`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsi_flags = cfg.fsi_flags + " --langversion:preview" }
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``extconstraint-compat preview`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --define:LANGVERSION_PREVIEW --langversion:preview" }
+
+        let outFile = "test-compat.output.txt" 
+        let expectedFile = "test-compat.output.bsl" 
+
+        fscBothToOut cfg outFile "%s -i  --nologo" cfg.fsc_flags ["test-compat.fsx"]
+
+        let diff = fsdiff cfg outFile expectedFile 
+
+        match diff with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff) 
+
+    [<Test>]
+    let ``extconstraint-compat2`` () = 
+        let cfg = testConfig "core/extconstraint"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --langversion:4.6" }
+
+        let outFile = "test-compat.output.feature-disabled.txt" 
+        let expectedFile = "test-compat.output.feature-disabled.bsl" 
+
+        fscBothToOut cfg outFile "%s -i  --nologo" cfg.fsc_flags ["test-compat.fsx"]
+
+        let diff = fsdiff cfg outFile expectedFile 
+
+        match diff with 
+        | "" -> () 
+        | _ -> 
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff) 
+
 
     //
     // Shadowcopy does not work for public signed assemblies
@@ -663,7 +742,7 @@ module CoreTests =
     //    // "%FSI%" %fsi_flags%  --shadowcopyreferences- < test1.fsx
     //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences-")
     //    let ``shadowcopy disabled`` (flags: string) =
-    //        let cfg = testConfig' ()
+    //        let cfg = testConfig ()
     //
     //
     //
@@ -684,7 +763,7 @@ module CoreTests =
     //    // "%FSI%" %fsi_flags%  --shadowcopyreferences  < test2.fsx
     //    [<FSharpSuiteTestCase("core/fsi-shadowcopy", "--shadowcopyreferences")
     //    let ``shadowcopy enabled`` (flags: string) =
-    //        let cfg = testConfig' ()
+    //        let cfg = testConfig ()
     //
     //
     //
@@ -2276,10 +2355,10 @@ module TypecheckTests =
 #if !NETCOREAPP
 
     [<Test>]
-    let ``sigs pos26`` () =
+    let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
-        peverify cfg "pos26.exe"
+        fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
+        peverify cfg "pos24.exe"
 
     [<Test>]
     let ``sigs pos25`` () =
@@ -2288,7 +2367,13 @@ module TypecheckTests =
         peverify cfg "pos25.exe"
 
     [<Test>]
-    let ``sigs pos27`` () =
+    let ``sigs pos26`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
+        peverify cfg "pos26.exe"
+
+    [<Test>]
+    let ``sigs pos27`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
         peverify cfg "pos27.exe"
@@ -2310,12 +2395,6 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos30.exe --warnaserror+" cfg.fsc_flags ["pos30.fs"]
         peverify cfg "pos30.exe"
-
-    [<Test>]
-    let ``sigs pos24`` () =
-        let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
-        peverify cfg "pos24.exe"
 
     [<Test>]
     let ``sigs pos31`` () =
@@ -2341,11 +2420,73 @@ module TypecheckTests =
         fsc cfg "%s --target:library -o:pos34.dll --warnaserror" cfg.fsc_flags ["pos34.fs"]
         peverify cfg "pos34.dll"
 
+    // We also run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs pos34 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos34-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["pos34.fs"]
+        peverify cfg "pos34-preview.dll"
+
     [<Test>]
     let ``sigs pos35`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:pos35.dll --warnaserror" cfg.fsc_flags ["pos35.fs"]
         peverify cfg "pos35.dll"
+
+    [<Test>] 
+    let ``sigs pos35 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos35.dll --warnaserror --langversion:preview" cfg.fsc_flags ["pos35.fs"]
+        peverify cfg "pos35.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs pos36 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:pos36.dll --langversion:preview --warnaserror" cfg.fsc_flags ["pos36.fs"]
+        peverify cfg "pos36.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs widen1 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:widen1.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen1.fs"]
+        peverify cfg "widen1.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs widen2 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:widen2.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen2.fs"]
+        peverify cfg "widen2.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs widen3 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:widen3.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen3.fs"]
+        peverify cfg "widen3.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs widen4 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:widen4.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen4.fs"]
+        peverify cfg "widen4.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs widen5 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:widen5.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen5.fs"]
+        peverify cfg "widen5.dll"
+
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>]
+    let ``sigs widen6 preview`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:widen6.dll --langversion:preview --warnaserror" cfg.fsc_flags ["widen6.fs"]
+        peverify cfg "widen6.dll"
 
     [<Test>]
     let ``sigs pos36-srtp`` () =
@@ -2811,8 +2952,9 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg93`` () = singleNegTest (testConfig "typecheck/sigs") "neg93"
 
-    [<Test>]
-    let ``type check neg94`` () = singleNegTest (testConfig "typecheck/sigs") "neg94"
+    // The code in the "pre" file no longer compiles in "preview".  This is by design - an extra type annotation is needed.
+    [<Test>] 
+    let ``type check neg94 langversion 4_7`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg94"
 
     [<Test>]
     let ``type check neg95`` () = singleNegTest (testConfig "typecheck/sigs") "neg95"
@@ -2880,47 +3022,171 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg116`` () = singleNegTest (testConfig "typecheck/sigs") "neg116"
 
-    [<Test>]
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>] 
+    let ``type check neg116 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg116"
+
+    [<Test>] 
     let ``type check neg117`` () = singleNegTest (testConfig "typecheck/sigs") "neg117"
 
-    [<Test>]
+    // We also run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    // This test can replace the one above once RFC-1043 is activated in default language version
+    [<Test>] 
+    let ``type check neg117 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg117-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg117.fs"]
+        peverify cfg "neg117-preview.dll"
+
+    [<Test>] 
     let ``type check neg118`` () = singleNegTest (testConfig "typecheck/sigs") "neg118"
 
     [<Test>]
     let ``type check neg119`` () = singleNegTest (testConfig "typecheck/sigs") "neg119"
 
-    [<Test>]
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
     let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
 
-    [<Test>]
+    [<Test>] 
+    let ``type check neg120 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg120"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
     let ``type check neg121`` () = singleNegTest (testConfig "typecheck/sigs") "neg121"
 
-    [<Test>]
+    // The code in this test fails to compile even when FS-1043 is enabled - this is expected.
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and may be affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg121 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg121"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
     let ``type check neg122`` () = singleNegTest (testConfig "typecheck/sigs") "neg122"
 
-    [<Test>]
-    let ``type check neg123`` () = singleNegTest (testConfig "typecheck/sigs") "neg123"
+    [<Test>] 
+    let ``type check neg122 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg122"
 
-    [<Test>]
-    let ``type check neg124`` () = singleNegTest (testConfig "typecheck/sigs") "neg124"
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg123`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg123"
 
-    [<Test>]
-    let ``type check neg125`` () = singleNegTest (testConfig "typecheck/sigs") "neg125"
+    [<Test>] 
+    let ``type check neg123 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg123"
 
-    [<Test>]
-    let ``type check neg126`` () = singleNegTest (testConfig "typecheck/sigs") "neg126"
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg124`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg124"
 
-    [<Test>]
-    let ``type check neg127`` () = singleNegTest (testConfig "typecheck/sigs") "neg127"
+    [<Test>] 
+    let ``type check neg124 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg124"
 
-    [<Test>]
-    let ``type check neg128`` () = singleNegTest (testConfig "typecheck/sigs") "neg128"
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:default and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg125`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg125"
 
-    [<Test>]
-    let ``type check neg129`` () = singleNegTest (testConfig "typecheck/sigs") "neg129"
+    [<Test>] 
+    let ``type check neg125 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg125"
+
+    // The code in this test starts to compile once FS-1043 is enabled.
+    //
+    // We run this with --langversion:preview because it is an SRTP test and RFC FS-1043 is enabled in preview
+    [<Test>] 
+    let ``type check neg126`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg126"
+
+    [<Test>] 
+    let ``type check neg126 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg126-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg126.fs"]
+        peverify cfg "neg126-preview.dll"
+
+    // The code in this test does not compile (in any language version)
+    // 
+    // We compile with both --langversion:4.7 and no --langversion:preview 
+    // because it is an SRTP test and we want to check it is not affected by RFC FS-1043
+    [<Test>] 
+    let ``type check neg127 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "" "neg127"
+
+    [<Test>] 
+    let ``type check neg127 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg127"
+
+    // The code in this test starts to compile once FS-1043 is enabled.
+    [<Test>] 
+    let ``type check neg128 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg128"
+
+    [<Test>] 
+    let ``type check neg128 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg128-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg128.fs"]
+        peverify cfg "neg128-preview.dll"
+
+    // The code in this test starts to compile once FS-1043 is enabled.
+    [<Test>] 
+    let ``type check neg129 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg129"
+
+    [<Test>] 
+    let ``type check neg129 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:library -o:neg129-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg129.fs"]
+        peverify cfg "neg129-preview.dll"
 
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
+
+    [<Test>] 
+    let ``type check neg131 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg131"
+
+    [<Test>] 
+    let ``type check neg131 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
+
+    [<Test>] 
+    // This code must pass compilation with /langversion:4.7 on because RFC FS-1043 is not supported
+    let ``type check neg132 4_7`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s -o:neg132-4.7.exe --langversion:4.7 --warnaserror" cfg.fsc_flags ["neg132.fs"]
+        peverify cfg "neg132-4.7.exe"
+        exec cfg ("." ++ "neg132-4.7.exe") ""
+
+    [<Test>] 
+    // This code must not pass compilation with /langversion:preview on because RFC FS-1043 is supported
+    let ``type check neg132 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg132"
+
+    // The code in the neg133 test does not compile (in any language version).
+    // However it raises an internal error without RFC-1043 and so we don't
+    // run it under that configuration.
+    //
+    //[<Test>] 
+    //let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
+
+    [<Test>] 
+    let ``type check neg133 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg133"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"

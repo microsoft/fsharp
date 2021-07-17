@@ -36,6 +36,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | ExtensionConstraintSolutions
     | StructActivePattern
     | PrintfBinaryFormat
     | UseBindingValueDiscard
@@ -82,6 +83,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.OverloadsForCustomOperations, previewVersion
             LanguageFeature.ExpandedMeasurables, previewVersion
             LanguageFeature.FromEndSlicing, previewVersion
+            LanguageFeature.ExtensionConstraintSolutions, previewVersion
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
@@ -160,6 +162,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.StringInterpolation -> FSComp.SR.featureStringInterpolation()
         | LanguageFeature.OverloadsForCustomOperations -> FSComp.SR.featureOverloadsForCustomOperations()
         | LanguageFeature.ExpandedMeasurables -> FSComp.SR.featureExpandedMeasurables()
+        | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions()
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()

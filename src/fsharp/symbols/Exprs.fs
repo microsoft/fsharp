@@ -886,7 +886,7 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
-            | TOp.TraitCall (TTrait(tys, nm, memFlags, argtys, _rty, _solution)), _, _                    -> 
+            | TOp.TraitCall (TTrait(tys, nm, memFlags, argtys, _rty, _solution, _traitCtxt)), _, _ -> 
                 let tysR = ConvTypes cenv tys
                 let tyargsR = ConvTypes cenv tyargs
                 let argtysR = ConvTypes cenv argtys

@@ -3,6 +3,6 @@ neg68.fsx(71,46,71,47): parse error FS0010: Unexpected symbol ')' in binding. Ex
 
 neg68.fsx(71,46,71,47): parse error FS0010: Unexpected symbol ')' in binding. Expected incomplete structured construct at or before this point or other token.
 
-neg68.fsx(123,40,123,41): typecheck error FS0001: The type 'bool' does not match the type 'float<'u>'
+neg68.fsx(123,40,123,41): typecheck error FS0001: The types 'float<kg ^ 2>, bool' do not support the operator '*'
 
-neg68.fsx(123,38,123,39): typecheck error FS0043: The type 'bool' does not match the type 'float<'u>'
+neg68.fsx(123,38,123,39): typecheck error FS0043: The types 'float<kg ^ 2>, bool' do not support the operator '*'

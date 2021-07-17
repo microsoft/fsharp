@@ -122,6 +122,11 @@
         <target state="translated">固定インデックス スライス 3d/4d</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>extension constraint solutions</source>
+        <target state="new">extension constraint solutions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureFromEndSlicing">
         <source>from-end slicing</source>
         <target state="translated">開始と終了を指定したスライス</target>
@@ -1632,6 +1637,16 @@
         <target state="translated">{0}' はプレフィックスの '{1}' フラグをサポートしていません</target>
         <note />
       </trans-unit>
+      <trans-unit id="csTypesDoNotSupportOperator">
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="new">The types '{0}' do not support the operator '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="csTypesDoNotSupportOperatorNullable">
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="new">The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="forBadFormatSpecifierGeneral">
         <source>Bad format specifier: '{0}'</source>
         <target state="translated">書式指定子に誤りがあります:'{0}'</target>
@@ -1987,19 +2002,9 @@
         <target state="translated">演算子 '{0}' をサポートする型が必要ですが、タプル型が指定されました</target>
         <note />
       </trans-unit>
-      <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">型 '{0}' はいずれも演算子 '{1}' をサポートしていません</target>
-        <note />
-      </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
         <source>The type '{0}' does not support the operator '{1}'</source>
         <target state="translated">型 '{0}' は演算子 '{1}' をサポートしていません</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">型 '{0}' はいずれも演算子 '{1}' をサポートしていません。'Microsoft.FSharp.Linq.NullableOperators' モジュールを開いてください。</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">

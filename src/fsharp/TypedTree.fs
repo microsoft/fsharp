@@ -2300,6 +2300,22 @@ type TyparConstraint =
     //member x.DebugText = x.ToString()
     
     override x.ToString() = sprintf "%+A" x 
+
+/// Only satisfied by elsewhere. Not stored in TastPickle.
+type ITraitContext = 
+    /// Used to select the extension methods in the context relevant to solving the constraint
+    /// given the current support types
+    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> ITraitExtensionMember list
+
+    /// Gives the access rights (e.g. InternalsVisibleTo, Protected) at the point the trait is being solved
+    abstract AccessRights: ITraitAccessorDomain
+
+/// Only satisfied by elsewhere. Not stored in TastPickle.
+type ITraitExtensionMember = interface end
+
+type ITraitAccessorDomain = interface end
+
+/// Represents the specification of a member constraint that must be solved 
     
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo = 
@@ -2320,30 +2336,38 @@ type TraitWitnessInfo =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
 
+    /// TTrait(tys, nm, memFlags, argtys, rty, solutionCell, extSlns, ad)
+    ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * _memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
+    | TTrait of supportTys: TTypes * memberName: string * memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * traitSln: TraitConstraintSln option ref * traitContext: ITraitContext option
+
+    /// Get the support types that can help provide members to solve the constraint
+    member x.SupportTypes = (let (TTrait(tys,_,_,_,_,_,_)) = x in tys)
 
     /// Get the key associated with the member constraint.
-    member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
+    member x.TraitKey = (let (TTrait(a, b, c, d, e, _, _)) = x in TraitWitnessInfo(a, b, c, d, e))
 
     /// Get the member name associated with the member constraint.
-    member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    member x.MemberName = (let (TTrait(_, nm, _, _, _, _, _)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
-    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _, _)) = x in flags)
 
     /// Get the argument types recorded in the member constraint. This includes the object instance type for
     /// instance members.
-    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _)) = x in argtys)
+    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _, _)) = x in argtys)
 
     /// Get the return type recorded in the member constraint.
-    member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
+    member x.ReturnType = (let (TTrait(_, _, _, _, rty, _, _)) = x in rty)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
-        and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(_, _, _, _, _, sln, _)) = x in sln.Value)
+        and set v = (let (TTrait(_, _, _, _, _, sln, _)) = x in sln.Value <- v)
+
+    /// Get the context used to help determine possible extension member solutions
+    member x.TraitContext = (let (TTrait(_, _, _, _, _, _, traitCtxt)) = x in traitCtxt)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2357,10 +2381,11 @@ type TraitConstraintSln =
     /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    ty -- the type and its instantiation
+    ///    ty -- the apparent type and its instantiation
     ///    vref -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst 
+    ///    isExt -- is this a use of an extension method
+    | FSMethSln of apparentType: TType * valRef: ValRef * methodInst: TypeInst * isExt: bool
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -5585,7 +5610,6 @@ type Construct() =
           rfield_id=id
           rfield_name_generated = nameGenerated
           rfield_other_range = None }
-
     
     /// Create a new type definition node
     static member NewTycon (cpath, nm, m, access, reprAccess, kind, typars, doc: XmlDoc, usesPrefixDisplay, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, mtyp) =

@@ -1,5 +1,5 @@
 // #Conformance #TypeConstraints #Diagnostics
-//<Expects status="error" span="(10,19-10,25)" id="FS0001">The type 'Foo' has a method 'someFunc' \(full name 'someFunc'\), but the method is not static$</Expects>
+//<Expects status="error" span="(10,19-10,25)" id="FS0001">someFunc is not a static method$</Expects>
 let inline testFunc (a : ^x) =
     (^x : (static member someFunc : unit -> ^x) ())
 

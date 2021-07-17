@@ -1514,8 +1514,11 @@ let p_trait_sln sln st =
     match sln with
     | ILMethSln(a, b, c, d) ->
          p_byte 0 st; p_tup4 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys (a, b, c, d) st
-    | FSMethSln(a, b, c) ->
-         p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
+    | FSMethSln(a, b, c, isExt) ->
+         if isExt then 
+             p_byte 6 st; p_tup4 p_ty (p_vref "trait") p_tys p_bool (a, b, c, isExt) st
+         else
+             p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
     | BuiltInSln ->
          p_byte 2 st
     | ClosedExprSln expr ->
@@ -1526,7 +1529,8 @@ let p_trait_sln sln st =
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
 
 
-let p_trait (TTrait(a, b, c, d, e, f)) st  =
+let p_trait (TTrait(a, b, c, d, e, f, _traitCtxt)) st  = 
+    // The _extSlns do not get pickled. We are assuming this is a generic or solved constraint
     p_tup6 p_tys p_string p_MemberFlags p_tys (p_option p_ty) (p_option p_trait_sln) (a, b, c, d, e, !f) st
 
 let u_anonInfo_data st =
@@ -1545,7 +1549,7 @@ let u_trait_sln st =
         ILMethSln(a, b, c, d)
     | 1 ->
         let (a, b, c) = u_tup3 u_ty u_vref u_tys st
-        FSMethSln(a, b, c)
+        FSMethSln(a, b, c, false)
     | 2 ->
         BuiltInSln
     | 3 ->
@@ -1556,12 +1560,17 @@ let u_trait_sln st =
     | 5 ->
          let (a, b, c) = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
+    | 6 ->
+        let (a, b, c, d) = u_tup4 u_ty u_vref u_tys u_bool st
+        FSMethSln(a, b, c, d)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =
     let a, b, c, d, e, f = u_tup6 u_tys u_string u_MemberFlags u_tys (u_option u_ty) (u_option u_trait_sln) st
-    TTrait (a, b, c, d, e, ref f)
-
+    // extSlns starts empty when reading trait constraints from pickled
+    // data. This is ok as only generalized (pre-solution, pre-freshened)
+    // or solved constraints are propagated across assembly boundaries.
+    TTrait (a, b, c, d, e, ref f, None)
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 

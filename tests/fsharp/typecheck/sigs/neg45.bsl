@@ -95,6 +95,6 @@ neg45.fs(144,13,144,23): typecheck error FS0001: The type 'A1' does not support 
 
 neg45.fs(145,13,145,23): typecheck error FS0001: The type 'A2' does not support the operator 'get_Name'
 
-neg45.fs(146,13,146,23): typecheck error FS0001: The type 'B' has a method 'get_Name' (full name 'get_Name'), but the method is not static
+neg45.fs(146,13,146,23): typecheck error FS0001: get_Name is not a static method
 
 neg45.fs(147,15,147,25): typecheck error FS0001: The type 'StaticMutableClassExplicit' does not support the operator 'get_Name'
