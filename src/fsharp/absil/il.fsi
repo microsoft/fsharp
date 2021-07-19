@@ -5,6 +5,7 @@
 module rec FSharp.Compiler.AbstractIL.IL
 
 open FSharp.Compiler.IO
+open FSharp.Compiler.Features
 open Internal.Utilities
 open System.Collections.Generic
 open System.Reflection
@@ -1645,6 +1646,8 @@ type internal ILGlobals =
 
     member fsharpCoreAssemblyScopeRef: ILScopeRef
 
+    member langVersion: LanguageVersion
+
     /// Is the given assembly possibly a primary assembly?
     /// In practice, a primary assembly is an assembly that contains the System.Object type definition
     /// and has no referenced assemblies.
@@ -1656,7 +1659,7 @@ type internal ILGlobals =
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
 /// Build the table of commonly used references given functions to find types in system assemblies
-val internal mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef -> ILGlobals
+val internal mkILGlobals: primaryScopeRef: ILScopeRef * assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef * langVersion: LanguageVersion -> ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
 
@@ -1727,6 +1730,7 @@ val internal mkILNonGenericStaticMethSpecInTy: ILType * string * ILType list * I
 
 /// Construct references to constructors.
 val internal mkILCtorMethSpecForTy: ILType * ILType list -> ILMethodSpec
+val internal mkILNonGenericCtorMethSpec: ILTypeRef * ILType list -> ILMethodSpec
 
 /// Construct references to fields.
 val internal mkILFieldRef: ILTypeRef * string * ILType -> ILFieldRef

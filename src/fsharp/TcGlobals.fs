@@ -763,12 +763,16 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_check_this_info            = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "CheckThis"                            , None                 , None                          , [vara],      ([[varaTy]], varaTy))
   let v_quote_to_linq_lambda_info  = makeIntrinsicValRef(fslib_MFLinqRuntimeHelpersQuotationConverter_nleref,  "QuotationToLambdaExpression"          , None                 , None                          , [vara],      ([[mkQuotedExprTy varaTy]], mkLinqExpressionTy varaTy))
 
+  let tref_DebuggerNonUserCodeAttribute = findSysILTypeRef tname_DebuggerNonUserCodeAttribute
+  let v_DebuggerNonUserCodeAttribute_tcr = splitILTypeName tname_DebuggerNonUserCodeAttribute ||> findSysTyconRef
+
   let tref_DebuggableAttribute = findSysILTypeRef tname_DebuggableAttribute
   let tref_CompilerGeneratedAttribute  = findSysILTypeRef tname_CompilerGeneratedAttribute
+  let v_CompilerGeneratedAttribute_tcr = splitILTypeName tname_CompilerGeneratedAttribute ||> findSysTyconRef
 
   let mutable generatedAttribsCache = []
   let mutable debuggerBrowsableNeverAttributeCache = None
-  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (findSysILTypeRef tname_DebuggerNonUserCodeAttribute, [], [], [])
+  let mkDebuggerNonUserCodeAttribute() = mkILCustomAttribute (tref_DebuggerNonUserCodeAttribute, [], [], [])
   let mkCompilerGeneratedAttribute () = mkILCustomAttribute (tref_CompilerGeneratedAttribute, [], [], [])
   let compilerGlobalState = CompilerGlobalState()
 
@@ -784,6 +788,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
            res
        | res -> res
     mkILCustomAttrs (attrs.AsList @ attribs)
+
+  let addValGeneratedAttrs (v: Val) m =
+    if not noDebugData then
+        v.SetAttribs ([
+           Attrib(v_CompilerGeneratedAttribute_tcr, ILAttrib ((mkILNonGenericCtorMethSpec (tref_CompilerGeneratedAttribute, [])).MethodRef), [], [], false, None, m)
+           Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib ((mkILNonGenericCtorMethSpec (tref_DebuggerNonUserCodeAttribute, [])).MethodRef), [], [], false, None, m)
+           Attrib(v_DebuggerNonUserCodeAttribute_tcr, ILAttrib ((mkILNonGenericCtorMethSpec (tref_DebuggerNonUserCodeAttribute, [])).MethodRef), [], [], true, None, m)
+        ] @ v.Attribs)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
@@ -1559,6 +1571,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member val ilxPubCloEnv =
       EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
+
+  member _.AddValGeneratedAttributes v = addValGeneratedAttrs v
 
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 

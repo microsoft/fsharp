@@ -28,6 +28,7 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
 

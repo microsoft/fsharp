@@ -636,7 +636,7 @@ module rec Compiler =
             match result with
             | Success _ -> result
             | Failure r ->
-                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A" (r.Diagnostics)
+                let message = sprintf "Operation failed (expected to succeed).\n All errors:\n%A.\n Output:\n%A\n" (r.Diagnostics) (r.Output)
                 failwith message
 
         let shouldFail (result: TestResult) : TestResult =

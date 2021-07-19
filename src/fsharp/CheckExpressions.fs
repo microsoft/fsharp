@@ -1201,10 +1201,10 @@ let PublishValueDefnPrim cenv env (vspec: Val) =
     UpdateAccModuleOrNamespaceType cenv env (fun _ mty ->
         mty.AddVal vspec)
 
-let PublishValueDefn cenv env declKind (vspec: Val) =
-    if (declKind = ModuleOrMemberBinding) &&
-       ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) &&
-       (Option.isNone vspec.MemberInfo) then
+let PublishValueDefnMaybeInclCompilerGenerated cenv env inclCompilerGenerated declKind (vspec: Val) =
+    if (declKind = ModuleOrMemberBinding) && 
+       ((GetCurrAccumulatedModuleOrNamespaceType env).ModuleOrNamespaceKind = Namespace) && 
+       (Option.isNone vspec.MemberInfo) then 
            errorR(Error(FSComp.SR.tcNamespaceCannotContainValues(), vspec.Range))
 
     if (declKind = ExtrinsicExtensionBinding) &&
@@ -1218,9 +1218,9 @@ let PublishValueDefn cenv env declKind (vspec: Val) =
     | IntrinsicExtensionBinding -> PublishValueDefnPrim cenv env vspec
     | _ -> ()
 
-    match vspec.MemberInfo with
+    match vspec.MemberInfo with 
     | Some _ when
-        (not vspec.IsCompilerGenerated &&
+       ((not vspec.IsCompilerGenerated || inclCompilerGenerated) && 
          // Extrinsic extensions don't get added to the tcaug
          not (declKind = ExtrinsicExtensionBinding)) ->
          // // Static initializers don't get published to the tcaug
@@ -1232,7 +1232,10 @@ let PublishValueDefn cenv env declKind (vspec: Val) =
         tcaug.tcaug_adhoc_list.Add (ValRefIsExplicitImpl cenv.g vref, vref)
     | _ -> ()
 
-let CombineVisibilityAttribs vis1 vis2 m =
+let PublishValueDefn cenv env declKind vspec =
+    PublishValueDefnMaybeInclCompilerGenerated cenv env false declKind vspec
+
+let CombineVisibilityAttribs vis1 vis2 m = 
     match vis1 with
     | Some _ ->
         if Option.isSome vis2 then

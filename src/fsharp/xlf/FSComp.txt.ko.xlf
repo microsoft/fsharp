@@ -197,6 +197,11 @@
         <target state="translated">활성 패턴에 대한 구조체 표현</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>visible union case test properties</source>
+        <target state="new">visible union case test properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">for 루프의 와일드카드</target>

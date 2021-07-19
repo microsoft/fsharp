@@ -197,6 +197,11 @@
         <target state="translated">Strukturdarstellung für aktive Muster</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>visible union case test properties</source>
+        <target state="new">visible union case test properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">Platzhalter in for-Schleife</target>

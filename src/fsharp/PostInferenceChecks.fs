@@ -2250,10 +2250,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 x.IsDispatchSlot && y.IsDefiniteFSharpOverride
             let IsAbstractDefaultPair2 (minfo: MethInfo) (minfo2: MethInfo) = 
                 IsAbstractDefaultPair minfo minfo2 || IsAbstractDefaultPair minfo2 minfo
+            let IsCompilerGenerated (minfo: MethInfo) =
+                match minfo.ArbitraryValRef with None -> false | Some vref -> vref.IsCompilerGenerated
             let checkForDup erasureFlag (minfo2: MethInfo) =
                 not (IsAbstractDefaultPair2 minfo minfo2)
                 && (minfo.IsInstance = minfo2.IsInstance)
                 && MethInfosEquivWrtUniqueness erasureFlag m minfo minfo2
+                // Don't consider any compiler-generated methods for now; those are handled separately
+                && not (IsCompilerGenerated minfo || IsCompilerGenerated minfo2)
 
             if others |> List.exists (checkForDup EraseAll) then 
                 if others |> List.exists (checkForDup EraseNone) then 

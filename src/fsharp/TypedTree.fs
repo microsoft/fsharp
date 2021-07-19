@@ -4707,7 +4707,7 @@ type TOp =
     | ValFieldGetAddr of RecdFieldRef * readonly: bool      
 
     /// An operation representing getting an integer tag for a union value representing the union case number
-    | UnionCaseTagGet of TyconRef 
+    | UnionCaseTagGet of TyconRef
 
     /// An operation representing a coercion that proves a union value is of a particular union case. This is not a test, its
     /// simply added proof to enable us to generate verifiable code for field access on union types

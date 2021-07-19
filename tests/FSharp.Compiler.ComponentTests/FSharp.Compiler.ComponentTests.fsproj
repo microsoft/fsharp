@@ -54,6 +54,7 @@
     <Compile Include="Language\CodeQuotationTests.fs" />
     <Compile Include="Language\ComputationExpressionTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
+    <Compile Include="Language\DiscriminatedUnionTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />

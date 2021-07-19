@@ -1474,6 +1474,146 @@ module IncrClassChecking =
         
         ctorBody, cctorBodyOpt, methodBinds, reps
 
+//-------------------------------------------------------------------------
+// Build augmentation declarations
+//------------------------------------------------------------------------- 
+
+module AddAugmentationDeclarations = 
+    let tcaugHasNominalInterface g (tcaug: TyconAugmentation) tcref =
+        tcaug.tcaug_interfaces |> List.exists (fun (x, _, _) -> 
+            match tryTcrefOfAppTy g x with
+            | ValueSome tcref2 when tyconRefEq g tcref2 tcref -> true
+            | _ -> false)
+
+    let AddGenericCompareDeclarations (cenv: cenv) (env: TcEnv) (scSet: Set<Stamp>) (tycon: Tycon) =
+        let g = cenv.g
+        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && scSet.Contains tycon.Stamp then 
+            let tcref = mkLocalTyconRef tycon
+            let tcaug = tycon.TypeContents
+            let _, ty = if tcref.Deref.IsExceptionDecl then [], g.exn_ty else generalizeTyconRef tcref
+            let m = tycon.Range
+            let genericIComparableTy = mkAppTy g.system_GenericIComparable_tcref [ty]
+
+
+            let hasExplicitIComparable = tycon.HasInterface g g.mk_IComparable_ty 
+            let hasExplicitGenericIComparable = tcaugHasNominalInterface g tcaug g.system_GenericIComparable_tcref    
+            let hasExplicitIStructuralComparable = tycon.HasInterface g g.mk_IStructuralComparable_ty
+
+            if hasExplicitIComparable then 
+                errorR(Error(FSComp.SR.tcImplementsIComparableExplicitly(tycon.DisplayName), m)) 
+      
+            elif hasExplicitGenericIComparable then 
+                errorR(Error(FSComp.SR.tcImplementsGenericIComparableExplicitly(tycon.DisplayName), m)) 
+            elif hasExplicitIStructuralComparable then
+                errorR(Error(FSComp.SR.tcImplementsIStructuralComparableExplicitly(tycon.DisplayName), m)) 
+            else
+                let hasExplicitGenericIComparable = tycon.HasInterface g genericIComparableTy
+                let cvspec1, cvspec2 = AugmentWithHashCompare.MakeValsForCompareAugmentation g tcref
+                let cvspec3 = AugmentWithHashCompare.MakeValsForCompareWithComparerAugmentation g tcref
+
+                PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralComparable_ty
+                PublishInterface cenv env.DisplayEnv tcref m true g.mk_IComparable_ty
+                if not tycon.IsExceptionDecl && not hasExplicitGenericIComparable then 
+                    PublishInterface cenv env.DisplayEnv tcref m true genericIComparableTy
+                tcaug.SetCompare (mkLocalValRef cvspec1, mkLocalValRef cvspec2)
+                tcaug.SetCompareWith (mkLocalValRef cvspec3)
+                PublishValueDefn cenv env ModuleOrMemberBinding cvspec1
+                PublishValueDefn cenv env ModuleOrMemberBinding cvspec2
+                PublishValueDefn cenv env ModuleOrMemberBinding cvspec3
+
+    let AddGenericEqualityWithComparerDeclarations (cenv: cenv) (env: TcEnv) (seSet: Set<Stamp>) (tycon: Tycon) =
+        let g = cenv.g
+        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon && seSet.Contains tycon.Stamp then 
+            let tcref = mkLocalTyconRef tycon
+            let tcaug = tycon.TypeContents
+            let m = tycon.Range
+
+            let hasExplicitIStructuralEquatable = tycon.HasInterface g g.mk_IStructuralEquatable_ty
+
+            if hasExplicitIStructuralEquatable then
+                errorR(Error(FSComp.SR.tcImplementsIStructuralEquatableExplicitly(tycon.DisplayName), m)) 
+            else
+                let evspec1, evspec2, evspec3 = AugmentWithHashCompare.MakeValsForEqualityWithComparerAugmentation g tcref
+                PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralEquatable_ty                
+                tcaug.SetHashAndEqualsWith (mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3)
+                PublishValueDefn cenv env ModuleOrMemberBinding evspec1
+                PublishValueDefn cenv env ModuleOrMemberBinding evspec2
+                PublishValueDefn cenv env ModuleOrMemberBinding evspec3
+
+    let AddGenericCompareBindings (cenv: cenv) (tycon: Tycon) =
+        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
+            AugmentWithHashCompare.MakeBindingsForCompareAugmentation cenv.g tycon
+        else
+            []
+            
+    let AddGenericCompareWithComparerBindings (cenv: cenv) (tycon: Tycon) =
+        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToWithComparerValues then
+             (AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation cenv.g tycon)
+         else
+            []
+             
+    let AddGenericEqualityWithComparerBindings (cenv: cenv) (tycon: Tycon) =
+        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon && Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues then
+            (AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation cenv.g tycon)
+        else
+            []
+
+    let AddGenericHashAndComparisonDeclarations (cenv: cenv) (env: TcEnv) scSet seSet tycon =
+        AddGenericCompareDeclarations cenv env scSet tycon
+        AddGenericEqualityWithComparerDeclarations cenv env seSet tycon
+
+    let AddGenericHashAndComparisonBindings cenv tycon =
+        AddGenericCompareBindings cenv tycon @ AddGenericCompareWithComparerBindings cenv tycon @ AddGenericEqualityWithComparerBindings cenv tycon
+
+    // We can only add the Equals override after we've done the augmentation because we have to wait until 
+    // tycon.HasOverride can give correct results 
+    let AddGenericEqualityBindings (cenv: cenv) (env: TcEnv) tycon =
+        let g = cenv.g
+        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon then 
+            let tcref = mkLocalTyconRef tycon
+            let tcaug = tycon.TypeContents
+            let _, ty = if tcref.Deref.IsExceptionDecl then [], g.exn_ty else generalizeTyconRef tcref
+            let m = tycon.Range
+            
+            // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
+            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
+            let hasExplicitGenericIEquatable = tcaugHasNominalInterface g tcaug g.system_GenericIEquatable_tcref
+            
+            if hasExplicitGenericIEquatable then 
+                errorR(Error(FSComp.SR.tcImplementsIEquatableExplicitly(tycon.DisplayName), m)) 
+
+            // Note: only provide the equals method if Equals is not implemented explicitly, and
+            // we're actually generating Hash/Equals for this type
+            if not hasExplicitObjectEqualsOverride &&
+                Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues then
+
+                 let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation g tcref
+                 tcaug.SetEquals (mkLocalValRef vspec1, mkLocalValRef vspec2)
+                 if not tycon.IsExceptionDecl then 
+                    PublishInterface cenv env.DisplayEnv tcref m true (mkAppTy g.system_GenericIEquatable_tcref [ty])
+                 PublishValueDefn cenv env ModuleOrMemberBinding vspec1
+                 PublishValueDefn cenv env ModuleOrMemberBinding vspec2
+                 AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon
+            else []
+        else []
+
+    let ShouldAugmentUnion (g: TcGlobals) (tcref: TyconRef) =
+        g.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible &&
+        match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
+        | Some(Attrib(_, _, [ AttribBoolArg b ], _, _, _, _)) -> b
+        | Some (Attrib(_, _, _, _, _, _, m)) ->
+            errorR(Error(FSComp.SR.ilDefaultAugmentationAttributeCouldNotBeDecoded(), m))
+            true
+        | _ -> true
+
+    let AddUnionAugmentationBindings (cenv: cenv) (env: TcEnv) tycon =
+        let g = cenv.g
+        let tcref = mkLocalTyconRef tycon
+        let vals = AugmentWithHashCompare.MakeValsForUnionAugmentation g tcref
+        for v in vals do
+            PublishValueDefnMaybeInclCompilerGenerated cenv env true ModuleOrMemberBinding v
+        AugmentWithHashCompare.MakeBindingsForUnionAugmentation g tycon (List.map mkLocalValRef vals)
+
 // Checking of mutually recursive types, members and 'let' bindings in classes
 //
 // Technique: multiple passes.
@@ -2443,7 +2583,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                     // The rest should have been removed by splitting, they belong to "core" (they are "shape" of type, not implementation) 
                     | _ -> error(Error(FSComp.SR.tcDeclarationElementNotPermittedInAugmentation(), mem.Range))))
 
-
+      let extraBindings = Dictionary(HashIdentity.Reference)
       let binds: MutRecDefnsPhase2Info = 
           (envMutRec, mutRecDefns) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls tyconData -> 
               let (MutRecDefnsPhase2DataForTycon(tyconOpt, _, declKind, tcref, _, _, declaredTyconTypars, _, _, _, fixupFinalAttrs)) = tyconData
@@ -2452,8 +2592,11 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                 // Does not need to be hidden behind a lang version as it needs to be possible to
                 //     implement protected interface methods in lower F# versions regardless if it's a DIM or not.
                 match tyconOpt with
-                | Some _ when declKind = DeclKind.ModuleOrMemberBinding ->
-                    MakeInnerEnvForTyconRef envForDecls tcref false
+                | Some tycon when declKind = DeclKind.ModuleOrMemberBinding ->
+                    let envForDecls = MakeInnerEnvForTyconRef envForDecls tcref false
+                    if tycon.IsUnionTycon && AddAugmentationDeclarations.ShouldAugmentUnion g tcref then
+                        extraBindings.Add(tycon, AddAugmentationDeclarations.AddUnionAugmentationBindings cenv envForDecls tycon)
+                    envForDecls
                 | _ -> 
                     envForDecls
               let obinds = tyconBindingsOfTypeDefn tyconData
@@ -2463,134 +2606,20 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
                       (intfTypes, slotImplSets) ||> List.map2 (interfaceMembersFromTypeDefn tyconData) |> List.concat
               MutRecDefnsPhase2InfoForTycon(tyconOpt, tcref, declaredTyconTypars, declKind, obinds @ ibinds, fixupFinalAttrs))
       
-      MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem mutRecNSInfo envMutRec binds
+      let withBindings, env = MutRecBindingChecking.TcMutRecDefns_Phase2_Bindings cenv envInitial tpenv bindsm scopem mutRecNSInfo envMutRec binds
+      let withBindings =
+          if extraBindings.Count = 0 then
+              withBindings
+          else
+              (env, withBindings) ||> MutRecShapes.expandTyconsWithEnv (fun _ (tyconOpt, _) ->
+                  let mutable binds = Unchecked.defaultof<_>
+                  match tyconOpt with 
+                  | Some tycon when extraBindings.TryGetValue(tycon, &binds) -> binds, []
+                  | _ -> [], [] 
+              )
+      withBindings, env
 
     with e -> errorRecovery e scopem; [], envMutRec
-
-//-------------------------------------------------------------------------
-// Build augmentation declarations
-//------------------------------------------------------------------------- 
-
-module AddAugmentationDeclarations = 
-    let tcaugHasNominalInterface g (tcaug: TyconAugmentation) tcref =
-        tcaug.tcaug_interfaces |> List.exists (fun (x, _, _) -> 
-            match tryTcrefOfAppTy g x with
-            | ValueSome tcref2 when tyconRefEq g tcref2 tcref -> true
-            | _ -> false)
-
-    let AddGenericCompareDeclarations (cenv: cenv) (env: TcEnv) (scSet: Set<Stamp>) (tycon: Tycon) =
-        let g = cenv.g
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && scSet.Contains tycon.Stamp then 
-            let tcref = mkLocalTyconRef tycon
-            let tcaug = tycon.TypeContents
-            let _, ty = if tcref.Deref.IsExceptionDecl then [], g.exn_ty else generalizeTyconRef tcref
-            let m = tycon.Range
-            let genericIComparableTy = mkAppTy g.system_GenericIComparable_tcref [ty]
-
-
-            let hasExplicitIComparable = tycon.HasInterface g g.mk_IComparable_ty 
-            let hasExplicitGenericIComparable = tcaugHasNominalInterface g tcaug g.system_GenericIComparable_tcref    
-            let hasExplicitIStructuralComparable = tycon.HasInterface g g.mk_IStructuralComparable_ty
-
-            if hasExplicitIComparable then 
-                errorR(Error(FSComp.SR.tcImplementsIComparableExplicitly(tycon.DisplayName), m)) 
-      
-            elif hasExplicitGenericIComparable then 
-                errorR(Error(FSComp.SR.tcImplementsGenericIComparableExplicitly(tycon.DisplayName), m)) 
-            elif hasExplicitIStructuralComparable then
-                errorR(Error(FSComp.SR.tcImplementsIStructuralComparableExplicitly(tycon.DisplayName), m)) 
-            else
-                let hasExplicitGenericIComparable = tycon.HasInterface g genericIComparableTy
-                let cvspec1, cvspec2 = AugmentWithHashCompare.MakeValsForCompareAugmentation g tcref
-                let cvspec3 = AugmentWithHashCompare.MakeValsForCompareWithComparerAugmentation g tcref
-
-                PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralComparable_ty
-                PublishInterface cenv env.DisplayEnv tcref m true g.mk_IComparable_ty
-                if not tycon.IsExceptionDecl && not hasExplicitGenericIComparable then 
-                    PublishInterface cenv env.DisplayEnv tcref m true genericIComparableTy
-                tcaug.SetCompare (mkLocalValRef cvspec1, mkLocalValRef cvspec2)
-                tcaug.SetCompareWith (mkLocalValRef cvspec3)
-                PublishValueDefn cenv env ModuleOrMemberBinding cvspec1
-                PublishValueDefn cenv env ModuleOrMemberBinding cvspec2
-                PublishValueDefn cenv env ModuleOrMemberBinding cvspec3
-
-    let AddGenericEqualityWithComparerDeclarations (cenv: cenv) (env: TcEnv) (seSet: Set<Stamp>) (tycon: Tycon) =
-        let g = cenv.g
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon && seSet.Contains tycon.Stamp then 
-            let tcref = mkLocalTyconRef tycon
-            let tcaug = tycon.TypeContents
-            let m = tycon.Range
-
-            let hasExplicitIStructuralEquatable = tycon.HasInterface g g.mk_IStructuralEquatable_ty
-
-            if hasExplicitIStructuralEquatable then
-                errorR(Error(FSComp.SR.tcImplementsIStructuralEquatableExplicitly(tycon.DisplayName), m)) 
-            else
-                let evspec1, evspec2, evspec3 = AugmentWithHashCompare.MakeValsForEqualityWithComparerAugmentation g tcref
-                PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralEquatable_ty                
-                tcaug.SetHashAndEqualsWith (mkLocalValRef evspec1, mkLocalValRef evspec2, mkLocalValRef evspec3)
-                PublishValueDefn cenv env ModuleOrMemberBinding evspec1
-                PublishValueDefn cenv env ModuleOrMemberBinding evspec2
-                PublishValueDefn cenv env ModuleOrMemberBinding evspec3
-
-    let AddGenericCompareBindings (cenv: cenv) (tycon: Tycon) =
-        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToValues then 
-            AugmentWithHashCompare.MakeBindingsForCompareAugmentation cenv.g tycon
-        else
-            []
-            
-    let AddGenericCompareWithComparerBindings (cenv: cenv) (tycon: Tycon) =
-        if (* AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && *) Option.isSome tycon.GeneratedCompareToWithComparerValues then
-             (AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation cenv.g tycon)
-         else
-            []
-             
-    let AddGenericEqualityWithComparerBindings (cenv: cenv) (tycon: Tycon) =
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon && Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues then
-            (AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation cenv.g tycon)
-        else
-            []
-
-    let AddGenericHashAndComparisonDeclarations (cenv: cenv) (env: TcEnv) scSet seSet tycon =
-        AddGenericCompareDeclarations cenv env scSet tycon
-        AddGenericEqualityWithComparerDeclarations cenv env seSet tycon
-
-    let AddGenericHashAndComparisonBindings cenv tycon =
-        AddGenericCompareBindings cenv tycon @ AddGenericCompareWithComparerBindings cenv tycon @ AddGenericEqualityWithComparerBindings cenv tycon
-
-    // We can only add the Equals override after we've done the augmentation because we have to wait until 
-    // tycon.HasOverride can give correct results 
-    let AddGenericEqualityBindings (cenv: cenv) (env: TcEnv) tycon =
-        let g = cenv.g
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon then 
-            let tcref = mkLocalTyconRef tycon
-            let tcaug = tycon.TypeContents
-            let _, ty = if tcref.Deref.IsExceptionDecl then [], g.exn_ty else generalizeTyconRef tcref
-            let m = tycon.Range
-            
-            // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
-            let hasExplicitObjectEqualsOverride = tycon.HasOverride g "Equals" [g.obj_ty]
-            let hasExplicitGenericIEquatable = tcaugHasNominalInterface g tcaug g.system_GenericIEquatable_tcref
-            
-            if hasExplicitGenericIEquatable then 
-                errorR(Error(FSComp.SR.tcImplementsIEquatableExplicitly(tycon.DisplayName), m)) 
-
-            // Note: only provide the equals method if Equals is not implemented explicitly, and
-            // we're actually generating Hash/Equals for this type
-            if not hasExplicitObjectEqualsOverride &&
-                Option.isSome tycon.GeneratedHashAndEqualsWithComparerValues then
-
-                 let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation g tcref
-                 tcaug.SetEquals (mkLocalValRef vspec1, mkLocalValRef vspec2)
-                 if not tycon.IsExceptionDecl then 
-                    PublishInterface cenv env.DisplayEnv tcref m true (mkAppTy g.system_GenericIEquatable_tcref [ty])
-                 PublishValueDefn cenv env ModuleOrMemberBinding vspec1
-                 PublishValueDefn cenv env ModuleOrMemberBinding vspec2
-                 AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon
-            else []
-        else []
-
-
 
 /// Infer 'comparison' and 'equality' constraints from type definitions
 module TyconConstraintInference = 

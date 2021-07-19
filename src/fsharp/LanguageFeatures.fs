@@ -40,6 +40,7 @@ type LanguageFeature =
     | StructActivePattern
     | PrintfBinaryFormat
     | UseBindingValueDiscard
+    | UnionIsPropertiesVisible
     | NonVariablePatternsToRightOfAsPatterns
     | AttributesToRightOfModuleKeyword
 
@@ -87,6 +88,7 @@ type LanguageVersion (specifiedVersionAsString) =
             LanguageFeature.StructActivePattern, previewVersion
             LanguageFeature.PrintfBinaryFormat, previewVersion
             LanguageFeature.UseBindingValueDiscard, previewVersion
+            LanguageFeature.UnionIsPropertiesVisible, previewVersion
             LanguageFeature.NonVariablePatternsToRightOfAsPatterns, previewVersion
             LanguageFeature.AttributesToRightOfModuleKeyword, previewVersion
         ]
@@ -166,6 +168,7 @@ type LanguageVersion (specifiedVersionAsString) =
         | LanguageFeature.StructActivePattern -> FSComp.SR.featureStructActivePattern()
         | LanguageFeature.PrintfBinaryFormat -> FSComp.SR.featurePrintfBinaryFormat()
         | LanguageFeature.UseBindingValueDiscard -> FSComp.SR.featureDiscardUseValue()
+        | LanguageFeature.UnionIsPropertiesVisible -> FSComp.SR.featureUnionIsPropertiesVisible()
         | LanguageFeature.NonVariablePatternsToRightOfAsPatterns -> FSComp.SR.featureNonVariablePatternsToRightOfAsPatterns()
         | LanguageFeature.AttributesToRightOfModuleKeyword -> FSComp.SR.featureAttributesToRightOfModuleKeyword()
 

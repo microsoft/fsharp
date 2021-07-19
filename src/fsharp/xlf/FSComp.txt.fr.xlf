@@ -197,6 +197,11 @@
         <target state="translated">représentation de structure pour les modèles actifs</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureUnionIsPropertiesVisible">
+        <source>visible union case test properties</source>
+        <target state="new">visible union case test properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureWildCardInForLoop">
         <source>wild card in for loop</source>
         <target state="translated">caractère générique dans une boucle for</target>
