@@ -36,13 +36,13 @@
   // Offset: 0x000002A0 Length: 0x000000BA
 }
 .module SeqExpressionSteppingTest6.exe
-// MVID: {60B78A59-2432-94A2-A745-0383598AB760}
+// MVID: {60BD414C-2432-94A2-A745-03834C41BD60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06B30000
+// Image base: 0x06E80000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -254,11 +254,10 @@
       .method public strict virtual instance void 
               Close() cil managed
       {
-        // Code size       173 (0xad)
+        // Code size       167 (0xa7)
         .maxstack  6
         .locals init ([0] class [mscorlib]System.Exception V_0,
-                 [1] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_1,
-                 [2] class [mscorlib]System.Exception e)
+                 [1] class [mscorlib]System.Exception e)
         .line 100001,100001 : 0,0 ''
         IL_0000:  ldarg.0
         IL_0001:  ldfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::pc
@@ -270,7 +269,7 @@
 
         .line 100001,100001 : 0,0 ''
         IL_0013:  nop
-        IL_0014:  br         IL_00a4
+        IL_0014:  br         IL_009e
 
         .line 100001,100001 : 0,0 ''
         IL_0019:  nop
@@ -343,41 +342,34 @@
           IL_0085:  ldarg.0
           IL_0086:  ldc.i4.0
           IL_0087:  stfld      int32 SeqExpressionSteppingTest6/SeqExpressionSteppingTest6/f7@6::current
-          IL_008c:  ldnull
-          IL_008d:  stloc.1
-          IL_008e:  leave.s    IL_009c
+          IL_008c:  leave.s    IL_0098
 
         }  // end .try
         catch [mscorlib]System.Object 
         {
-          IL_0090:  castclass  [mscorlib]System.Exception
-          IL_0095:  stloc.2
+          IL_008e:  castclass  [mscorlib]System.Exception
+          IL_0093:  stloc.1
           .line 6,8 : 15,25 ''
-          IL_0096:  ldloc.2
-          IL_0097:  stloc.0
-          IL_0098:  ldnull
-          IL_0099:  stloc.1
-          IL_009a:  leave.s    IL_009c
+          IL_0094:  ldloc.1
+          IL_0095:  stloc.0
+          IL_0096:  leave.s    IL_0098
 
           .line 100001,100001 : 0,0 ''
         }  // end handler
-        IL_009c:  ldloc.1
-        IL_009d:  pop
-        .line 100001,100001 : 0,0 ''
-        IL_009e:  nop
-        IL_009f:  br         IL_0000
+        IL_0098:  nop
+        IL_0099:  br         IL_0000
 
+        IL_009e:  ldloc.0
+        IL_009f:  ldnull
+        IL_00a0:  cgt.un
+        IL_00a2:  brfalse.s  IL_00a6
+
+        .line 100001,100001 : 0,0 ''
         IL_00a4:  ldloc.0
-        IL_00a5:  ldnull
-        IL_00a6:  cgt.un
-        IL_00a8:  brfalse.s  IL_00ac
+        IL_00a5:  throw
 
         .line 100001,100001 : 0,0 ''
-        IL_00aa:  ldloc.0
-        IL_00ab:  throw
-
-        .line 100001,100001 : 0,0 ''
-        IL_00ac:  ret
+        IL_00a6:  ret
       } // end of method f7@6::Close
 
       .method public strict virtual instance bool 

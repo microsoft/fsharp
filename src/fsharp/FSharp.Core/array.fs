@@ -238,7 +238,7 @@ namespace Microsoft.FSharp.Collections
             res
 
         [<CompiledName("Iterate")>]
-        let inline iter action (array: 'T[]) = 
+        let inline iter ([<InlineIfLambda>] action) (array: 'T[]) = 
             checkNonNull "array" array            
             for i = 0 to array.Length-1 do 
                 action array.[i]
@@ -258,7 +258,7 @@ namespace Microsoft.FSharp.Collections
             Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 i temp
 
         [<CompiledName("Map")>]
-        let inline map (mapping: 'T -> 'U) (array: 'T[]) =
+        let inline map ([<InlineIfLambda>] mapping: 'T -> 'U) (array: 'T[]) =
             checkNonNull "array" array            
             let res: 'U[] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked array.Length
             for i = 0 to res.Length-1 do 
@@ -1110,7 +1110,7 @@ namespace Microsoft.FSharp.Collections
             acc
 
         [<CompiledName("MinBy")>]
-        let inline minBy projection (array: _[]) = 
+        let inline minBy ([<InlineIfLambda>] projection) (array: _[]) = 
             checkNonNull "array" array
             if array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputArrayEmptyString
             let mutable accv = array.[0]
@@ -1167,7 +1167,7 @@ namespace Microsoft.FSharp.Collections
             LanguagePrimitives.DivideByInt< ^U> acc array.Length
 
         [<CompiledName("CompareWith")>]
-        let inline compareWith (comparer: 'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
+        let inline compareWith ([<InlineIfLambda>] comparer: 'T -> 'T -> int) (array1: 'T[]) (array2: 'T[]) = 
             checkNonNull "array1" array1
             checkNonNull "array2" array2
 

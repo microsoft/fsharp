@@ -36,13 +36,13 @@
   // Offset: 0x00000200 Length: 0x0000007B
 }
 .module ForLoop03.exe
-// MVID: {60B68B7F-1757-791C-A745-03837F8BB660}
+// MVID: {60BCDCE8-1757-791C-A745-0383E8DCBC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07280000
+// Image base: 0x066B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -62,16 +62,13 @@
 
   .method public static void  test1() cil managed
   {
-    // Code size       113 (0x71)
+    // Code size       97 (0x61)
     .maxstack  5
     .locals init ([0] int32 z,
              [1] int32 i,
              [2] class [mscorlib]System.Collections.Generic.List`1<int32> V_2,
              [3] valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<int32> V_3,
-             [4] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_4,
-             [5] int32 x,
-             [6] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_6,
-             [7] int32 V_7)
+             [4] int32 x)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 10,10 : 4,21 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ForLoop03.fs'
     IL_0000:  ldc.i4.0
@@ -79,7 +76,7 @@
     .line 11,11 : 4,28 ''
     IL_0002:  ldc.i4.0
     IL_0003:  stloc.1
-    IL_0004:  br.s       IL_0048
+    IL_0004:  br.s       IL_0040
 
     .line 12,12 : 6,20 ''
     IL_0006:  call       class [mscorlib]System.Collections.Generic.List`1<int32> ForLoop03::get_ra()
@@ -106,46 +103,36 @@
       IL_0029:  nop
       IL_002a:  br.s       IL_0013
 
-      IL_002c:  ldnull
-      IL_002d:  stloc.s    V_4
-      IL_002f:  leave.s    IL_0041
+      IL_002c:  leave.s    IL_003c
 
     }  // end .try
     finally
     {
-      IL_0031:  ldloca.s   V_3
-      IL_0033:  constrained. valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<int32>
-      IL_0039:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-      IL_003e:  ldnull
-      IL_003f:  pop
-      IL_0040:  endfinally
+      IL_002e:  ldloca.s   V_3
+      IL_0030:  constrained. valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<int32>
+      IL_0036:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+      IL_003b:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0041:  ldloc.s    V_4
-    IL_0043:  pop
-    IL_0044:  ldloc.1
-    IL_0045:  ldc.i4.1
-    IL_0046:  add
-    IL_0047:  stloc.1
+    IL_003c:  ldloc.1
+    IL_003d:  ldc.i4.1
+    IL_003e:  add
+    IL_003f:  stloc.1
     .line 11,11 : 4,28 ''
-    IL_0048:  ldloc.1
-    IL_0049:  ldc.i4.1
-    IL_004a:  ldc.i4     0x989680
-    IL_004f:  add
-    IL_0050:  blt.s      IL_0006
+    IL_0040:  ldloc.1
+    IL_0041:  ldc.i4.1
+    IL_0042:  ldc.i4     0x989680
+    IL_0047:  add
+    IL_0048:  blt.s      IL_0006
 
     .line 14,14 : 4,20 ''
-    IL_0052:  ldstr      "z = %d"
-    IL_0057:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
-    IL_005c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0061:  stloc.s    V_6
-    IL_0063:  ldloc.0
-    IL_0064:  stloc.s    V_7
-    IL_0066:  ldloc.s    V_6
-    IL_0068:  ldloc.s    V_7
-    IL_006a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_006f:  pop
-    IL_0070:  ret
+    IL_004a:  ldstr      "z = %d"
+    IL_004f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
+    IL_0054:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_0059:  ldloc.0
+    IL_005a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_005f:  pop
+    IL_0060:  ret
   } // end of method ForLoop03::test1
 
   .property class [mscorlib]System.Collections.Generic.List`1<int32>

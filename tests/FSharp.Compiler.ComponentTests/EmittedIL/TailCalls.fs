@@ -25,22 +25,16 @@ let run() = let x = 0 in foo(x,5)
   .method public static void  foo<a>(int32 x,
                                      !!a y) cil managed
   {
-
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
-             int32 V_1)
+        
+    .maxstack  8
     IL_0000:  ldstr      "%d"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  stloc.0
-    IL_0010:  ldarg.0
-    IL_0011:  stloc.1
-    IL_0012:  ldloc.0
-    IL_0013:  ldloc.1
-    IL_0014:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0019:  pop
-    IL_001a:  ret
-  }
+    IL_000f:  ldarg.0
+    IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0015:  pop
+    IL_0016:  ret
+  } 
             """
             """
   .method public static void  run() cil managed
@@ -110,28 +104,22 @@ let run() = let mutable x = 0 in foo &x &x 5
                                      int32& y,
                                      !!a z) cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00
-                                                                                                                    00 00 00 00 )
-
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
-             int32 V_1)
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 03 00 00 00 01 00 00 00 01 00 00 00 01 00 
+                                                                                                                        00 00 00 00 ) 
+        
+    .maxstack  8
     IL_0000:  ldstr      "%d"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  stloc.0
-    IL_0010:  ldarg.0
-    IL_0011:  ldobj      [runtime]System.Int32
-    IL_0016:  ldarg.1
-    IL_0017:  ldobj      [runtime]System.Int32
-    IL_001c:  add
-    IL_001d:  stloc.1
-    IL_001e:  ldloc.0
-    IL_001f:  ldloc.1
-    IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0025:  pop
-    IL_0026:  ret
-  }
+    IL_000f:  ldarg.0
+    IL_0010:  ldobj      [runtime]System.Int32
+    IL_0015:  ldarg.1
+    IL_0016:  ldobj      [runtime]System.Int32
+    IL_001b:  add
+    IL_001c:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0021:  pop
+    IL_0022:  ret
+  } 
             """
             """
   .method public static void  run() cil managed
@@ -167,23 +155,17 @@ let run() = let mutable x = 0 in foo(&x,5)
   .method public static void  foo<a>(int32& x,
                                      !!a y) cil managed
   {
-
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
-             int32 V_1)
+    
+    .maxstack  8
     IL_0000:  ldstr      "%d"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  stloc.0
-    IL_0010:  ldarg.0
-    IL_0011:  ldobj      [runtime]System.Int32
-    IL_0016:  stloc.1
-    IL_0017:  ldloc.0
-    IL_0018:  ldloc.1
-    IL_0019:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_001e:  pop
-    IL_001f:  ret
-  }
+    IL_000f:  ldarg.0
+    IL_0010:  ldobj      [runtime]System.Int32
+    IL_0015:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001a:  pop
+    IL_001b:  ret
+  } 
             """
             """
   .method public static void  run() cil managed
@@ -218,26 +200,20 @@ let run() = let mutable x = 0 in foo(&x,&x,5)
                                      int32& y,
                                      !!a z) cil managed
   {
-
-    .maxstack  4
-    .locals init (class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
-             int32 V_1)
+        
+    .maxstack  8
     IL_0000:  ldstr      "%d"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [runtime]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  stloc.0
-    IL_0010:  ldarg.0
-    IL_0011:  ldobj      [runtime]System.Int32
-    IL_0016:  ldarg.1
-    IL_0017:  ldobj      [runtime]System.Int32
-    IL_001c:  add
-    IL_001d:  stloc.1
-    IL_001e:  ldloc.0
-    IL_001f:  ldloc.1
-    IL_0020:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0025:  pop
-    IL_0026:  ret
-  }
+    IL_000f:  ldarg.0
+    IL_0010:  ldobj      [runtime]System.Int32
+    IL_0015:  ldarg.1
+    IL_0016:  ldobj      [runtime]System.Int32
+    IL_001b:  add
+    IL_001c:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0021:  pop
+    IL_0022:  ret
+  } 
             """
             """
   .method public static void  run() cil managed

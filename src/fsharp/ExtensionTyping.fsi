@@ -7,7 +7,7 @@ namespace FSharp.Compiler
 #if !NO_EXTENSIONTYPING
 
 open System
-open System.Collections.Generic
+open System.Collections.Concurrent
 open FSharp.Core.CompilerServices
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Text
@@ -78,9 +78,9 @@ module internal ExtensionTyping =
 
         static member Empty : ProvidedTypeContext 
 
-        static member Create : Dictionary<ProvidedType, ILTypeRef> * Dictionary<ProvidedType, obj (* TyconRef *) > -> ProvidedTypeContext 
+        static member Create : ConcurrentDictionary<ProvidedType, ILTypeRef> * ConcurrentDictionary<ProvidedType, obj (* TyconRef *) > -> ProvidedTypeContext
 
-        member GetDictionaries : unit -> Dictionary<ProvidedType, ILTypeRef> * Dictionary<ProvidedType, obj (* TyconRef *) > 
+        member GetDictionaries : unit -> ConcurrentDictionary<ProvidedType, ILTypeRef> * ConcurrentDictionary<ProvidedType, obj (* TyconRef *) >
 
         /// Map the TyconRef objects, if any
         member RemapTyconRefs : (obj -> obj) -> ProvidedTypeContext 

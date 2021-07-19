@@ -36,13 +36,13 @@
   // Offset: 0x00000308 Length: 0x000000E4
 }
 .module CCtorDUWithMember02.exe
-// MVID: {60B68B7E-D176-C99D-A745-03837E8BB660}
+// MVID: {608C04FF-D176-C99D-A745-0383FF048C60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BF0000
+// Image base: 0x06EF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,23 +63,17 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       31 (0x1f)
-    .maxstack  4
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
-             [1] int32 V_1)
+    // Code size       27 (0x1b)
+    .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 2,2 : 1,17 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember02.fs'
     IL_0000:  ldstr      "x = %A"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_000f:  stloc.0
-    IL_0010:  call       int32 CCtorDUWithMember02a::get_y()
-    IL_0015:  stloc.1
-    IL_0016:  ldloc.0
-    IL_0017:  ldloc.1
-    IL_0018:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_001d:  pop
-    IL_001e:  ret
+    IL_000f:  call       int32 CCtorDUWithMember02a::get_y()
+    IL_0014:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_0019:  pop
+    IL_001a:  ret
   } // end of method $CCtorDUWithMember02::main@
 
 } // end of class '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02

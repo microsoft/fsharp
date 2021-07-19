@@ -237,6 +237,24 @@ let p23 (_x, y, _z) = y
 
 let p33 (_x, _y, z) = z
 
+let p14 (x1, _x2, _x3, _x4) = x1
+
+let p24 (_x1, x2, _x3, _x4) = x2
+
+let p34 (_x1, _x2, x3, _x4) = x3
+
+let p44 (_x1, _x2, _x3, x4) = x4
+
+let p15 (x1, _x2, _x3, _x4, _x5) = x1
+
+let p25 (_x1, x2, _x3, _x4, _x5) = x2
+
+let p35 (_x1, _x2, x3, _x4, _x5) = x3
+
+let p45 (_x1, _x2, _x3, x4, _x5) = x4
+
+let p55 (_x1, _x2, _x3, _x4, x5) = x5
+
 let map1Of2 f (a1, a2) = (f a1, a2)
 
 let map2Of2 f (a1, a2) = (a1, f a2)

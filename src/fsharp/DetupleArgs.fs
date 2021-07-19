@@ -288,7 +288,7 @@ module GlobalUsageAnalysis =
           let context = []
           recognise context origExpr
 
-      let targetIntercept exprF z = function TTarget(_argvs, body, _) -> Some (foldUnderLambda exprF z body)
+      let targetIntercept exprF z = function TTarget(_argvs, body, _, _) -> Some (foldUnderLambda exprF z body)
       let tmethodIntercept exprF z = function TObjExprMethod(_, _, _, _, e, _m) -> Some (foldUnderLambda exprF z e)
       
       {ExprFolder0 with
@@ -300,7 +300,6 @@ module GlobalUsageAnalysis =
          tmethodIntercept = tmethodIntercept
       }
 
-
     //-------------------------------------------------------------------------
     // GlobalUsageAnalysis - entry point
     //-------------------------------------------------------------------------
@@ -309,7 +308,6 @@ module GlobalUsageAnalysis =
         let folder = UsageFolders g
         let z = FoldImplFile folder z0 expr
         z
-
 
 let internalError str = raise(Failure(str))
 

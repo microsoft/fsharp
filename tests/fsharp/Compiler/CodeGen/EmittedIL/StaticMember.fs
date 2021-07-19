@@ -88,30 +88,35 @@ type MyClass(x: int32) =
 
 [<EntryPoint>]
 let main _ =
-let input = new MyClass(7)
-let func = new Action<int32>(fun x -> C.M input.X)
-0
+    let input = new MyClass(7)
+    let func = new Action<int32>(fun x -> C.M input.X)
+    box func |> ignore // make sure 'func' is not optimized away
+    0
             """
             (fun verifier -> verifier.VerifyIL [
             """
 .method public static int32  main(string[] _arg1) cil managed
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-
+  
   .maxstack  4
   .locals init (class StaticMember03/MyClass V_0,
-           class [runtime]System.Action`1<int32> V_1)
+           class [runtime]System.Action`1<int32> V_1,
+           object V_2)
   IL_0000:  ldc.i4.7
   IL_0001:  newobj     instance void StaticMember03/MyClass::.ctor(int32)
   IL_0006:  stloc.0
   IL_0007:  ldnull
   IL_0008:  ldftn      void StaticMember03/func@15::Invoke(int32)
   IL_000e:  newobj     instance void class [runtime]System.Action`1<int32>::.ctor(object,
-                                                                                   native int)
+                                                                                         native int)
   IL_0013:  stloc.1
-  IL_0014:  ldc.i4.0
-  IL_0015:  ret
-}
+  IL_0014:  ldloc.1
+  IL_0015:  box        class [runtime]System.Action`1<int32>
+  IL_001a:  stloc.2
+  IL_001b:  ldc.i4.0
+  IL_001c:  ret
+} 
             """
             """
 .class abstract auto autochar serializable sealed nested assembly beforefieldinit specialname func@15
@@ -204,6 +209,7 @@ type MyClass(x: int32) =
 let main _ =
     let input = new MyClass(7)
     let func = new Func<int32, int32>(fun x -> C.M input.X)
+    box func |> ignore // dummy code to prevent func being optimized away
     0
             """
             (fun verifier -> verifier.VerifyIL [
@@ -211,10 +217,11 @@ let main _ =
 .method public static int32  main(string[] _arg1) cil managed
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
-
+  
   .maxstack  4
   .locals init (class StaticMember06/MyClass V_0,
-           class [runtime]System.Func`2<int32,int32> V_1)
+           class [runtime]System.Func`2<int32,int32> V_1,
+           object V_2)
   IL_0000:  ldc.i4.7
   IL_0001:  newobj     instance void StaticMember06/MyClass::.ctor(int32)
   IL_0006:  stloc.0
@@ -222,11 +229,14 @@ let main _ =
   IL_0008:  newobj     instance void StaticMember06/func@16::.ctor(class StaticMember06/MyClass)
   IL_000d:  ldftn      instance int32 StaticMember06/func@16::Invoke(int32)
   IL_0013:  newobj     instance void class [runtime]System.Func`2<int32,int32>::.ctor(object,
-                                                                                      native int)
+                                                                                             native int)
   IL_0018:  stloc.1
-  IL_0019:  ldc.i4.0
-  IL_001a:  ret
-}
+  IL_0019:  ldloc.1
+  IL_001a:  box        class [runtime]System.Func`2<int32,int32>
+  IL_001f:  stloc.2
+  IL_0020:  ldc.i4.0
+  IL_0021:  ret
+} 
             """
             """
 .class auto autochar serializable sealed nested assembly beforefieldinit specialname func@16

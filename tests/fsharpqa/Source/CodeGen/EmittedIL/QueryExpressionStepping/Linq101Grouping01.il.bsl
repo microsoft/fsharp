@@ -50,7 +50,7 @@
   // Offset: 0x00000408 Length: 0x00000129
 }
 .module Linq101Grouping01.exe
-// MVID: {60D46F1F-FB79-E5BF-A745-03831F6FD460}
+// MVID: {60BCC37C-FB79-E5BF-A745-03837CC3BC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

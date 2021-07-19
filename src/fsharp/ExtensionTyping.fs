@@ -7,6 +7,7 @@ namespace FSharp.Compiler
 #if !NO_EXTENSIONTYPING
 
 open System
+open System.Collections.Concurrent
 open System.IO
 open System.Collections.Generic
 open System.Reflection
@@ -271,7 +272,7 @@ module internal ExtensionTyping =
     and ProvidedTypeContext = 
         | NoEntries
         // The dictionaries are safe because the ProvidedType with the ProvidedTypeContext are only accessed one thread at a time during type-checking.
-        | Entries of Dictionary<ProvidedType, ILTypeRef> * Lazy<Dictionary<ProvidedType, obj>>
+        | Entries of ConcurrentDictionary<ProvidedType, ILTypeRef> * Lazy<ConcurrentDictionary<ProvidedType, obj>>
 
         static member Empty = NoEntries
 
@@ -280,7 +281,7 @@ module internal ExtensionTyping =
         member ctxt.GetDictionaries()  = 
             match ctxt with
             | NoEntries -> 
-                Dictionary<ProvidedType, ILTypeRef>(ProvidedTypeComparer.Instance), Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
+                ConcurrentDictionary<ProvidedType, ILTypeRef>(ProvidedTypeComparer.Instance), ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
             | Entries (lookupILTR, lookupILTCR) ->
                 lookupILTR, lookupILTCR.Force()
 
@@ -305,8 +306,8 @@ module internal ExtensionTyping =
             match ctxt with 
             | NoEntries -> NoEntries
             | Entries(d1, d2) ->
-                Entries(d1, lazy (let dict = Dictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
-                                  for KeyValue (st, tcref) in d2.Force() do dict.Add(st, f tcref)
+                Entries(d1, lazy (let dict = ConcurrentDictionary<ProvidedType, obj>(ProvidedTypeComparer.Instance)
+                                  for KeyValue (st, tcref) in d2.Force() do dict.TryAdd(st, f tcref) |> ignore
                                   dict))
 
     and [<AllowNullLiteral; Sealed>]

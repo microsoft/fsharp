@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+	<OtherFlags>$(OtherFlags) --define:ASYNC_PERF</OtherFlags>
+	<DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+
+	<FscToolPath>C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\CommonExtensions\Microsoft\FSharp</FscToolPath>
+	<FscToolExe>fsc.exe</FscToolExe>
+	<DotnetFscCompilerPath></DotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<Compile Include="defs.fs" />
+	<Compile Include="..\TaskPerf\sync.fs" />
+	<Compile Include="..\TaskPerf\array.fs" />
+	<Compile Include="..\TaskPerf\option.fs" />
+	<Compile Include="..\TaskPerf\TaskBuilder.fs" />
+	<Compile Include="..\TaskPerf\TaskPerf.fs" />
+    <PackageReference Include="FSharp.Core" Version="5.0.1" />
+	<ProjectReference Include="..\TaskPerfCSharp\TaskPerfCSharp.csproj" />
+	<PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+     <!-- this must be manually enabled because CI fails because some post-build checks don't like the DLL-->
+	  <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />  -->
+    <PackageReference Include="System.Interactive.Async" Version="4.1.1" />
+  </ItemGroup>
+
+</Project>

@@ -39,9 +39,6 @@ type StampMap<'T> = Map<Stamp, 'T>
 [<RequireQualifiedAccess>]
 type ValInline =
 
-    /// Indicates the value must always be inlined and no .NET IL code is generated for the value/function
-    | PseudoVal
-
     /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
 
@@ -54,7 +51,7 @@ type ValInline =
     /// Returns true if the implementation of a value must always be inlined
     member x.MustInline = 
         match x with 
-        | ValInline.PseudoVal | ValInline.Always -> true 
+        | ValInline.Always -> true 
         | ValInline.Optional | ValInline.Never -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
@@ -110,7 +107,6 @@ type ValFlags(flags: int64) =
                      (if isCompGen then                                      0b00000000000000001000L 
                       else                                                   0b000000000000000000000L) |||
                      (match inlineInfo with
-                                        | ValInline.PseudoVal ->             0b00000000000000000000L
                                         | ValInline.Always ->                0b00000000000000010000L
                                         | ValInline.Optional ->              0b00000000000000100000L
                                         | ValInline.Never ->                 0b00000000000000110000L) |||
@@ -142,7 +138,7 @@ type ValFlags(flags: int64) =
 
                      (match isGeneratedEventVal with
                                         | false     ->                       0b00000000000000000000L
-                                        | true      ->                       0b00100000000000000000L)                                        
+                                        | true      ->                       0b00100000000000000000L)                                          
 
         ValFlags flags
 
@@ -167,7 +163,7 @@ type ValFlags(flags: int64) =
 
     member x.InlineInfo = 
                                   match (flags       &&&                     0b00000000000000110000L) with 
-                                                             |               0b00000000000000000000L -> ValInline.PseudoVal
+                                                             |               0b00000000000000000000L
                                                              |               0b00000000000000010000L -> ValInline.Always
                                                              |               0b00000000000000100000L -> ValInline.Optional
                                                              |               0b00000000000000110000L -> ValInline.Never
@@ -204,11 +200,11 @@ type ValFlags(flags: int64) =
 
     member x.WithRecursiveValInfo recValInfo = 
             let flags = 
-                     (flags       &&&                                    ~~~0b00000001100000000000L) |||
+                     (flags       &&&                                     ~~~0b00000001100000000000L) |||
                      (match recValInfo with
-                                     | ValNotInRecScope     ->              0b00000000000000000000L
-                                     | ValInRecScope true  ->               0b00000000100000000000L
-                                     | ValInRecScope false ->               0b00000001000000000000L) 
+                                     | ValNotInRecScope     ->               0b00000000000000000000L
+                                     | ValInRecScope true  ->                0b00000000100000000000L
+                                     | ValInRecScope false ->                0b00000001000000000000L) 
             ValFlags flags
 
     member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b00000010000000000000L) <> 0L
@@ -235,13 +231,17 @@ type ValFlags(flags: int64) =
 
     member x.WithIgnoresByrefScope                     =  ValFlags(flags ||| 0b10000000000000000000L)
 
+    member x.InlineIfLambda                            =         (flags &&& 0b100000000000000000000L) <> 0L
+    
+    member x.WithInlineIfLambda                        = ValFlags(flags ||| 0b100000000000000000000L)
+
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
         // Clear the RecursiveValInfo, only used during inference and irrelevant across assembly boundaries
         // Clear the IsCompiledAsStaticPropertyWithoutField, only used to determine whether to use a true field for a value, and to eliminate the optimization info for observable bindings
         // Clear the HasBeenReferenced, only used to report "unreferenced variable" warnings and to help collect 'it' values in FSI.EXE
         // Clear the IsGeneratedEventVal, since there's no use in propagating specialname information for generated add/remove event vals
-                                                      (flags       &&&    ~~~0b10011001100000000000L) 
+                                                      (flags       &&&   ~~~0b010011001100000000000L) 
 
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2707,6 +2707,9 @@ type Val =
     /// Get the inline declaration on the value
     member x.InlineInfo = x.val_flags.InlineInfo
 
+    /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
+    member x.InlineIfLambda = x.val_flags.InlineIfLambda
+
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.InlineInfo.MustInline
 
@@ -2915,6 +2918,8 @@ type Val =
     member x.SetIsFixed() = x.val_flags <- x.val_flags.WithIsFixed
 
     member x.SetIgnoresByrefScope() = x.val_flags <- x.val_flags.WithIgnoresByrefScope
+
+    member x.SetInlineIfLambda() = x.val_flags <- x.val_flags.WithInlineIfLambda
 
     member x.SetValReprInfo info = 
         match x.val_opt_data with
@@ -3777,6 +3782,9 @@ type ValRef =
     /// Get the inline declaration on the value
     member x.InlineInfo = x.Deref.InlineInfo
 
+    /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
+    member x.InlineIfLambda = x.Deref.InlineIfLambda
+
     /// Indicates whether the inline declaration for the value indicate that the value must be inlined?
     member x.MustInline = x.Deref.MustInline
 
@@ -4306,12 +4314,22 @@ type DecisionTreeTest =
     override x.ToString() = sprintf "%+A" x 
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
+///   -- boundVals - The values bound at the target, matching the valuesin the TDSuccess
+///   -- targetExpr - The expression to evaluate if we branch to the target
+///   -- debugPoint - The debug point for the target
+///   -- isStateVarFlags - Indicates which, if any, of the values are repesents as state machine variables
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type DecisionTreeTarget = 
-    | TTarget of Val list * Expr * DebugPointForTarget
+    | TTarget of 
+        boundVals: Val list *
+        targetExpr: Expr *
+        debugPoint: DebugPointForTarget *
+        isStateVarFlags: bool list option
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
+
+    member x.TargetExpression = (let (TTarget(_, expr, _, _)) = x in expr)
 
     override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
@@ -4319,9 +4337,15 @@ type DecisionTreeTarget =
 type Bindings = Binding list
 
 /// A binding of a variable to an expression, as in a `let` binding or similar
+///  -- val: The value being bound
+///  -- expr: The expression to execute to get the value
+///  -- debugPoint: The debug point for the binding
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type Binding = 
-    | TBind of var: Val * expr: Expr * debugPoint: DebugPointAtBinding
+    | TBind of
+        var: Val *
+        expr: Expr *
+        debugPoint: DebugPointAtBinding
 
     /// The value being bound
     member x.Var = (let (TBind(v, _, _)) = x in v)
@@ -4341,7 +4365,11 @@ type Binding =
 /// integer indicates which choice in the target set is being selected by this item. 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ActivePatternElemRef = 
-    | APElemRef of activePatternInfo: ActivePatternInfo * activePatternVal: ValRef * caseIndex: int * isStructRetTy: bool
+    | APElemRef of
+        activePatternInfo: ActivePatternInfo *
+        activePatternVal: ValRef *
+        caseIndex: int *
+        isStructRetTy: bool
 
     /// Get the full information about the active pattern being referred to
     member x.ActivePatternInfo = (let (APElemRef(info, _, _, _)) = x in info)
@@ -4365,7 +4393,10 @@ type ActivePatternElemRef =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ValReprInfo = 
     /// ValReprInfo (typars, args, result)
-    | ValReprInfo of typars: TyparReprInfo list * args: ArgReprInfo list list * result: ArgReprInfo 
+    | ValReprInfo of
+        typars: TyparReprInfo list *
+        args: ArgReprInfo list list *
+        result: ArgReprInfo 
 
     /// Get the extra information about the arguments for the value
     member x.ArgInfos = (let (ValReprInfo(_, args, _)) = x in args)
@@ -4748,7 +4779,7 @@ type TOp =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
-
+    
     override op.ToString() = 
         match op with 
         | UnionCase ucref -> "UnionCase(" + ucref.CaseName + ")"

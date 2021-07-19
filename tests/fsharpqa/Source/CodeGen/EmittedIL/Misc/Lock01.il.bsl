@@ -41,13 +41,13 @@
   // Offset: 0x00000188 Length: 0x00000064
 }
 .module Lock01.exe
-// MVID: {60B68B7F-2BCA-B308-A745-03837F8BB660}
+// MVID: {60BCDCE8-2BCA-B308-A745-0383E8DCBC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06BF0000
+// Image base: 0x06B90000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -123,13 +123,12 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       64 (0x40)
+    // Code size       56 (0x38)
     .maxstack  4
     .locals init ([0] object o,
              [1] object V_1,
              [2] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2,
-             [3] bool V_3,
-             [4] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_4)
+             [3] bool V_3)
     .line 19,19 : 1,28 ''
     IL_0000:  newobj     instance void [mscorlib]System.Object::.ctor()
     IL_0005:  dup
@@ -151,30 +150,24 @@
       IL_0022:  ldloc.2
       IL_0023:  ldnull
       IL_0024:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-      IL_0029:  stloc.s    V_4
-      IL_002b:  leave.s    IL_003c
+      IL_0029:  pop
+      IL_002a:  leave.s    IL_0037
 
     }  // end .try
     finally
     {
-      IL_002d:  ldloc.3
-      IL_002e:  brfalse.s  IL_0039
+      IL_002c:  ldloc.3
+      IL_002d:  brfalse.s  IL_0036
 
       .line 100001,100001 : 0,0 ''
-      IL_0030:  ldloc.1
-      IL_0031:  call       void [netstandard]System.Threading.Monitor::Exit(object)
-      IL_0036:  ldnull
-      IL_0037:  pop
-      IL_0038:  endfinally
+      IL_002f:  ldloc.1
+      IL_0030:  call       void [netstandard]System.Threading.Monitor::Exit(object)
+      IL_0035:  endfinally
       .line 100001,100001 : 0,0 ''
-      IL_0039:  ldnull
-      IL_003a:  pop
-      IL_003b:  endfinally
+      IL_0036:  endfinally
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_003c:  ldloc.s    V_4
-    IL_003e:  pop
-    IL_003f:  ret
+    IL_0037:  ret
   } // end of method $Lock01::main@
 
 } // end of class '<StartupCode$Lock01>'.$Lock01

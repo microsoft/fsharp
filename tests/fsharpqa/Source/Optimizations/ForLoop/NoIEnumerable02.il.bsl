@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.NoIEnumerable02
 {
-  // Offset: 0x00000000 Length: 0x000001CB
+  // Offset: 0x00000000 Length: 0x000001CD
 }
 .mresource public FSharpOptimizationData.NoIEnumerable02
 {
-  // Offset: 0x000001D0 Length: 0x0000006C
+  // Offset: 0x000001D8 Length: 0x0000006C
 }
 .module NoIEnumerable02.dll
-// MVID: {5F1FBE49-5066-4012-A745-038349BE1F5F}
+// MVID: {60BE1F17-5066-4012-A745-0383171FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x07280000
+// Image base: 0x05170000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -64,7 +64,7 @@
              [1] int32 i,
              [2] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 7,7 : 4,24 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\NoIEnumerable02.fsx'
+    .line 7,7 : 4,24 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\NoIEnumerable02.fsx'
     IL_0000:  ldc.i4.s   100
     IL_0002:  stloc.1
     IL_0003:  ldarg.0

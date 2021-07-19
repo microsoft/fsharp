@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
+    <PackageReference Include="System.Interactive.Async" Version="4.1.1" />
+  </ItemGroup>
+
+</Project>

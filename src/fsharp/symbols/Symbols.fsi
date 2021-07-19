@@ -716,10 +716,7 @@ type FSharpGenericParameterConstraint =
 [<RequireQualifiedAccess>] 
 type FSharpInlineAnnotation = 
 
-   /// Indicates the value is inlined and compiled code for the function does not exist
-   | PseudoValue
-
-   /// Indicates the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
+   /// Indicates the value is always inlined in statically compiled code
    | AlwaysInline 
 
    /// Indicates the value is optionally inlined 

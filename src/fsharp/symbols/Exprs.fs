@@ -1186,7 +1186,7 @@ module FSharpExprConvert =
     and ConvTargetsLinear cenv env tgs contF = 
         match tgs with 
         | [] -> contF []
-        | TTarget(vars, rhs, _) :: rest -> 
+        | TTarget(vars, rhs, _, _) :: rest -> 
             let varsR = (List.rev vars) |> List.map (ConvVal cenv)
             ConvExprLinear cenv env rhs (fun targetR -> 
             ConvTargetsLinear cenv env rest (fun restR -> 

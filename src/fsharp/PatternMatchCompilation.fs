@@ -80,7 +80,7 @@ and TypedMatchClause =
     member c.Pattern = let (TClause(p, _, _, _)) = c in p
     member c.Range = let (TClause(_, _, _, m)) = c in m
     member c.Target = let (TClause(_, _, tg, _)) = c in tg
-    member c.BoundVals = let (TClause(_p, _whenOpt, TTarget(vs, _, _), _m)) = c in vs
+    member c.BoundVals = let (TClause(_p, _whenOpt, TTarget(vs, _, _, _), _m)) = c in vs
 
 let debug = false
 
@@ -854,7 +854,7 @@ let CompilePatternBasic
             // Note we don't emit sequence points at either the succeeding or failing targets of filters since if
             // the exception is filtered successfully then we will run the handler and hit the sequence point there.
             // That sequence point will have the pattern variables bound, which is exactly what we want.
-            let tg = TTarget(List.empty, throwExpr, DebugPointForTarget.No)
+            let tg = TTarget([], throwExpr, DebugPointForTarget.No, None)
             let _ = matchBuilder.AddTarget tg
             let clause = TClause(TPat_wild matchm, None, tg, matchm)
             incompleteMatchClauseOnce <- Some clause
@@ -871,7 +871,9 @@ let CompilePatternBasic
             clausesA.[i]
         elif i = nClauses then getIncompleteMatchClause refuted
         else failwith "GetClause"
+
     let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
+
     let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
 
     // Different uses of parameterized active patterns have different identities as far as paths are concerned.
@@ -1424,7 +1426,7 @@ let rec CompilePattern  g denv amap tcVal infoReader exprm matchm warnOnUnused a
                 else DebugPointForTarget.Yes
 
             // Make the clause that represents the remaining cases of the pattern match
-            let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, spTarget), matchm)
+            let clauseForRestOfMatch = TClause(TPat_wild matchm, None, TTarget(List.empty, expr, spTarget, None), matchm)
 
             CompilePatternBasic g denv amap tcVal infoReader exprm matchm warnOnUnused warnOnIncomplete actionOnFailure (origInputVal, origInputValTypars, origInputExprOpt) (group @ [clauseForRestOfMatch]) inputTy resultTy
 

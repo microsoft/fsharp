@@ -5,6 +5,7 @@
         <language>en-US</language>
         <dependencies>
             <group targetFramework=".NETStandard2.0" />
+            <group targetFramework=".NETStandard2.1" />
         </dependencies>
         <contentFiles> <!-- Deploy doc comments as Content -->
             <files include="**/FSharp.Core.xml" buildAction="None" copyToOutput="true" flatten="true" />
@@ -19,5 +20,12 @@
 
         <!-- resources -->
         <file src="FSharp.Core\$Configuration$\netstandard2.0\**\FSharp.Core.resources.dll" target="lib\netstandard2.0" />
+
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\FSharp.Core.dll" target="lib\netstandard2.1" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\FSharp.Core.xml" target="lib\netstandard2.1" />
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\FSharp.Core.xml" target="contentFiles/any/netstandard2.1" />
+
+        <!-- resources -->
+        <file src="FSharp.Core\$Configuration$\netstandard2.1\**\FSharp.Core.resources.dll" target="lib\netstandard2.1" />
     </files>
 </package>

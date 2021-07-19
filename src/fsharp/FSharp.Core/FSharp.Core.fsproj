@@ -1,16 +1,30 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);FSHARP_CORE</DefineConstants>
     <DefineConstants Condition="'$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:3218 --warnon:1182 --warnon:3390 --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1 --nowarn:57</OtherFlags>
-    <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <!-- 3218: ArgumentsInSigAndImplMismatch -->
+    <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
+	<!-- 1182: Unused variables -->
+	<OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+	<!-- 3390: xmlDocBadlyFormed -->
+	<OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
+    <!-- Turn off 57: Use of construct with Experimental attribute -->
+	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+    <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
+    <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
+	<OtherFlags>$(OtherFlags) --nowarn:3511 --nowarn:3513</OtherFlags>
+	<OtherFlags>$(OtherFlags) --compiling-fslib --compiling-fslib-40 --maxerrors:100 --extraoptimizationloops:1</OtherFlags>
+    <!-- preview needed for use of state machines for tasks -->
+    <LangVersion>preview</LangVersion>
+    <!-- .tail annotations always emitted for this binary, even in debug mode -->
+    <Tailcalls>true</Tailcalls>
     <NGenBinary>true</NGenBinary>
 
     <PreRelease>true</PreRelease>
@@ -162,11 +176,23 @@
     <Compile Include="event.fs">
       <Link>Control/event.fs</Link>
     </Compile>
+    <Compile Include="resumable.fsi">
+      <Link>Control/resumable.fsi</Link>
+    </Compile>
+    <Compile Include="resumable.fs">
+      <Link>Control/resumable.fs</Link>
+    </Compile>
     <Compile Include="async.fsi">
       <Link>Control/async.fsi</Link>
     </Compile>
     <Compile Include="async.fs">
       <Link>Control/async.fs</Link>
+    </Compile>
+    <Compile Include="tasks.fsi">
+      <Link>Control/tasks.fsi</Link>
+    </Compile>
+    <Compile Include="tasks.fs">
+      <Link>Control/tasks.fs</Link>
     </Compile>
     <Compile Include="eventmodule.fsi">
       <Link>Control/eventmodule.fsi</Link>

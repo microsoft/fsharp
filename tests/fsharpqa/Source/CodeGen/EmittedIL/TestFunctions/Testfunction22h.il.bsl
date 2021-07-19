@@ -36,13 +36,13 @@
   // Offset: 0x00000160 Length: 0x00000056
 }
 .module Testfunction22h.exe
-// MVID: {60B68B97-0266-39F6-A745-0383978BB660}
+// MVID: {60BD4158-0266-39F6-A745-03835841BD60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00C90000
+// Image base: 0x07240000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,36 +63,29 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       27 (0x1b)
+    // Code size       21 (0x15)
     .maxstack  3
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.Unit V_0,
-             [1] class [mscorlib]System.Exception V_1)
+    .locals init ([0] class [mscorlib]System.Exception V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 4,4 : 4,30 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22h.fs'
     .try
     {
       IL_0000:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0005:  ldnull
-      IL_0006:  stloc.0
-      IL_0007:  leave.s    IL_0018
+      IL_0005:  leave.s    IL_0014
 
       .line 5,5 : 1,5 ''
     }  // end .try
     catch [mscorlib]System.Object 
     {
-      IL_0009:  castclass  [mscorlib]System.Exception
-      IL_000e:  stloc.1
+      IL_0007:  castclass  [mscorlib]System.Exception
+      IL_000c:  stloc.0
       .line 6,6 : 11,37 ''
-      IL_000f:  call       void [mscorlib]System.Console::WriteLine()
-      IL_0014:  ldnull
-      IL_0015:  stloc.0
-      IL_0016:  leave.s    IL_0018
+      IL_000d:  call       void [mscorlib]System.Console::WriteLine()
+      IL_0012:  leave.s    IL_0014
 
       .line 100001,100001 : 0,0 ''
     }  // end handler
-    IL_0018:  ldloc.0
-    IL_0019:  pop
-    IL_001a:  ret
+    IL_0014:  ret
   } // end of method $Testfunction22h::main@
 
 } // end of class '<StartupCode$Testfunction22h>'.$Testfunction22h

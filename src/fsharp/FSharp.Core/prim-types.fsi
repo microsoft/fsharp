@@ -520,7 +520,7 @@ namespace Microsoft.FSharp.Core
     /// </summary>
     ///
     /// <category>Attributes</category>
-    [<AttributeUsage (AttributeTargets.Field,AllowMultiple=false)>]  
+    [<AttributeUsage (AttributeTargets.Field|||AttributeTargets.Method,AllowMultiple=false)>]  
     [<Sealed>]
     type DefaultValueAttribute =
         inherit Attribute
@@ -772,6 +772,22 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>Indicates the warning message to be emitted when F# source code uses this construct</summary>
         member Message: string
+
+    /// <summary>Adding this attribute to a parameter of function type indicates that, if the overall function or method is inlined and the parameter is
+    /// determined to be a known lambda, then this function should be statically inlined throughout the body of the function of method.</summary>
+    ///
+    /// <remarks>If the function parameter is called multiple times in the implementation of the function or method this attribute may cause code explosion and slow compilation times.</remarks>
+    ///
+    /// <category>Attributes</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<AttributeUsage (AttributeTargets.Parameter,AllowMultiple=false)>]  
+    [<Sealed>]
+    type InlineIfLambdaAttribute =
+        inherit Attribute
+
+        /// <summary>Creates an instance of the attribute</summary>
+        /// <returns>InlineIfLambdaAttribute</returns>
+        new : unit -> InlineIfLambdaAttribute
 
     /// <summary>This attribute is generated automatically by the F# compiler to tag functions and members 
     /// that accept a partial application of some of their arguments and return a residual function.

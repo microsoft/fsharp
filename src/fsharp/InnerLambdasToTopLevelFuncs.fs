@@ -137,7 +137,7 @@ let mkLocalNameTypeArity compgen m name ty topValInfo =
 
 let GetValsBoundUnderMustInline xinfo =
     let accRejectFrom (v: Val) repr rejectS =
-      if v.InlineInfo = ValInline.PseudoVal then
+      if v.InlineInfo = ValInline.Always then
         Zset.union (GetValsBoundInExpr repr) rejectS
       else rejectS
     let rejectS = Zset.empty valOrder
@@ -157,7 +157,9 @@ let IsRefusedTLR g (f: Val) =
     // Special values are instance methods etc. on .NET types.  For now leave these alone
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
-    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline
+    let isResumableCode = isReturnsResumableCodeTy g f.Type
+    let isInlineIfLambda = f.InlineIfLambda
+    let refuseTest = alreadyChosen || mutableVal || byrefVal || specialVal || dllImportStubOrOtherNeverInline || isResumableCode || isInlineIfLambda
     refuseTest
 
 let IsMandatoryTopLevel (f: Val) =
@@ -1131,7 +1133,7 @@ module Pass4_RewriteAssembly =
 
         // ilobj - has implicit lambda exprs and recursive/base references
         | Expr.Obj (_, ty, basev, basecall, overrides, iimpls, m) ->
-            let basecall, z = TransExpr penv z basecall
+            let basecall, z  = TransExpr penv z basecall
             let overrides, z = List.mapFold (TransMethod penv) z overrides
             let iimpls, z =
                 (z, iimpls) ||> List.mapFold (fun z (tType, objExprs) ->
@@ -1291,11 +1293,11 @@ module Pass4_RewriteAssembly =
            let dflt, z  = Option.mapFold (TransDecisionTree penv)      z dflt
            TDSwitch (e, cases, dflt, m), z
 
-    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget)) =
+    and TransDecisionTreeTarget penv z (TTarget(vs, e, spTarget, flags)) =
         let z = EnterInner z
         let e, z = TransExpr penv z e
         let z = ExitInner z
-        TTarget(vs, e, spTarget), z
+        TTarget(vs, e, spTarget, flags), z
 
     and TransValBinding penv z bind = TransBindingRhs penv z bind
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds

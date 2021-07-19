@@ -8,14 +8,14 @@ open System
 
 open Internal.Utilities
 open Internal.Utilities.Text.Parsing
+open Internal.Utilities.Library
+open Internal.Utilities.Library.Extras
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL
-open Internal.Utilities.Library
 open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Features
-open Internal.Utilities.Library.Extras
 open FSharp.Compiler.ParseHelpers
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -3354,7 +3354,7 @@ typedSeqExprEOF:
 
 seqExpr:
   | declExpr seps seqExpr
-      { SynExpr.Sequential (DebugPointAtSequential.Both, true, $1, $3, unionRanges $1.Range $3.Range) } 
+      { SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, true, $1, $3, unionRanges $1.Range $3.Range) } 
 
   | declExpr seps                         
       { $1 }  
@@ -3363,10 +3363,10 @@ seqExpr:
       { $1 } 
 
   | declExpr THEN seqExpr %prec prec_then_before 
-      { SynExpr.Sequential (DebugPointAtSequential.Both, false, $1, $3, unionRanges $1.Range $3.Range ) }
+      { SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, false, $1, $3, unionRanges $1.Range $3.Range ) }
 
   | declExpr OTHEN OBLOCKBEGIN typedSeqExpr oblockend %prec prec_then_before 
-      { SynExpr.Sequential (DebugPointAtSequential.Both, false, $1, $4, unionRanges $1.Range $4.Range) }
+      { SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, false, $1, $4, unionRanges $1.Range $4.Range) }
 
   | hardwhiteLetBindings %prec prec_args_error
      { let hwlb, m = $1

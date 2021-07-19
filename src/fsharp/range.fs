@@ -58,6 +58,15 @@ type Position(code:int64) =
 
 and pos = Position
 
+[<RequireQualifiedAccess>]
+type RangeDebugPointKind =
+    | None
+    | While
+    | For
+    | Try
+    | Binding
+    | Finally
+
 [<AutoOpen>]
 module RangeImpl =
     [<Literal>]
@@ -79,6 +88,9 @@ module RangeImpl =
     let isSyntheticBitCount = 1
 
     [<Literal>]
+    let debugPointKindBitCount = 3
+
+    [<Literal>]
     let fileIndexShift   = 0
 
     [<Literal>]
@@ -97,33 +109,40 @@ module RangeImpl =
     let isSyntheticShift = 58
 
     [<Literal>]
-    let fileIndexMask =   0b0000000000000000000000000000000000000000111111111111111111111111L
+    let debugPointKindShift = 59
 
     [<Literal>]
-    let startColumnMask = 0b0000000000000000000011111111111111111111000000000000000000000000L
+    let fileIndexMask =     0b0000000000000000000000000000000000000000111111111111111111111111L
 
     [<Literal>]
-    let endColumnMask =   0b1111111111111111111100000000000000000000000000000000000000000000L
+    let startColumnMask =   0b0000000000000000000011111111111111111111000000000000000000000000L
 
     [<Literal>]
-    let startLineMask =   0b0000000000000000000000000000000001111111111111111111111111111111L
+    let endColumnMask =     0b1111111111111111111100000000000000000000000000000000000000000000L
 
     [<Literal>]
-    let heightMask =      0b0000001111111111111111111111111110000000000000000000000000000000L
+    let startLineMask =     0b0000000000000000000000000000000001111111111111111111111111111111L
 
     [<Literal>]
-    let isSyntheticMask = 0b0000010000000000000000000000000000000000000000000000000000000000L
+    let heightMask =        0b0000001111111111111111111111111110000000000000000000000000000000L
+
+    [<Literal>]
+    let isSyntheticMask =   0b0000010000000000000000000000000000000000000000000000000000000000L
+
+    [<Literal>]
+    let debugPointKindMask= 0b0011100000000000000000000000000000000000000000000000000000000000L
 
     #if DEBUG
     let _ = assert (posBitCount <= 64)
     let _ = assert (fileIndexBitCount + startColumnBitCount + endColumnBitCount <= 64)
-    let _ = assert (startLineBitCount + heightBitCount + isSyntheticBitCount <= 64)
+    let _ = assert (startLineBitCount + heightBitCount + isSyntheticBitCount + debugPointKindBitCount <= 64)
 
     let _ = assert (startColumnShift   = fileIndexShift   + fileIndexBitCount)
     let _ = assert (endColumnShift = startColumnShift   + startColumnBitCount)
 
     let _ = assert (heightShift      = startLineShift + startLineBitCount)
     let _ = assert (isSyntheticShift = heightShift      + heightBitCount)
+    let _ = assert (debugPointKindShift = isSyntheticShift + isSyntheticBitCount)
 
     let _ = assert (fileIndexMask =   mask64 fileIndexShift   fileIndexBitCount)
     let _ = assert (startLineMask =   mask64 startLineShift   startLineBitCount)
@@ -131,6 +150,7 @@ module RangeImpl =
     let _ = assert (heightMask =      mask64 heightShift      heightBitCount)
     let _ = assert (endColumnMask =   mask64 endColumnShift   endColumnBitCount)
     let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
+    let _ = assert (debugPointKindMask = mask64 debugPointKindShift debugPointKindBitCount)
     #endif
 
 
@@ -229,6 +249,15 @@ type Range(code1:int64, code2: int64) =
 
     member r.IsSynthetic = int32((code2 &&& isSyntheticMask) >>> isSyntheticShift) <> 0
 
+    member r.DebugPointKind = 
+        match int32((code2 &&& debugPointKindMask) >>> debugPointKindShift) with
+        | 1 -> RangeDebugPointKind.While
+        | 2 -> RangeDebugPointKind.For
+        | 3 -> RangeDebugPointKind.Try
+        | 4 -> RangeDebugPointKind.Finally
+        | 5 -> RangeDebugPointKind.Binding
+        | _ -> RangeDebugPointKind.None
+
     member r.Start = pos (r.StartLine, r.StartColumn)
 
     member r.End = pos (r.EndLine, r.EndColumn)
@@ -244,6 +273,17 @@ type Range(code1:int64, code2: int64) =
     member r.ShortFileName = Path.GetFileName(fileOfFileIndex r.FileIndex)
 
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
+
+    member r.NoteDebugPoint(kind) = 
+        let code = 
+            match kind with 
+            | RangeDebugPointKind.None -> 0 
+            | RangeDebugPointKind.While -> 1
+            | RangeDebugPointKind.For -> 2
+            | RangeDebugPointKind.Try -> 3
+            | RangeDebugPointKind.Finally -> 4
+            | RangeDebugPointKind.Binding -> 5
+        range(code1, code2 ||| (int64 code <<< debugPointKindShift))
 
     member r.Code1 = code1
 
@@ -273,7 +313,7 @@ type Range(code1:int64, code2: int64) =
 
     override r.GetHashCode() = hash code1 + hash code2
 
-    override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
+    override r.ToString() = sprintf "%s (%d,%d--%d,%d)" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn
 
 and range = Range
 
@@ -341,6 +381,10 @@ module Range =
     /// This is deliberately written in an allocation-free way, i.e. m1.Start, m1.End etc. are not called
     let unionRanges (m1:range) (m2:range) =
         if m1.FileIndex <> m2.FileIndex then m2 else
+        
+        // If all identical then return m1. This preserves DebugPointKind when no merging takes place
+        if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then m1 else 
+
         let b =
           if (m1.StartLine > m2.StartLine || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then m2
           else m1

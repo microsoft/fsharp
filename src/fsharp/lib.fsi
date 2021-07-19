@@ -160,6 +160,24 @@ val p23: _x:'a * y:'b * _z:'c -> 'b
 
 val p33: _x:'a * _y:'b * z:'c -> 'c
 
+val p14: x1:'a * _x2:'b * _x3:'c * _x4:'d -> 'a
+
+val p24: _x1:'a * x2:'b * _x3:'c * _x4:'d -> 'b
+
+val p34: _x1:'a * _x2:'b * x3:'c * _x4:'d -> 'c
+
+val p44: _x1:'a * _x2:'b * _x3:'c * x4:'d -> 'd
+
+val p15: x1:'a * _x2:'b * _x3:'c * _x4:'d * _x5:'e -> 'a
+
+val p25: _x1:'a * x2:'b * _x3:'c * _x4:'d * _x5:'e -> 'b
+
+val p35: _x1:'a * _x2:'b * x3:'c * _x4:'d * _x5:'e -> 'c
+
+val p45: _x1:'a * _x2:'b * _x3:'c * x4:'d * _x5:'e -> 'd
+
+val p55: _x1:'a * _x2:'b * _x3:'c * _x4:'d * x5:'e -> 'e
+
 val map1Of2: f:('a -> 'b) -> a1:'a * a2:'c -> 'b * 'c
 
 val map2Of2: f:('a -> 'b) -> a1:'c * a2:'a -> 'c * 'b

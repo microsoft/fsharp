@@ -268,6 +268,11 @@ module ExtraTopLevelOperators =
     [<assembly: AutoOpen("Microsoft.FSharp.Core")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Collections")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Control")>]
+    #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.LowPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.MediumPriority")>]
+    [<assembly: AutoOpen("Microsoft.FSharp.Control.TaskBuilderExtensions.HighPriority")>]
+    #endif
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.LowPriority")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Linq.QueryRunExtensions.HighPriority")>]
     do()

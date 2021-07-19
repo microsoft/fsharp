@@ -524,7 +524,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                             | SynInterpolatedStringPart.String _ -> ()
                                             | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> yield fillExpr ]
 
-                  | SynExpr.YieldOrReturn (_, e, _)
+                  | SynExpr.YieldOrReturn (_, e, m) ->
+                      yield! checkRange m
+                      yield! walkExpr false e
                   | SynExpr.YieldOrReturnFrom (_, e, _)
                   | SynExpr.DoBang  (e, _) ->
                       yield! checkRange e.Range
@@ -615,8 +617,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                   | SynExpr.SequentialOrImplicitYield (spSeq, e1, e2, _, _)
                   | SynExpr.Sequential (spSeq, _, e1, e2, _) -> 
-                      yield! walkExpr (match spSeq with DebugPointAtSequential.ExprOnly -> false | _ -> true) e1
-                      yield! walkExpr (match spSeq with DebugPointAtSequential.StmtOnly -> false | _ -> true) e2
+                      yield! walkExpr (match spSeq with DebugPointAtSequential.SuppressExpr | DebugPointAtSequential.SuppressBoth -> false | _ -> true) e1
+                      yield! walkExpr (match spSeq with DebugPointAtSequential.SuppressStmt | DebugPointAtSequential.SuppressBoth -> false | _ -> true) e2
 
                   | SynExpr.IfThenElse (e1, e2, e3opt, spBind, _, _, _) ->
                       yield! walkBindSeqPt spBind

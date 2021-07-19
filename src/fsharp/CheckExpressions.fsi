@@ -98,6 +98,9 @@ type TcEnv =
       eCtorInfo: CtorInfo option
 
       eCallerMemberName: string option
+
+      // Active arg infos in iterated lambdas , allowing us to determine the attributes of arguments
+      eLambdaArgInfos: ArgReprInfo list list
     } 
 
     member DisplayEnv : DisplayEnv

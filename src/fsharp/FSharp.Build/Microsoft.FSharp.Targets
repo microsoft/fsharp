@@ -232,7 +232,7 @@ this file.
                  @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
-        Returns=""
+        Returns="@(FscCommandLineArgs)"
         DependsOnTargets="$(CoreCompileDependsOn)"
     >
 

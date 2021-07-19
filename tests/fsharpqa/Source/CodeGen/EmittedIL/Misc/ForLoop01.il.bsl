@@ -36,13 +36,13 @@
   // Offset: 0x00000140 Length: 0x00000050
 }
 .module ForLoop01.exe
-// MVID: {60B68B7F-1795-791C-A745-03837F8BB660}
+// MVID: {60BCDCE8-1795-791C-A745-0383E8DCBC60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05340000
+// Image base: 0x070C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,13 +63,11 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       80 (0x50)
+    // Code size       74 (0x4a)
     .maxstack  5
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_0,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> V_1,
-             [2] int32 wi,
-             [3] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_3,
-             [4] int32 V_4)
+             [2] int32 wi)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 5,5 : 1,24 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\ForLoop01.fs'
     IL_0000:  ldc.i4.1
@@ -89,7 +87,7 @@
     IL_001a:  ldloc.1
     IL_001b:  ldnull
     IL_001c:  cgt.un
-    IL_001e:  brfalse.s  IL_004f
+    IL_001e:  brfalse.s  IL_0049
 
     .line 5,5 : 1,24 ''
     IL_0020:  ldloc.0
@@ -98,23 +96,19 @@
     IL_0027:  ldstr      "%A"
     IL_002c:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_0031:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0036:  stloc.3
-    IL_0037:  ldloc.2
-    IL_0038:  stloc.s    V_4
-    IL_003a:  ldloc.3
-    IL_003b:  ldloc.s    V_4
-    IL_003d:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0042:  pop
-    IL_0043:  ldloc.1
-    IL_0044:  stloc.0
-    IL_0045:  ldloc.0
-    IL_0046:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
-    IL_004b:  stloc.1
+    IL_0036:  ldloc.2
+    IL_0037:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_003c:  pop
+    IL_003d:  ldloc.1
+    IL_003e:  stloc.0
+    IL_003f:  ldloc.0
+    IL_0040:  call       instance class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_TailOrNull()
+    IL_0045:  stloc.1
     .line 100001,100001 : 0,0 ''
-    IL_004c:  nop
-    IL_004d:  br.s       IL_001a
+    IL_0046:  nop
+    IL_0047:  br.s       IL_001a
 
-    IL_004f:  ret
+    IL_0049:  ret
   } // end of method $ForLoop01::main@
 
 } // end of class '<StartupCode$ForLoop01>'.$ForLoop01

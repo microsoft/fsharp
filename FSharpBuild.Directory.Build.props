@@ -87,4 +87,13 @@
     <FSharpOverridesTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
+  <!-- use this to enable good debugging in the Proto bootstrap compiler -->
+  <!-- You'll have to remove it to get the actual compiler bo build because optimization is needed for some large methods -->
+  <!--
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
+  -->
 </Project>

@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Turn off "This function is for use by compiled F# code and should not be used directly" -->
+	<OtherFlags>$(OtherFlags) --nowarn:1204</OtherFlags>
+    <!-- Turn off "Experimental" -->
+	<OtherFlags>$(OtherFlags) --nowarn:57</OtherFlags>
+    <!-- Turn off 3511: state machine not compilable - expected for inlined functions defining state machine generators -->
+    <!-- Turn off 3513: resumable code invocation' - expected for resumable code combinators -->
+	<OtherFlags>$(OtherFlags) --nowarn:3511 --nowarn:3513</OtherFlags>
+	<OtherFlags>$(OtherFlags) --langversion:preview</OtherFlags>
+	<OtherFlags>$(OtherFlags) --define:PREVIEW</OtherFlags>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <!--
+    <Compile Include="empty.fs"  />
+	-->
+	<Compile Include="sync.fs" />
+	<Compile Include="list.fs" />
+	<Compile Include="array.fs" />
+	<Compile Include="option.fs" />
+	<Compile Include="coroutine.fs" />
+	<Compile Include="coroutineBasic.fs" />
+	<Compile Include="async2.fsi" />
+	<Compile Include="async2.fs" />
+	<Compile Include="taskSeq.fs" />
+	<Compile Include="TaskBuilder.fs" />
+	<Compile Include="TaskPerf.fs" />
+	  <!--
+    <Compile Include="seq2.fs" />
+-->	
+	<ProjectReference Include="..\TaskPerfCSharp\TaskPerfCSharp.csproj" />
+    <ProjectReference Include="..\..\..\src\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+     <!-- this must be manually enabled because CI fails because some post-build checks don't like the DLL-->
+	  <!-- <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.0.3" />  -->
+    <PackageReference Include="System.Interactive.Async" Version="4.1.1" />
+  </ItemGroup>
+
+</Project>

@@ -147,6 +147,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Primitives.Basics
     open System.Collections
     open System.Collections.Generic
+    open System.Runtime.CompilerServices
 
     module RuntimeHelpers =
 

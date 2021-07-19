@@ -158,59 +158,54 @@ module Test =
             (fun verifier ->
                 verifier.VerifyIL
                             [
-                            """.method public static void  test() cil managed
-  {
-
-    .maxstack  3
-    .locals init (valuetype System.Span`1<object> V_0,
-             class [System.Runtime]System.Collections.IEnumerator V_1,
-             class [FSharp.Core]Microsoft.FSharp.Core.Unit V_2,
-             class [System.Runtime]System.IDisposable V_3)
-    IL_0000:  call       !!0[] [runtime]System.Array::Empty<object>()
-    IL_0005:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
-    IL_000a:  stloc.0
-    IL_000b:  ldloc.0
-    IL_000c:  box        valuetype System.Span`1<object>
-    IL_0011:  unbox.any  [System.Runtime]System.Collections.IEnumerable
-    IL_0016:  callvirt   instance class [System.Runtime]System.Collections.IEnumerator [System.Runtime]System.Collections.IEnumerable::GetEnumerator()
-    IL_001b:  stloc.1
-    .try
-    {
-      IL_001c:  ldloc.1
-      IL_001d:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0022:  brfalse.s  IL_0031
-
-      IL_0024:  ldloc.1
-      IL_0025:  callvirt   instance object [System.Runtime]System.Collections.IEnumerator::get_Current()
-      IL_002a:  call       void [System.Console]System.Console::WriteLine(object)
-      IL_002f:  br.s       IL_001c
-
-      IL_0031:  ldnull
-      IL_0032:  stloc.2
-      IL_0033:  leave.s    IL_004b
-
+                            """
+      .method public static void  test() cil managed
+      {
+        
+        .maxstack  3
+        .locals init (valuetype System.Span`1<object> V_0,
+                 class [runtime]System.Collections.IEnumerator V_1,
+                 class [runtime]System.IDisposable V_2)
+        IL_0000:  call       !!0[] [runtime]System.Array::Empty<object>()
+        IL_0005:  newobj     instance void valuetype System.Span`1<object>::.ctor(!0[])
+        IL_000a:  stloc.0
+        IL_000b:  ldloc.0
+        IL_000c:  box        valuetype System.Span`1<object>
+        IL_0011:  unbox.any  [runtime]System.Collections.IEnumerable
+        IL_0016:  callvirt   instance class [runtime]System.Collections.IEnumerator [runtime]System.Collections.IEnumerable::GetEnumerator()
+        IL_001b:  stloc.1
+        .try
+        {
+          IL_001c:  ldloc.1
+          IL_001d:  callvirt   instance bool [runtime]System.Collections.IEnumerator::MoveNext()
+          IL_0022:  brfalse.s  IL_0031
+    
+          IL_0024:  ldloc.1
+          IL_0025:  callvirt   instance object [runtime]System.Collections.IEnumerator::get_Current()
+          IL_002a:  call       void [runtime]System.Console::WriteLine(object)
+          IL_002f:  br.s       IL_001c
+    
+          IL_0031:  leave.s    IL_0045
+    
+        }  
+        finally
+        {
+          IL_0033:  ldloc.1
+          IL_0034:  isinst     [runtime]System.IDisposable
+          IL_0039:  stloc.2
+          IL_003a:  ldloc.2
+          IL_003b:  brfalse.s  IL_0044
+    
+          IL_003d:  ldloc.2
+          IL_003e:  callvirt   instance void [runtime]System.IDisposable::Dispose()
+          IL_0043:  endfinally
+          IL_0044:  endfinally
+        }  
+        IL_0045:  ret
+      } 
+    
     }
-    finally
-    {
-      IL_0035:  ldloc.1
-      IL_0036:  isinst     [System.Runtime]System.IDisposable
-      IL_003b:  stloc.3
-      IL_003c:  ldloc.3
-      IL_003d:  brfalse.s  IL_0048
-
-      IL_003f:  ldloc.3
-      IL_0040:  callvirt   instance void [System.Runtime]System.IDisposable::Dispose()
-      IL_0045:  ldnull
-      IL_0046:  pop
-      IL_0047:  endfinally
-      IL_0048:  ldnull
-      IL_0049:  pop
-      IL_004a:  endfinally
-    }
-    IL_004b:  ldloc.2
-    IL_004c:  pop
-    IL_004d:  ret
-  }"""
+"""
                         ])
 
     [<Test>]

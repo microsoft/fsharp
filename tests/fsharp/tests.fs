@@ -462,6 +462,45 @@ module CoreTests =
         testOkFile.CheckExists()
 
     [<Test>]
+    let ``state-machines-non-optimized`` () = 
+        let cfg = testConfig "core/state-machines"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize- --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines-optimized`` () = 
+        let cfg = testConfig "core/state-machines"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls+ --optimize+ --langversion:preview" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``state-machines neg-resumable-01`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-01"
+
+
+    [<Test>]
+    let ``state-machines neg-resumable-02`` () =
+        let cfg = testConfig "core/state-machines"
+        singleVersionedNegTest cfg "preview" "neg-resumable-02"
+
+    [<Test>]
     let ``lots-of-conditionals``() =
         let cfg = testConfig "core/large/conditionals"
         use testOkFile = fileguard cfg "test.ok"

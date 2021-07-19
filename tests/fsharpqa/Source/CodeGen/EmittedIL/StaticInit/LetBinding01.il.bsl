@@ -36,13 +36,13 @@
   // Offset: 0x000001B8 Length: 0x00000070
 }
 .module LetBinding01.exe
-// MVID: {60B68B90-269D-BEEF-A745-0383908BB660}
+// MVID: {608C050A-269D-BEEF-A745-03830A058C60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06AB0000
+// Image base: 0x066B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -79,9 +79,8 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       37 (0x25)
-    .maxstack  4
-    .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0)
+    // Code size       33 (0x21)
+    .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 5,5 : 1,11 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\StaticInit\\LetBinding01.fs'
     IL_0000:  call       class [FSharp.Core]Microsoft.FSharp.Core.Unit LetBinding01::get_x()
@@ -90,14 +89,10 @@
     IL_0006:  ldstr      "x = %A"
     IL_000b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
     IL_0010:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0015:  stloc.0
-    IL_0016:  call       class [FSharp.Core]Microsoft.FSharp.Core.Unit LetBinding01::get_x()
-    IL_001b:  pop
-    IL_001c:  ldloc.0
-    IL_001d:  ldnull
-    IL_001e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_0023:  pop
-    IL_0024:  ret
+    IL_0015:  call       class [FSharp.Core]Microsoft.FSharp.Core.Unit LetBinding01::get_x()
+    IL_001a:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001f:  pop
+    IL_0020:  ret
   } // end of method $LetBinding01::main@
 
 } // end of class '<StartupCode$LetBinding01>'.$LetBinding01

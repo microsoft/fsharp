@@ -1299,7 +1299,7 @@ module IncrClassChecking =
 
                 (isPriorToSuperInit, (fun e -> 
                      let e = match adjustSafeInitFieldExprOpt with None -> e | Some ae -> mkCompGenSequential m ae e
-                     mkSequential DebugPointAtSequential.Both m assignExpr e)), []
+                     mkSequential DebugPointAtSequential.SuppressNeither m assignExpr e)), []
 
         /// Work out the implicit construction side effects of a 'let', 'let rec' or 'do' 
         /// binding in the implicit class construction sequence 
@@ -1327,7 +1327,7 @@ module IncrClassChecking =
 
               | IncrClassDo (doExpr, isStatic) -> 
                   let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
-                  let binder = (fun e -> mkSequential DebugPointAtSequential.Both doExpr.Range doExpr e)
+                  let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither doExpr.Range doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
                       ([(isPriorToSuperInit, binder)], [], []), reps
@@ -1347,7 +1347,7 @@ module IncrClassChecking =
                       | Some v -> 
                         let setExpr = mkRefCellSet g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.Both setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
 
@@ -1361,7 +1361,7 @@ module IncrClassChecking =
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
                         let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
-                        let binder = (fun e -> mkSequential DebugPointAtSequential.Both setExpr.Range setExpr e)
+                        let binder = (fun e -> mkSequential DebugPointAtSequential.SuppressNeither setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
                       | NoSafeInitInfo ->  
@@ -1448,7 +1448,7 @@ module IncrClassChecking =
                     | _ -> 
                         inheritsExpr
 
-                let spAtSuperInit = (if inheritsIsVisible then DebugPointAtSequential.Both else DebugPointAtSequential.StmtOnly)
+                let spAtSuperInit = (if inheritsIsVisible then DebugPointAtSequential.SuppressNeither else DebugPointAtSequential.SuppressStmt)
                 mkSequential spAtSuperInit m inheritsExpr ctorBody
 
             // Add the normal <let/do bindings> 
@@ -3484,12 +3484,12 @@ module EstablishTypeDefinitionCores =
             tycon.entity_tycon_repr <- repr
             // Record the details so we can map System.Type --> TyconRef
             let ilOrigRootTypeRef = GetOriginalILTypeRefOfProvidedType (theRootTypeWithRemapping, m)
-            theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st)) ; lookupTyconRef.Add(st, tcref)), m)
+            theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupTyconRef.TryRemove(st)) ; ignore(lookupTyconRef.TryAdd(st, tcref))), m)
 
             // Record the details so we can map System.Type --> ILTypeRef, including the relocation if any
             if not isSuppressRelocate then 
                 let ilTgtRootTyRef = tycon.CompiledRepresentationForNamedType
-                theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st)) ; lookupILTypeRef.Add(st, ilTgtRootTyRef)), m)
+                theRootTypeWithRemapping.PUntaint ((fun st -> ignore(lookupILTypeRef.TryRemove(st)) ; ignore(lookupILTypeRef.TryAdd(st, ilTgtRootTyRef))), m)
 
             // Iterate all nested types and force their embedding, to populate the mapping from System.Type --> TyconRef/ILTypeRef.
             // This is only needed for generated types, because for other types the System.Type objects self-describe
@@ -3522,12 +3522,12 @@ module EstablishTypeDefinitionCores =
                 let ilOrigTypeRef = GetOriginalILTypeRefOfProvidedType (st, m)
                                 
                 // Record the details so we can map System.Type --> TyconRef
-                st.PUntaint ((fun st -> ignore(lookupTyconRef.Remove(st)) ; lookupTyconRef.Add(st, nestedTyRef)), m)
+                st.PUntaint ((fun st -> ignore(lookupTyconRef.TryRemove(st)) ; ignore(lookupTyconRef.TryAdd(st, nestedTyRef))), m)
 
                 if isGenerated then 
                     let ilTgtTyRef = nestedTycon.CompiledRepresentationForNamedType
                     // Record the details so we can map System.Type --> ILTypeRef
-                    st.PUntaint ((fun st -> ignore(lookupILTypeRef.Remove(st)) ; lookupILTypeRef.Add(st, ilTgtTyRef)), m)
+                    st.PUntaint ((fun st -> ignore(lookupILTypeRef.TryRemove(st)) ; ignore(lookupILTypeRef.TryAdd(st, ilTgtTyRef))), m)
 
                     // Record the details so we can build correct ILTypeDefs during static linking rewriting
                     if not isSuppressRelocate then 
@@ -5662,7 +5662,8 @@ let emptyTcEnv g =
       eModuleOrNamespaceTypeAccumulator = ref (Construct.NewEmptyModuleOrNamespaceType Namespace)
       eFamilyType = None
       eCtorInfo = None
-      eCallerMemberName = None }
+      eCallerMemberName = None 
+      eLambdaArgInfos = [] }
 
 let CreateInitialTcEnv(g, amap, scopem, assemblyName, ccus) =
     (emptyTcEnv g, ccus) ||> List.fold (fun env (ccu, autoOpens, internalsVisible) -> 

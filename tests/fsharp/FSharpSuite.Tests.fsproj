@@ -11,7 +11,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --langversion:preview</OtherFlags>
     <UnitTestType>nunit</UnitTestType>
     <NoWarn>3186</NoWarn>
   </PropertyGroup>
@@ -28,11 +28,14 @@
     <Compile Include="Compiler\Service\MultiProjectTests.fs" />
     <Compile Include="Compiler\Service\SignatureGenerationTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticMember.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\ComputationExpressionOptimizations.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\DelegateAndFuncOptimizations.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\StaticLinkTests.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\ComputedListExpressions.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\BooleanLogic.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\Mutation.fs" />
     <Compile Include="Compiler\CodeGen\EmittedIL\CeEdiThrow.fs" />
+    <Compile Include="Compiler\CodeGen\EmittedIL\TaskGeneratedCode.fs" />
     <Compile Include="Compiler\Conformance\DataExpressions\ComputationExpressions.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\BasicConstants.fs" />
     <Compile Include="Compiler\Conformance\BasicGrammarElements\CharConstants.fs" />

@@ -729,7 +729,33 @@ module TestCollectOnStructSeq =
         seq { yield! Seq.collect (fun _ -> x) [1] }
  
     check "ccekecnwe" (iterate (Unchecked.defaultof<S>) |> Seq.length) 2
-    
+
+module CheckStateMachineCompilationOfMatchBindingVariables =
+    let f xs =
+        seq {
+            match xs with
+            | 1,h
+            | h,1 ->
+                 let stackTrace = new System.Diagnostics.StackTrace()
+                 let methodBase = stackTrace.GetFrame(1).GetMethod()
+                 System.Console.WriteLine(methodBase.Name)
+                 // This checks we have a state machine.  In the combinator compilation
+                 // we get 'Invoke'.
+                 check "vwehoehwvo" methodBase.Name "MoveNextImpl" 
+                 yield h
+                 yield h
+            | 2,h
+            | h,2 ->
+                 yield h
+            | _ -> ()
+        }
+
+    check "ccekecnwevwe1" (f (1, 2) |> Seq.toList) [2;2]
+    check "ccekecnwevwe2" (f (2, 1) |> Seq.toList) [2;2]
+    check "ccekecnwevwe3" (f (2, 3) |> Seq.toList) [3]
+    check "ccekecnwevwe4" (f (3, 2) |> Seq.toList) [3]
+    check "ccekecnwevwe5" (f (3, 3) |> Seq.toList) []
+
 (*---------------------------------------------------------------------------
 !* wrap up
  *--------------------------------------------------------------------------- *)

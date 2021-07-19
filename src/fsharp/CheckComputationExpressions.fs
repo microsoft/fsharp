@@ -857,7 +857,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             // 2. incompatible types: int and string
             // with SynExpr.ArbitraryAfterError we have only first one
             let wrapInArbErrSequence l caption = 
-                SynExpr.Sequential (DebugPointAtSequential.Both, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
+                SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
 
             let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
                 let isNullableOp opId =
@@ -929,7 +929,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
 
         | SynExpr.ForEach (spForLoop, SeqExprOnly _seqExprOnly, isFromSource, pat, sourceExpr, innerComp, _) -> 
             let wrappedSourceExpr = mkSourceExprConditional isFromSource sourceExpr
-            let mFor = match spForLoop with DebugPointAtFor.Yes m -> m | _ -> pat.Range
+            let mFor = match spForLoop with DebugPointAtFor.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.For) | _ -> pat.Range
             let mPat = pat.Range
             let spBind = match spForLoop with DebugPointAtFor.Yes m -> DebugPointAtBinding.Yes m | DebugPointAtFor.No -> DebugPointAtBinding.NoneAtSticky
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mFor ad "For" builderTy) then
@@ -947,13 +947,13 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                         translatedCtxt (mkSynCall "For" mFor [wrappedSourceExpr; SynExpr.MatchLambda (false, sourceExpr.Range, [SynMatchClause(pat, None, holeFill, mPat, DebugPointForTarget.Yes)], spBind, mFor) ])) )
 
         | SynExpr.For (spBind, id, start, dir, finish, innerComp, m) ->
-            let mFor = match spBind with DebugPointAtFor.Yes m -> m | _ -> m
+            let mFor = match spBind with DebugPointAtFor.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.For) | _ -> m
             if isQuery then errorR(Error(FSComp.SR.tcNoIntegerForLoopInQuery(), mFor))
             Some (trans CompExprTranslationPass.Initial q varSpace (elimFastIntegerForLoop (spBind, id, start, dir, finish, innerComp, m)) translatedCtxt )
 
         | SynExpr.While (spWhile, guardExpr, innerComp, _) -> 
             let mGuard = guardExpr.Range
-            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m | _ -> mGuard
+            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.While) | _ -> mGuard
             if isQuery then error(Error(FSComp.SR.tcNoWhileInQuery(), mWhile))
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "While" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("While"), mWhile))
@@ -963,7 +963,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
 
         | SynExpr.TryFinally (innerComp, unwindExpr, mTryToLast, spTry, _spFinally) ->
 
-            let mTry = match spTry with DebugPointAtTry.Yes m -> m | _ -> mTryToLast
+            let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
             if isQuery then error(Error(FSComp.SR.tcNoTryFinallyInQuery(), mTry))
             if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mTry ad "TryFinally" builderTy) then
                 error(Error(FSComp.SR.tcRequireBuilderMethod("TryFinally"), mTry))
@@ -1048,9 +1048,10 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                 | SynExpr.DoBang (rhsExpr, m) -> 
                     let sp = 
                         match sp with 
-                        | DebugPointAtSequential.ExprOnly -> DebugPointAtBinding.Yes m
-                        | DebugPointAtSequential.StmtOnly -> DebugPointAtBinding.NoneAtDo 
-                        | DebugPointAtSequential.Both -> DebugPointAtBinding.Yes m
+                        | DebugPointAtSequential.SuppressExpr -> DebugPointAtBinding.NoneAtDo 
+                        | DebugPointAtSequential.SuppressBoth -> DebugPointAtBinding.NoneAtDo 
+                        | DebugPointAtSequential.SuppressStmt -> DebugPointAtBinding.Yes m
+                        | DebugPointAtSequential.SuppressNeither -> DebugPointAtBinding.Yes m
                     Some(trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (sp, false, true, SynPat.Const(SynConst.Unit, rhsExpr.Range), rhsExpr, [], innerComp2, m)) translatedCtxt)
 
                 // "expr; cexpr" is treated as sequential execution
@@ -1298,7 +1299,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             Some(translatedCtxt (mkSynCall "Bind" mMatch [matchExpr; consumeExpr]))
 
         | SynExpr.TryWith (innerComp, _mTryToWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
-            let mTry = match spTry with DebugPointAtTry.Yes m -> m | _ -> mTryToLast
+            let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try) | _ -> mTryToLast
             
             if isQuery then error(Error(FSComp.SR.tcTryWithMayNotBeUsedInQueries(), mTry))
             let clauses = clauses |> List.map (fun (SynMatchClause(pat, cond, clauseComp, patm, sp)) -> SynMatchClause(pat, cond, transNoQueryOps clauseComp, patm, sp))
@@ -1456,7 +1457,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | None -> 
             // This only occurs in final position in a sequence
             match comp with 
-            // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided or as { let! () = expr in zero } otherwise
+            // "do! expr;" in final position is treated as { let! () = expr in return () } when Return is provided (and no Zero with Default attribute is available) or as { let! () = expr in zero } otherwise
             | SynExpr.DoBang (rhsExpr, m) -> 
                 let mUnit = rhsExpr.Range
                 let rhsExpr = mkSourceExpr rhsExpr
@@ -1465,7 +1466,9 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Return" builderTy) then
                         SynExpr.ImplicitZero m
                     else
-                        SynExpr.YieldOrReturn((false, true), SynExpr.Const(SynConst.Unit, m), m)
+                        match TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env m ad "Zero" builderTy with
+                        | minfo :: _ when MethInfoHasAttribute cenv.g m cenv.g.attrib_DefaultValueAttribute minfo -> SynExpr.ImplicitZero m
+                        | _ -> SynExpr.YieldOrReturn ((false, true), SynExpr.Const (SynConst.Unit, m), m)
                 trans CompExprTranslationPass.Initial q varSpace (SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtDo, false, false, SynPat.Const(SynConst.Unit, mUnit), rhsExpr, [], bodyExpr, m)) translatedCtxt
 
             // "expr;" in final position is treated as { expr; zero }
@@ -1483,9 +1486,9 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                         let fillExpr = 
                             if enableImplicitYield then 
                                 let implicitYieldExpr = mkSynCall "Yield" comp.Range [comp]
-                                SynExpr.SequentialOrImplicitYield(DebugPointAtSequential.ExprOnly, comp, holeFill, implicitYieldExpr, comp.Range)
+                                SynExpr.SequentialOrImplicitYield(DebugPointAtSequential.SuppressExpr, comp, holeFill, implicitYieldExpr, comp.Range)
                             else
-                                SynExpr.Sequential(DebugPointAtSequential.ExprOnly, true, comp, holeFill, comp.Range)
+                                SynExpr.Sequential(DebugPointAtSequential.SuppressExpr, true, comp, holeFill, comp.Range)
                         translatedCtxt fillExpr) 
 
     and transBind q varSpace bindRange bindName bindArgs (consumePat: SynPat) spBind (innerComp: SynExpr) translatedCtxt = 
@@ -1688,7 +1691,7 @@ let mkSeqFinally (cenv: cenv) env m genTy e1 e2 =
     mkCallSeqFinally cenv.g m genResultTy e1 e2 
 
 let mkSeqExprMatchClauses (pat', vspecs) innerExpr = 
-    [TClause(pat', None, TTarget(vspecs, innerExpr, DebugPointForTarget.Yes), pat'.Range) ] 
+    [TClause(pat', None, TTarget(vspecs, innerExpr, DebugPointForTarget.Yes, None), pat'.Range) ] 
 
 let compileSeqExprMatchClauses (cenv: cenv) env inputExprMark (pat: Pattern, vspecs) innerExpr inputExprOpt bindPatTy genInnerTy = 
     let patMark = pat.Range
@@ -1733,7 +1736,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             // We attach the debug point to the lambda expression so we can fetch it out again in LowerComputedListOrArraySeqExpr
             let mFor = 
                 match spFor with 
-                | DebugPointAtFor.Yes m -> m
+                | DebugPointAtFor.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.For)
                 | _ -> enumExprMark
 
             match pat', vspecs, innerExpr with 
@@ -1771,7 +1774,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             // We attach the debug point to the lambda expression so we can fetch it out again in LowerComputedListOrArraySeqExpr
             let mWhile = 
                 match spWhile with 
-                | DebugPointAtWhile.Yes m -> m
+                | DebugPointAtWhile.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.While)
                 | _ -> guardExprMark
 
             let innerExpr = mkDelayedExpr mWhile innerExpr
@@ -1784,12 +1787,12 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             // We attach the debug points to the lambda expressions so we can fetch it out again in LowerComputedListOrArraySeqExpr
             let mTry = 
                 match spTry with 
-                | DebugPointAtTry.Yes m -> m
+                | DebugPointAtTry.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Try)
                 | _ -> unwindExpr.Range
 
             let mFinally = 
                 match spFinally with 
-                | DebugPointAtFinally.Yes m -> m
+                | DebugPointAtFinally.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Finally)
                 | _ -> unwindExpr.Range
 
             let innerExpr = mkDelayedExpr mTry innerExpr
@@ -1847,7 +1850,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
             let mBind = 
                 match spBind with 
-                | DebugPointAtBinding.Yes m -> m
+                | DebugPointAtBinding.Yes m -> m.NoteDebugPoint(RangeDebugPointKind.Binding)
                 | _ -> inputExpr.Range
             let inputExprMark = inputExpr.Range
             let matchv, matchExpr = compileSeqExprMatchClauses cenv env inputExprMark (pat', vspecs) innerExpr (Some inputExpr) bindPatTy genOuterTy 
@@ -1865,7 +1868,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                     (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp)) ->
                           let pat', cond', vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv (pat, cond)
                           let innerExpr, tpenv = tcSequenceExprBody envinner genOuterTy tpenv innerComp
-                          TClause(pat', cond', TTarget(vspecs, innerExpr, sp), pat'.Range), tpenv)
+                          TClause(pat', cond', TTarget(vspecs, innerExpr, sp, None), pat'.Range), tpenv)
                     tpenv
                     clauses
             let inputExprTy = tyOfExpr cenv.g inputExpr
@@ -1901,7 +1904,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
             expr, tpenv
         | Choice2Of2 stmt -> 
             let m = comp.Range
-            let resExpr = Expr.Sequential(stmt, mkSeqEmpty cenv env m genOuterTy, NormalSeq, DebugPointAtSequential.ExprOnly, m)
+            let resExpr = Expr.Sequential(stmt, mkSeqEmpty cenv env m genOuterTy, NormalSeq, DebugPointAtSequential.SuppressExpr, m)
             resExpr, tpenv
 
     and tcSequenceExprBodyAsSequenceOrStatement env genOuterTy tpenv comp =

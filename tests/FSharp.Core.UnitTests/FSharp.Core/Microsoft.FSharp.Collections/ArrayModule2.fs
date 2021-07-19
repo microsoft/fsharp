@@ -850,7 +850,7 @@ type ArrayModule2() =
         // float32 array
         let floatArray: string[] = [| "1.2";"3.5";"6.7" |]
         let resultFloat = Array.sumBy float32 floatArray
-        if resultFloat <> 11.4f then Assert.Fail()
+        if abs (resultFloat - 11.4f) > 0.00000001f then Assert.Fail()
         
         // double array
         let doubleArray: System.Double[] = [| 1.0;8.0 |]

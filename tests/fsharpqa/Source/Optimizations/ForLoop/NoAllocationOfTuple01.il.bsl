@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly NoAllocationOfTuple01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.NoAllocationOfTuple01
 {
-  // Offset: 0x00000000 Length: 0x000001E0
+  // Offset: 0x00000000 Length: 0x000001DC
 }
 .mresource public FSharpOptimizationData.NoAllocationOfTuple01
 {
-  // Offset: 0x000001E8 Length: 0x00000085
+  // Offset: 0x000001E0 Length: 0x00000085
 }
 .module NoAllocationOfTuple01.dll
-// MVID: {59B18AEE-13B5-F699-A745-0383EE8AB159}
+// MVID: {60BE1F17-13B5-F699-A745-0383171FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03460000
+// Image base: 0x08DC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,7 +60,7 @@
              [2] int32 V_2,
              [3] int32 j)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 6,6 : 5,31 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\NoAllocationOfTuple01.fs'
+    .line 6,6 : 5,31 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\ForLoop\\NoAllocationOfTuple01.fs'
     IL_0000:  ldarg.0
     IL_0001:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::ZeroCreate<int32>(int32)
     IL_0006:  stloc.0

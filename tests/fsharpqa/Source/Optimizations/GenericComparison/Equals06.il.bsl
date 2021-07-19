@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 5:0:0:0
 }
 .assembly Equals06
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Equals06
 {
-  // Offset: 0x00000000 Length: 0x00000896
+  // Offset: 0x00000000 Length: 0x00000886
 }
 .mresource public FSharpOptimizationData.Equals06
 {
-  // Offset: 0x000008A0 Length: 0x0000068E
+  // Offset: 0x00000890 Length: 0x00000688
 }
 .module Equals06.dll
-// MVID: {59B18AEE-0759-31EC-A745-0383EE8AB159}
+// MVID: {60BE1F16-0759-31EC-A745-0383161FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01B90000
+// Image base: 0x06DA0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -187,7 +187,7 @@
                  [4] !a V_4,
                  [5] !a V_5)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Equals06.fsx'
+        .line 16707566,16707566 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals06.fsx'
         IL_0000:  ldarg.0
         IL_0001:  ldnull
         IL_0002:  cgt.un

@@ -34,20 +34,20 @@
 }
 .mresource public FSharpSignatureData.Equals03
 {
-  // Offset: 0x00000000 Length: 0x0000022E
+  // Offset: 0x00000000 Length: 0x00000230
 }
 .mresource public FSharpOptimizationData.Equals03
 {
   // Offset: 0x00000238 Length: 0x000000B6
 }
 .module Equals03.dll
-// MVID: {5F1FBE49-0759-3313-A745-038349BE1F5F}
+// MVID: {60BE1F16-0759-3313-A745-0383161FBE60}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x071F0000
+// Image base: 0x05410000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -67,7 +67,7 @@
       .locals init ([0] bool x,
                [1] int32 i)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 8,29 'C:\\kevinransom\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals03.fsx'
+      .line 5,5 : 8,29 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\Optimizations\\GenericComparison\\Equals03.fsx'
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
       .line 8,8 : 8,32 ''

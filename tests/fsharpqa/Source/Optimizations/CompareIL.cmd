@@ -3,8 +3,8 @@ REM == %1 --> assembly
 ildasm /TEXT /LINENUM /NOBAR "%~nx1" >"%~n1.il"
 IF %ERRORLEVEL% NEQ 0 exit /b 1
 
-echo ..\..\..\testenv\bin\ILComparer.exe "%~n1.il.bsl" "%~n1.il"
-..\..\..\testenv\bin\ILComparer.exe "%~n1.il.bsl" "%~n1.il"
+echo %~dp0..\..\testenv\bin\ILComparer.exe "%~n1.il.bsl" "%~n1.il"
+     %~dp0..\..\testenv\bin\ILComparer.exe "%~n1.il.bsl" "%~n1.il"
 
 IF %ERRORLEVEL% EQU 0 exit /b 0
 

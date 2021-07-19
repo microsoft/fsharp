@@ -1978,20 +1978,6 @@ and p_tycon_objmodel_kind x st =
     | TTyconDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TTyconEnum        -> p_byte 4 st
 
-and p_mustinline x st =
-    p_byte (match x with
-            | ValInline.PseudoVal -> 0
-            | ValInline.Always  -> 1
-            | ValInline.Optional -> 2
-            | ValInline.Never -> 3) st
-
-and p_basethis x st =
-    p_byte (match x with
-            | BaseVal -> 0
-            | CtorThisVal  -> 1
-            | NormalVal -> 2
-            | MemberThisVal -> 3) st
-
 and p_vrefFlags x st =
     match x with
     | NormalValUse -> p_byte 0 st
@@ -2278,22 +2264,6 @@ and u_tycon_objmodel_kind st =
     | 4 -> TTyconEnum
     | _ -> ufailwith st "u_tycon_objmodel_kind"
 
-and u_mustinline st =
-    match u_byte st with
-    | 0 -> ValInline.PseudoVal
-    | 1 -> ValInline.Always
-    | 2 -> ValInline.Optional
-    | 3 -> ValInline.Never
-    | _ -> ufailwith st "u_mustinline"
-
-and u_basethis st =
-    match u_byte st with
-    | 0 -> BaseVal
-    | 1 -> CtorThisVal
-    | 2 -> NormalVal
-    | 3 -> MemberThisVal
-    | _ -> ufailwith st "u_basethis"
-
 and u_vrefFlags st =
     match u_byte st with
     | 0 -> NormalValUse
@@ -2422,7 +2392,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"
 
-and p_target (TTarget(a, b, _)) st = p_tup2 p_Vals p_expr (a, b) st
+and p_target (TTarget(a, b, _, _)) st = p_tup2 p_Vals p_expr (a, b) st
 and p_bind (TBind(a, b, _)) st = p_tup2 p_Val p_expr (a, b) st
 
 and p_lval_op_kind x st =
@@ -2453,7 +2423,7 @@ and u_dtree_discrim st =
     | 4 -> u_tup2 u_int u_ty st    |> DecisionTreeTest.ArrayLength
     | _ -> ufailwith st "u_dtree_discrim"
 
-and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No))
+and u_target st = let a, b = u_tup2 u_Vals u_expr st in (TTarget(a, b, DebugPointForTarget.No, None))
 
 and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a, b, DebugPointAtBinding.NoneAtSticky)
 
@@ -2598,7 +2568,7 @@ and p_expr expr st =
     | Expr.LetRec (a, b, c, _)            -> p_byte 7 st; p_tup3 p_binds p_expr p_dummy_range (a, b, c) st
     | Expr.Let (a, b, c, _)               -> p_byte 8 st; p_tup3 p_bind p_expr p_dummy_range (a, b, c) st
     | Expr.Match (_, a, b, c, d, e)         -> p_byte 9 st; p_tup5 p_dummy_range p_dtree p_targets p_dummy_range p_ty (a, b, c, d, e) st
-    | Expr.Obj (_, b, c, d, e, f, g)          -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
+    | Expr.Obj (_, b, c, d, e, f, g)       -> p_byte 10 st; p_tup6 p_ty (p_option p_Val) p_expr p_methods p_intfs p_dummy_range (b, c, d, e, f, g) st
     | Expr.StaticOptimization (a, b, c, d) -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a, b, c, d) st
     | Expr.TyChoose (a, b, c)            -> p_byte 12 st; p_tup3 p_tyar_specs p_expr p_dummy_range (a, b, c) st
     | Expr.Quote (ast, _, _, m, ty)         -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_ty (ast, m, ty) st
@@ -2624,7 +2594,8 @@ and u_expr st =
            let b = u_expr st
            let c = u_int st
            let d = u_dummy_range  st
-           Expr.Sequential (a, b, (match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"), DebugPointAtSequential.StmtOnly, d)
+           let dir = match c with 0 -> NormalSeq | 1 -> ThenDoSeq | _ -> ufailwith st "specialSeqFlag"
+           Expr.Sequential (a, b, dir, DebugPointAtSequential.SuppressStmt, d)
     | 4 -> let a0 = u_option u_Val st
            let b0 = u_option u_Val st
            let b1 = u_Vals st

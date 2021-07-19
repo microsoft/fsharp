@@ -175,11 +175,10 @@ type DebugPointForTarget =
 
 [<RequireQualifiedAccess>]
 type DebugPointAtSequential =
-    | Both
-
-    | StmtOnly
-
-    | ExprOnly
+    | SuppressNeither
+    | SuppressStmt
+    | SuppressBoth
+    | SuppressExpr
 
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
@@ -509,13 +508,13 @@ type SynExpr =
         range: range
 
     | While of
-        whileSeqPoint: DebugPointAtWhile *
+        whileDebugPoint: DebugPointAtWhile *
         whileExpr: SynExpr *
         doExpr: SynExpr *
         range: range
 
     | For of
-        forSeqPoint: DebugPointAtFor *
+        forDebugPoint: DebugPointAtFor *
         ident: Ident *
         identBody: SynExpr *
         direction: bool *
@@ -524,7 +523,7 @@ type SynExpr =
         range: range
 
     | ForEach of
-        forSeqPoint: DebugPointAtFor *
+        forDebugPoint: DebugPointAtFor *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -555,11 +554,11 @@ type SynExpr =
         isExnMatch: bool *
         keywordRange: range *
         matchClauses: SynMatchClause list *
-        matchSeqPoint: DebugPointAtBinding *
+        matchDebugPoint: DebugPointAtBinding *
         range: range
 
     | Match of
-        matchSeqPoint: DebugPointAtBinding *
+        matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range 
@@ -601,22 +600,22 @@ type SynExpr =
         withCases: SynMatchClause list *
         withRange: range *
         range: range *
-        trySeqPoint: DebugPointAtTry *
-        withSeqPoint: DebugPointAtWith
+        tryDebugPoint: DebugPointAtTry *
+        withDebugPoint: DebugPointAtWith
 
     | TryFinally of
         tryExpr: SynExpr *
         finallyExpr: SynExpr *
         range: range *
-        trySeqPoint: DebugPointAtTry *
-        finallySeqPoint: DebugPointAtFinally
+        tryDebugPoint: DebugPointAtTry *
+        finallyDebugPoint: DebugPointAtFinally
 
     | Lazy of
         expr: SynExpr *
         range: range
 
     | Sequential of
-        seqPoint: DebugPointAtSequential *
+        debugPoint: DebugPointAtSequential *
         isTrueSeq: bool *
         expr1: SynExpr *
         expr2: SynExpr *
@@ -737,7 +736,7 @@ type SynExpr =
         range: range
 
     | SequentialOrImplicitYield of
-        seqPoint:DebugPointAtSequential *
+        debugPoint:DebugPointAtSequential *
         expr1:SynExpr *
         expr2:SynExpr *
         ifNotStmt:SynExpr *
@@ -754,7 +753,7 @@ type SynExpr =
         range: range
 
     | LetOrUseBang of
-        bindSeqPoint: DebugPointAtBinding *
+        bindDebugPoint: DebugPointAtBinding *
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
@@ -764,7 +763,7 @@ type SynExpr =
         range: range 
 
     | MatchBang of
-        matchSeqPoint: DebugPointAtBinding *
+        matchDebugPoint: DebugPointAtBinding *
         expr: SynExpr *
         clauses: SynMatchClause list *
         range: range
@@ -948,8 +947,8 @@ type SynSimplePat =
         ident: Ident *
         altNameRefCell: SynSimplePatAlternativeIdInfo ref option *
         isCompilerGenerated: bool *
-        isThisVar: bool *
-        isOptArg: bool *
+        isThisVal: bool *
+        isOptional: bool *
         range: range
 
     | Typed of
@@ -1024,7 +1023,7 @@ type SynPat =
 
     | Named of
         ident: Ident *
-        isSelfIdentifier: bool *
+        isThisVal: bool *
         accessibility: SynAccess option *
         range: range
 
@@ -1146,7 +1145,7 @@ type SynMatchClause =
         whenExpr: SynExpr option *
         resultExpr: SynExpr *
         range: range *
-        spInfo: DebugPointForTarget
+        debugPoint: DebugPointForTarget
 
     member this.RangeOfGuardAndRhs =
         match this with
@@ -1196,7 +1195,7 @@ type SynBinding =
     | SynBinding of
         accessibility: SynAccess option *
         kind: SynBindingKind *
-        mustInline: bool *
+        isInline: bool *
         isMutable: bool *
         attributes: SynAttributes *
         xmlDoc: PreXmlDoc *
@@ -1205,7 +1204,7 @@ type SynBinding =
         returnInfo: SynBindingReturnInfo option *
         expr: SynExpr  *
         range: range *
-        seqPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1499,6 +1498,8 @@ type SynArgInfo =
 
     member x.Ident : Ident option = let (SynArgInfo(_,_,id)) = x in id
 
+    member x.Attributes : SynAttributes = let (SynArgInfo(attrs,_,_)) = x in attrs
+
 [<NoEquality; NoComparison>]
 type SynValTyparDecls =
     | SynValTyparDecls of
@@ -1673,7 +1674,7 @@ type SynModuleDecl =
         range: range
 
     | DoExpr of
-       spInfo: DebugPointAtBinding *
+       debugPoint: DebugPointAtBinding *
        expr: SynExpr *
        range: range
 
