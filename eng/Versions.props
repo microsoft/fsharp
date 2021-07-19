@@ -182,7 +182,7 @@
     <!-- setup packages -->
     <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
     <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
-    <MicroBuildPluginsSwixBuildVersion>1.0.147</MicroBuildPluginsSwixBuildVersion>
+    <MicroBuildPluginsSwixBuildVersion>1.1.96</MicroBuildPluginsSwixBuildVersion>
     <!-- other packages -->
     <FsCheckVersion>3.0.0-alpha4</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
