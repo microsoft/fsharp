@@ -404,6 +404,17 @@ namespace Microsoft.FSharp.Collections
             if len1 <> array2.Length then invalidArgDifferentArrayLength "array1" array1.Length "array2" array2.Length
             let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i]) && loop (i+1))
             loop 0
+        
+        [<CompiledName("ForAll3")>]
+        let internal forall3 predicate (array1: _[]) (array2: _[]) (array3: _[]) = 
+            if isNull array1 then nullArg (nameof array1)
+            if isNull array2 then nullArg (nameof array2)
+            if isNull array3 then nullArg (nameof array3)
+            let f = OptimizedClosures.FSharpFunc<_, _, _, _>.Adapt(predicate)
+            let len1 = array1.Length
+            if len1 <> array2.Length || len1 <> array3.Length then invalidArg3ArraysDifferent "array1" "array2" "array3" array1.Length array2.Length array3.Length
+            let rec loop i = i >= len1 || (f.Invoke(array1.[i], array2.[i], array3.[i]) && loop (i+1))
+            loop 0
 
         let inline groupByImpl (comparer: IEqualityComparer<'SafeKey>) (keyf: 'T->'SafeKey) (getKey: 'SafeKey->'Key) (array: 'T[]) =
             let length = array.Length

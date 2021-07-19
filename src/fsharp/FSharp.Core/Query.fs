@@ -314,26 +314,27 @@ module Query =
         match prop.GetGetMethod true with
         | null -> None
         | v -> Some v
+    let (|GenericArgs|) (minfo: MethodInfo) = minfo.GetGenericArguments() |> Array.toList
 
     // Match 'f x'
     let (|SpecificCall1|_|) q =
        let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
        function
-       | CallQ (Some builderObj, tyargs, [arg1]) -> Some(builderObj, tyargs, arg1)
+       | CallQ (Some builderObj, GenericArgs tyargs, [arg1]) -> Some(builderObj, tyargs, arg1)
        | _ -> None
 
     // Match 'f x y' or 'f (x, y)'
     let (|SpecificCall2|_|) q =
        let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
        function
-       | CallQ (Some builderObj, tyargs, [arg1; arg2]) -> Some(builderObj, tyargs, arg1, arg2)
+       | CallQ (Some builderObj, GenericArgs tyargs, [arg1; arg2]) -> Some(builderObj, tyargs, arg1, arg2)
        | _ -> None
 
     // Match 'f x y z' or 'f (x, y, z)'
     let (|SpecificCall3|_|) q =
        let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
        function
-       | CallQ (Some builderObj, tyargs, [arg1; arg2; arg3]) -> Some(builderObj, tyargs, arg1, arg2, arg3)
+       | CallQ (Some builderObj, GenericArgs tyargs, [arg1; arg2; arg3]) -> Some(builderObj, tyargs, arg1, arg2, arg3)
        | _ -> None
 
     /// (fun (x, y) -> z) is represented as 'fun p -> let x = p#0 let y = p#1' etc.
@@ -1286,7 +1287,7 @@ module Query =
         // rewrite has had the custom operator translation mechanism applied. In this case, the
         // body of the "for" will simply contain "yield".
 
-        | CallQueryBuilderFor (_, [_; qTy; immutResElemTy; _], [immutSource; Lambda(immutSelectorVar, immutSelector) ]) ->
+        | CallQueryBuilderFor (_, GenericArgs [_; qTy; immutResElemTy; _], [immutSource; Lambda(immutSelectorVar, immutSelector) ]) ->
 
             let mutSource, sourceConv = TransInner CanEliminate.Yes check immutSource
 
@@ -1467,7 +1468,7 @@ module Query =
                 | _ -> GroupingConv (immutKeySelector.Type, immutElementSelector.Type, selectorConv)
             TransInnerResult.Other(MakeGroupValBy(qTyIsIQueryable qTy, mutVar1.Type, mutKeySelector.Type, mutElementSelector.Type, mutSource, mutVar2, mutKeySelector, mutVar1, mutElementSelector)), conv
 
-        | CallJoin(_, [_; qTy; _; _; _],
+        | CallJoin(_, GenericArgs [_; qTy; _; _; _],
                    [ immutOuterSource
                      immutInnerSource
                      Lambda(immutOuterKeyVar, immutOuterKeySelector)
@@ -1491,7 +1492,7 @@ module Query =
             TransInnerResult.Other joinExpr, elementSelectorConv
 
         | CallGroupJoin
-              (_, [_; qTy; _; _; _], 
+              (_, GenericArgs [_; qTy; _; _; _], 
                [ immutOuterSource
                  immutInnerSource
                  Lambda(immutOuterKeyVar, immutOuterKeySelector)
@@ -1517,7 +1518,7 @@ module Query =
             TransInnerResult.Other joinExpr, elementSelectorConv
 
         | CallLeftOuterJoin
-             (_, [ _; qTy; immutInnerSourceTy; _; _],
+             (_, GenericArgs [ _; qTy; immutInnerSourceTy; _; _],
               [ immutOuterSource
                 immutInnerSource
                 Lambda(immutOuterKeyVar, immutOuterKeySelector)

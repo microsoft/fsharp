@@ -61,4 +61,4 @@ module LeafExpressionConverter =
     /// A runtime helper used to evaluate nested quotation literals.
     val SubstHelperRaw : Expr * Var[] * obj[] -> Expr
 
-    val internal (|SpecificCallToMethod|_|) : System.RuntimeMethodHandle -> (Expr -> (Expr option * Type list * Expr list) option)
+    val internal (|SpecificCallToMethod|_|) : System.RuntimeMethodHandle -> (Expr -> (Expr option * Reflection.MethodInfo * Expr list) option)

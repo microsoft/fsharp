@@ -1411,7 +1411,7 @@ namedModuleDefnBlock:
      { Choice1Of2 $1.Lid }
 
 
-/* A module definition that inccludes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
+/* A module definition that includes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
 wrappedNamedModuleDefn:
   | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
      { $2 }

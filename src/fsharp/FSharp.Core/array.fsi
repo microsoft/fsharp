@@ -459,6 +459,26 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ForAll2")>]
         val forall2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1[] -> array2:'T2[] -> bool
 
+        /// <summary>Tests if all corresponding elements of three arrays satisfy the given predicate pairwise.</summary>
+        ///
+        /// <remarks>The predicate is applied to matching elements in the three collections up to the lesser of the 
+        /// three lengths of the collections. If any application returns false then the overall result is 
+        /// false and no further elements are tested. Otherwise, if one collection is longer 
+        /// than the others then the <c>ArgumentException</c> exception is raised. 
+        /// Otherwise, true is returned.</remarks>
+        ///
+        /// <param name="predicate">The function to test the input elements.</param>
+        /// <param name="array1">The first input array.</param>
+        /// <param name="array2">The second input array.</param>
+        /// <param name="array3">The third input array.</param>
+        ///
+        /// <exception cref="T:System.ArgumentNullException">Thrown when any of the input arrays is null.</exception>
+        /// <exception cref="T:System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        ///
+        /// <returns>True if all of the array elements satisfy the predicate.</returns>
+        [<CompiledName("ForAll3")>]
+        val internal forall3: predicate:('T1 -> 'T2 -> 'T3 -> bool) -> array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> bool
+
         /// <summary>Applies a function to each element of the collection, threading an accumulator argument
         /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
         /// <c>f (... (f s i0)...) iN</c></summary>
