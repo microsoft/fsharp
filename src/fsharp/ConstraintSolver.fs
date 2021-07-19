@@ -2430,7 +2430,16 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
 
                 ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange, id.idText, suggestFields)
             else
-                Error((msgNum, FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange)
+
+                let message = 
+                  FSComp.SR.csMemberHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)
+                  + " " + 
+                  match minfo with
+                  | ILMeth (_,ilmethInfo,_) -> "parameter(s) name(s): " + ([for p in ilmethInfo.ParamMetadata -> p.Name.Value] |> String.concat ",")
+                  | FSMeth _ -> ""
+                  | _ -> ""
+                Error((msgNum, message), id.idRange)
+
         | [] -> Error((msgNum, msgText), m)
 
     // One method, incorrect number of arguments provided by the user
@@ -2496,11 +2505,21 @@ and ReportNoCandidatesError (csenv: ConstraintSolverEnv) (nUnnamedCallerArgs, nN
                 FSComp.SR.csNoMemberTakesTheseArguments((ShowAccessDomain ad), methodName, nUnnamedCallerArgs)
             else 
                 let s = calledMethGroup |> List.map (fun cmeth -> cmeth.UnassignedNamedArgs |> List.map (fun na -> na.Name)|> Set.ofList) |> Set.intersectMany
+                let nl = System.Environment.NewLine
+                let methods =
+                    [for c in calledMethGroup -> FSComp.SR.formatDashItem (NicePrint.stringOfMethInfo amap m denv c.Method)]
+                    |> String.concat nl
+                    |> FSComp.SR.csCandidates 
+
+                let methods = nl + methods + nl
+
                 if s.IsEmpty then 
-                    FSComp.SR.csNoMemberTakesTheseArguments2((ShowAccessDomain ad), methodName, nUnnamedCallerArgs, nNamedCallerArgs)
+                    let erN, message = FSComp.SR.csNoMemberTakesTheseArguments2((ShowAccessDomain ad), methodName, nUnnamedCallerArgs, nNamedCallerArgs)
+                    erN, (message + methods)
                 else 
                     let sample = s.MinimumElement
-                    FSComp.SR.csNoMemberTakesTheseArguments3((ShowAccessDomain ad), methodName, nUnnamedCallerArgs, sample)
+                    let erN, message = FSComp.SR.csNoMemberTakesTheseArguments3((ShowAccessDomain ad), methodName, nUnnamedCallerArgs, sample)
+                    erN, (message + methods)
         Error (msg, m)
     |> ErrorD
 
