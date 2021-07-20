@@ -23,6 +23,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Symbols.FSharpExprPatterns
+open TestFramework
 
 type FSharpCore =
     | FC45
@@ -50,18 +51,16 @@ module internal Utils =
             if Directory.Exists tempPath then ()
             else Directory.CreateDirectory tempPath |> ignore
 
-    /// Returns the filename part of a temp file name created with Path.GetTempFileName()
+    /// Returns the filename part of a temp file name created with tryCreateTemporaryFileName ()
     /// and an added process id and thread id to ensure uniqueness between threads.
     let getTempFileName() =
-        let tempFileName = Path.GetTempFileName()
+        let tempFileName = tryCreateTemporaryFileName ()
         try
             let tempFile, tempExt = Path.GetFileNameWithoutExtension tempFileName, Path.GetExtension tempFileName
             let procId, threadId = Process.GetCurrentProcess().Id, Thread.CurrentThread.ManagedThreadId
             String.concat "" [tempFile; "_"; string procId; "_"; string threadId; tempExt]  // ext includes dot
         finally
             try
-                // Since Path.GetTempFileName() creates a *.tmp file in the %TEMP% folder, we want to clean it up.
-                // This also prevents a system to run out of available randomized temp files (the pool is only 64k large).
                 FileSystem.FileDeleteShim tempFileName
             with _ -> ()
 

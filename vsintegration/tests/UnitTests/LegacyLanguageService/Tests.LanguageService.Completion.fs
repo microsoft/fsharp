@@ -6403,7 +6403,7 @@ let rec f l =
                 open System.IO
                 open System.Runtime.InteropServices
                 // Get two temp files, write data into one of them
-                let tempFile1, tempFile2 = Path.GetTempFileName(), Path.GetTempFileName()
+                let tempFile1, tempFile2 = tryCreateTemporaryFileName , tryCreateTemporaryFileName ()
                 let writer = new StreamWriter (tempFile1)
                 writer.WriteLine("Some Data")
                 writer.Close()

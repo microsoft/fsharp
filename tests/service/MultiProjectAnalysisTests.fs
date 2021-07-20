@@ -18,6 +18,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Service.Tests.Common
+open TestFramework
 
 let toIList (x: _ array) = x :> IList<_>
 let numProjectsForStressTest = 100
@@ -29,8 +30,8 @@ let internal tups (m:range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndCol
 
 module internal Project1A =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
@@ -75,8 +76,8 @@ type U =
 //-----------------------------------------------------------------------------------------
 module internal Project1B =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
@@ -102,8 +103,8 @@ let x =
 // A project referencing two sub-projects
 module internal MultiProject1 =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
@@ -264,7 +265,7 @@ module internal ManyProjectsStressTest =
     type Project = { ModuleName: string; FileName: string; Options: FSharpProjectOptions; DllName: string }
     let projects =
         [ for i in 1 .. numProjectsForStressTest do
-                let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+                let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
                 let moduleName = "Project" + string i
                 let fileSource1 = "module " + moduleName + """
 
@@ -280,7 +281,7 @@ let p = C.Print()
 
     """
                 FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
-                let baseName = Path.GetTempFileName()
+                let baseName = tryCreateTemporaryFileName ()
                 let dllName = Path.ChangeExtension(baseName, ".dll")
                 let projFileName = Path.ChangeExtension(baseName, ".fsproj")
                 let fileNames = [fileName1 ]
@@ -289,8 +290,8 @@ let p = C.Print()
                 yield { ModuleName = moduleName; FileName=fileName1; Options = options; DllName=dllName } ]
 
     let jointProject =
-        let fileName = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-        let dllBase = Path.GetTempFileName()
+        let fileName = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+        let dllBase = tryCreateTemporaryFileName ()
         let dllName = Path.ChangeExtension(dllBase, ".dll")
         let projFileName = Path.ChangeExtension(dllBase, ".fsproj")
         let fileSource =
@@ -383,8 +384,8 @@ let ``Test ManyProjectsStressTest all symbols`` () =
 
 module internal MultiProjectDirty1 =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let content = """module Project1
@@ -405,8 +406,8 @@ let x = "F#"
 module internal MultiProjectDirty2 =
 
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
 
@@ -592,10 +593,10 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
 module internal Project2A =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName1 = Path.GetTempFileName()
-    let baseName2 = Path.GetTempFileName()
-    let baseName3 = Path.GetTempFileName() // this one doesn't get InternalsVisibleTo rights
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName(), ".fs")
+    let baseName1 = tryCreateTemporaryFileName ()
+    let baseName2 = tryCreateTemporaryFileName ()
+    let baseName3 = tryCreateTemporaryFileName () // this one doesn't get InternalsVisibleTo rights
     let dllShortName = Path.GetFileNameWithoutExtension(baseName2)
     let dllName = Path.ChangeExtension(baseName1, ".dll")
     let projFileName = Path.ChangeExtension(baseName1, ".fsproj")
@@ -621,7 +622,7 @@ type C() =
 // A project referencing Project2A
 module internal Project2B =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
     let dllName = Path.ChangeExtension(Project2A.baseName2, ".dll")
     let projFileName = Path.ChangeExtension(Project2A.baseName2, ".fsproj")
     let fileSource1 = """
@@ -645,7 +646,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 // A project referencing Project2A but without access to the internals of A
 module internal Project2C =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
     let dllName = Path.ChangeExtension(Project2A.baseName3, ".dll")
     let projFileName = Path.ChangeExtension(Project2A.baseName3, ".fsproj")
     let fileSource1 = """
@@ -709,8 +710,8 @@ let ``Test multi project 2 all symbols`` () =
 
 module internal Project3A =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
@@ -732,8 +733,8 @@ let (|DivisibleBy|_|) by n =
 // A project referencing a sub-project
 module internal MultiProject3 =
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let baseName = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let baseName = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """

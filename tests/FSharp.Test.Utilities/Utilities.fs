@@ -285,8 +285,8 @@ let main argv = 0"""
         static member CreateILCompilation (source: string) =
             let compute =
                 lazy
-                    let ilFilePath = Path.GetTempFileName ()
-                    let tmp = Path.GetTempFileName()
+                    let ilFilePath = tryCreateTemporaryFileName ()
+                    let tmp = tryCreateTemporaryFileName ()
                     let dllFilePath = Path.ChangeExtension (tmp, ".dll")
                     try
                         File.WriteAllText (ilFilePath, source)

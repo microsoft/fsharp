@@ -33,7 +33,7 @@ let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
 
-let inline getTestsDirectory dir = FSharp.Test.Utilities.getTestsDirectory __SOURCE_DIRECTORY__ dir
+let inline getTestsDirectory dir = getTestsDirectory __SOURCE_DIRECTORY__ dir
 let testConfig = getTestsDirectory >> testConfig
 
 [<Test>]

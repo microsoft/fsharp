@@ -17,11 +17,12 @@ open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
+open TestFramework
 
 let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlags) =
     let otherFlags = defaultArg otherFlags []
     let libDirs = defaultArg libDirs []
-    let base1 = Path.GetTempFileName()
+    let base1 = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(base1, ".dll")
     let fileName1 = Path.ChangeExtension(base1, ".fs")
     let projFileName = Path.ChangeExtension(base1, ".fsproj")

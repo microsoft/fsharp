@@ -14,6 +14,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.IO
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Text
+open TestFramework
 
 // Add additional imports/constructs into this script text to verify that common scenarios
 // for FCS script typechecking can be supported
@@ -27,7 +28,7 @@ let pi = Math.PI
 [<Test>]
 let ``can generate options for different frameworks regardless of execution environment``(assumeNetFx, useSdk, flags) =
     let path = Path.GetTempPath()
-    let file = Path.GetTempFileName()
+    let file = tryCreateTemporaryFileName ()
     let tempFile = Path.Combine(path, file)
     let (_, errors) =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdk, otherFlags = flags)
@@ -40,7 +41,7 @@ let ``can generate options for different frameworks regardless of execution envi
 [<TestCase(false, true, [| "--targetprofile:netcore" |])>]
 [<Test>]
 let ``all default assembly references are system assemblies``(assumeNetFx, useSdkRefs, flags) =
-    let tempFile = Path.GetTempFileName() + ".fsx"
+    let tempFile = tryCreateTemporaryFileName () + ".fsx"
     let (options, errors) =
         checker.GetProjectOptionsFromScript(tempFile, SourceText.ofString scriptSource, assumeDotNetFramework = assumeNetFx, useSdkRefs = useSdkRefs, otherFlags = flags)
         |> Async.RunImmediate
@@ -70,7 +71,7 @@ let ``all default assembly references are system assemblies``(assumeNetFx, useSd
 // Because of this the test has been manually verified by running locally.
 //[<Test>]
 let ``sdk dir with dodgy global json gives warning``() =
-    let tempFile = Path.GetTempFileName() + ".fsx"
+    let tempFile = tryCreateTemporaryFileName () + ".fsx"
     let tempPath = Path.GetDirectoryName(tempFile)
     let globalJsonPath = Path.Combine(tempPath, "global.json")
     FileSystem.OpenFileForWriteShim(globalJsonPath).Write("""{ "sdk": { "version": "666.666.666" } }""")

@@ -33,6 +33,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
+open TestFramework
 
 [<TestFixture>][<Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
@@ -77,7 +78,7 @@ module GoToDefinitionServiceTests =
 
     let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
 
-        let filePath = Path.GetTempFileName() + ".fs"
+        let filePath = tryCreateTemporaryFileName () + ".fs"
         File.WriteAllText(filePath, fileContents)
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker

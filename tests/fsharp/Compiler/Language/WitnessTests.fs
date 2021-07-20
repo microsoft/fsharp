@@ -6,6 +6,7 @@ open NUnit.Framework
 open FSharp.Test
 open FSharp.Test.Utilities
 open FSharp.Test.Compiler
+open TestFramework
 
 #if !NETCOREAPP
 

@@ -13,6 +13,7 @@ open FSharp.Compiler.CodeAnalysis
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
 open FSharp.Compiler.Text
+open TestFramework
 
 [<TestFixture>]
 module MultiProjectTests =
@@ -85,14 +86,14 @@ let test() =
             reraise()
 
     let createOnDisk src =
-        let tmpFilePath = Path.GetTempFileName()
+        let tmpFilePath = tryCreateTemporaryFileName ()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fs")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
         tmpRealFilePath
 
     let createOnDiskCompiledAsDll checker src =
-        let tmpFilePath = Path.GetTempFileName()
+        let tmpFilePath = tryCreateTemporaryFileName ()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fs")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
@@ -134,6 +135,7 @@ let test() =
     let ``Using compiler service, file referencing a DLL will correctly update when the referenced DLL file changes``() =
         let checker = CompilerAssert.Checker
 
+        // Create an assembly with the module Script1 and function x.
         let dllPath1 = 
             createOnDiskCompiledAsDll checker
                 """
@@ -142,6 +144,7 @@ module Script1
 let x = 1
                 """
 
+        // Create script with that uses Script1 and function x
         let filePath1 = 
             createOnDisk 
                 """
@@ -159,12 +162,14 @@ let x = Script1.x
                     ReferencedProjects = [||]
                     SourceFiles = [|filePath1|] }              
 
-            let checkProjectResults = 
+            // Verify that a script using Script1.x works
+            let checkProjectResults1 = 
                 checker.ParseAndCheckProject(fsOptions1)
                 |> Async.RunImmediate
 
-            Assert.IsEmpty(checkProjectResults.Diagnostics)
+            Assert.IsEmpty(checkProjectResults1.Diagnostics)
 
+            // Create script with that uses Script1 and function x and function y
             updateFileOnDisk filePath1
                 """
 module Script2
@@ -173,12 +178,14 @@ let x = Script1.x
 let y = Script1.y
                 """
 
-            let checkProjectResults = 
+            // Verify that a script using Script1.x and Script1.y fails
+            let checkProjectResults2 = 
                 checker.ParseAndCheckProject(fsOptions1)
                 |> Async.RunImmediate
 
-            Assert.IsNotEmpty(checkProjectResults.Diagnostics)
+            Assert.IsNotEmpty(checkProjectResults2.Diagnostics)
 
+            // Create an assembly with the module Script1 and function x and function y
             updateCompiledDllOnDisk checker dllPath1
                 """
 module Script1
@@ -187,11 +194,12 @@ let x = 1
 let y = 1
                 """
 
-            let checkProjectResults = 
+            // Verify that a script using Script1.x and Script1.y fails
+            let checkProjectResults3 = 
                 checker.ParseAndCheckProject(fsOptions1)
                 |> Async.RunImmediate
 
-            Assert.IsEmpty(checkProjectResults.Diagnostics)
+            Assert.IsEmpty(checkProjectResults3.Diagnostics)
 
         finally
             try File.Delete(dllPath1) with | _ -> ()

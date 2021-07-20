@@ -18,6 +18,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+open TestFramework
 open NUnit.Framework
 
 [<TestFixture>]
@@ -39,14 +40,14 @@ module WorkspaceTests =
             reraise()
 
     let createOnDiskScript src =
-        let tmpFilePath = Path.GetTempFileName()
+        let tmpFilePath = tryCreateTemporaryFileName ()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fsx")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
         tmpRealFilePath
 
     let createOnDiskCompiledScriptAsDll (workspace: Workspace) src =
-        let tmpFilePath = Path.GetTempFileName()
+        let tmpFilePath = tryCreateTemporaryFileName ()
         let tmpRealFilePath = Path.ChangeExtension(tmpFilePath, ".fsx")
         try File.Delete(tmpFilePath) with | _ -> ()
         File.WriteAllText(tmpRealFilePath, src)
