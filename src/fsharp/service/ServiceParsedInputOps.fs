@@ -588,7 +588,7 @@ module ParsedInput =
             | SynExpr.TryFinally (e1, e2, _, _, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.Lazy (e, _) -> walkExprWithKind parentKind e
             | Sequentials es -> List.tryPick (walkExprWithKind parentKind) es
-            | SynExpr.IfThenElse (e1, e2, e3, _, _, _, _) -> 
+            | SynExpr.IfThenElse (_, e1, _, e2, _, e3, _, _, _, _) -> 
                 List.tryPick (walkExprWithKind parentKind) [e1; e2] |> Option.orElse (match e3 with None -> None | Some e -> walkExprWithKind parentKind e)
             | SynExpr.Ident ident -> ifPosInRange ident.idRange (fun _ -> Some (EntityKind.FunctionOrValue false))
             | SynExpr.LongIdentSet (_, e, _) -> walkExprWithKind parentKind e
@@ -1320,7 +1320,7 @@ module ParsedInput =
                 List.iter walkBinding bindings; walkExpr e
             | SynExpr.TryWith (e, _, clauses, _, _, _, _) ->
                 List.iter walkClause clauses;  walkExpr e
-            | SynExpr.IfThenElse (e1, e2, e3, _, _, _, _) ->
+            | SynExpr.IfThenElse (_, e1, _, e2, _, e3, _, _, _, _) ->
                 List.iter walkExpr [e1; e2]
                 e3 |> Option.iter walkExpr
             | SynExpr.LongIdentSet (ident, e, _)

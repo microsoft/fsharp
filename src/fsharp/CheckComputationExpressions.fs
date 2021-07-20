@@ -95,7 +95,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.Sequential (_, _, e1, e2, _) ->
                 YieldFree e1 && YieldFree e2
 
-            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+            | SynExpr.IfThenElse (_, _, _, e2, _, e3opt, _, _, _, _) ->
                 YieldFree e2 && Option.forall YieldFree e3opt
 
             | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
@@ -126,7 +126,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.Sequential (_, _, e1, e2, _) ->
                 YieldFree e1 && YieldFree e2
 
-            | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) ->
+            | SynExpr.IfThenElse (_, _, _, e2, _, e3opt, _, _, _, _) ->
                 YieldFree e2 && Option.forall YieldFree e3opt
 
             | SynExpr.TryWith (e1, _, clauses, _, _, _, _) ->
@@ -707,7 +707,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
     // NOTE: we should probably suppress these sequence points altogether
     let rangeForCombine innerComp1 = 
         match innerComp1 with 
-        | SynExpr.IfThenElse (_, _, _, _, _, mIfToThen, _m) -> mIfToThen
+        | SynExpr.IfThenElse (_, _, _, _, _, _, _, _, mIfToThen, _m) -> mIfToThen
         | SynExpr.Match (DebugPointAtBinding.Yes mMatch, _, _, _) -> mMatch
         | SynExpr.TryWith (_, _, _, _, _, DebugPointAtTry.Yes mTry, _) -> mTry
         | SynExpr.TryFinally (_, _, _, DebugPointAtTry.Yes mTry, _)  -> mTry
@@ -1071,17 +1071,17 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                                 SynExpr.Sequential(sp, true, innerComp1, holeFill, m)
                         translatedCtxt fillExpr))
 
-        | SynExpr.IfThenElse (guardExpr, thenComp, elseCompOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
+        | SynExpr.IfThenElse (ifKw, guardExpr, thenKw, thenComp, elseKw, elseCompOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
             match elseCompOpt with 
             | Some elseComp -> 
                 if isQuery then error(Error(FSComp.SR.tcIfThenElseMayNotBeUsedWithinQueries(), mIfToThen))
-                Some (translatedCtxt (SynExpr.IfThenElse (guardExpr, transNoQueryOps thenComp, Some(transNoQueryOps elseComp), spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch)))
+                Some (translatedCtxt (SynExpr.IfThenElse (ifKw, guardExpr, thenKw, transNoQueryOps thenComp, elseKw, Some(transNoQueryOps elseComp), spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch)))
             | None -> 
                 let elseComp = 
                     if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mIfToThen ad "Zero" builderTy) then
                         error(Error(FSComp.SR.tcRequireBuilderMethod("Zero"), mIfToThen))
                     mkSynCall "Zero" mIfToThen []
-                Some (trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (guardExpr, holeFill, Some elseComp, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch))))
+                Some (trans CompExprTranslationPass.Initial q varSpace thenComp (fun holeFill -> translatedCtxt (SynExpr.IfThenElse (ifKw, guardExpr, thenKw, holeFill, None, Some elseComp, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch))))
 
         // 'let binds in expr'
         | SynExpr.LetOrUse (isRec, false, binds, innerComp, m) ->
@@ -1543,7 +1543,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
             else
                 None
 
-        | SynExpr.IfThenElse (guardExpr, thenComp, elseCompOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
+        | SynExpr.IfThenElse (ifKw, guardExpr, thenKw, thenComp, elseKw, elseCompOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
             match convertSimpleReturnToExpr varSpace thenComp with
             | None -> None
             | Some (_, Some _) -> None
@@ -1558,7 +1558,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
                     | Some (elseExpr, None) -> Some (Some elseExpr)
             match elseExprOptOpt with 
             | None -> None
-            | Some elseExprOpt -> Some (SynExpr.IfThenElse (guardExpr, thenExpr, elseExprOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch), None)
+            | Some elseExprOpt -> Some (SynExpr.IfThenElse (ifKw, guardExpr, thenKw, thenExpr, elseKw, elseExprOpt, spIfToThen, isRecovery, mIfToThen, mIfToEndOfElseBranch), None)
 
         | SynExpr.LetOrUse (isRec, false, binds, innerComp, m) ->
             match convertSimpleReturnToExpr varSpace innerComp with
@@ -1599,7 +1599,7 @@ let TcComputationExpression cenv env overallTy tpenv (mWhole, interpExpr: Expr, 
         | OptionalSequential (JoinOrGroupJoinOrZipClause _, _) -> false
         | OptionalSequential (CustomOperationClause _, _) -> false
         | SynExpr.Sequential (_, _, innerComp1, innerComp2, _) -> isSimpleExpr innerComp1 && isSimpleExpr innerComp2
-        | SynExpr.IfThenElse (_, thenComp, elseCompOpt, _, _, _, _) -> 
+        | SynExpr.IfThenElse (_, _, _, thenComp, _, elseCompOpt, _, _, _, _) -> 
              isSimpleExpr thenComp && (match elseCompOpt with None -> true | Some c -> isSimpleExpr c)
         | SynExpr.LetOrUse (_, _, _, innerComp, _) -> isSimpleExpr innerComp
         | SynExpr.LetOrUseBang _ -> false
@@ -1822,7 +1822,7 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp overallTy m =
                 let innerExpr2, tpenv = tcSequenceExprBody env genOuterTy tpenv innerComp2
                 Some(Expr.Sequential(stmt1, innerExpr2, NormalSeq, sp, m), tpenv)
 
-        | SynExpr.IfThenElse (guardExpr, thenComp, elseCompOpt, spIfToThen, _isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
+        | SynExpr.IfThenElse (_, guardExpr, _, thenComp, _, elseCompOpt, spIfToThen, _isRecovery, mIfToThen, mIfToEndOfElseBranch) ->
             let guardExpr', tpenv = TcExpr cenv cenv.g.bool_ty env tpenv guardExpr
             let thenExpr, tpenv = tcSequenceExprBody env genOuterTy tpenv thenComp
             let elseComp = (match elseCompOpt with Some c -> c | None -> SynExpr.ImplicitZero mIfToThen)

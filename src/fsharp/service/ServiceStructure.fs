@@ -348,7 +348,7 @@ module Structure =
                 | _ -> ()
                 parseExpr tryExpr
                 parseExpr finallyExpr
-            | SynExpr.IfThenElse (ifExpr, thenExpr, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
+            | SynExpr.IfThenElse (_, ifExpr, _, thenExpr, _, elseExprOpt, spIfToThen, _, ifToThenRange, r) ->
                 match spIfToThen with
                 | DebugPointAtBinding.Yes rt ->
                     // Outline the entire IfThenElse

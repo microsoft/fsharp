@@ -622,8 +622,11 @@ type SynExpr =
         range: range
 
     | IfThenElse of
+        ifKeyword: SynIfThenElseStart *
         ifExpr: SynExpr *
+        thenKeyword: range *
         thenExpr: SynExpr *
+        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
@@ -917,6 +920,16 @@ type SynExpr =
         match this with
         | SynExpr.ArbitraryAfterError _ -> true
         | _ -> false
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynIfThenElseStart =
+    | If of range: Range
+    | Elif of range: Range
+
+    member this.Range =
+        match this with
+        | If m
+        | Elif m -> m
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynInterpolatedStringPart =

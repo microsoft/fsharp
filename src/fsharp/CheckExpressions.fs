@@ -7947,7 +7947,7 @@ and TcItemThen cenv overallTy env tpenv (tinstEnclosing, item, mItem, rest, afte
             | SynExpr.ArrayOrList (_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
             | SynExpr.Record (_, copyOpt, fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall (p23 >> Option.forall isSimpleArgument)
             | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
-            | SynExpr.IfThenElse (synExpr, synExpr2, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
+            | SynExpr.IfThenElse (_, synExpr, _, synExpr2, _, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
             | SynExpr.DotIndexedGet (synExpr, _, _, _) -> isSimpleArgument synExpr
             | SynExpr.ObjExpr _
             | SynExpr.AnonRecd _
@@ -9157,7 +9157,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) ->
                 cont (fst (mkf (x, overallTy)), tpenv))
 
-    | SynExpr.IfThenElse (synBoolExpr, synThenExpr, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
+    | SynExpr.IfThenElse (_, synBoolExpr, _, synThenExpr, _, synElseExprOpt, spIfToThen, isRecovery, mIfToThen, m) when not isCompExpr ->
         let boolExpr, tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv synBoolExpr
         let thenExpr, tpenv =
             let env =

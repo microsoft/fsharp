@@ -6257,12 +6257,18 @@ FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Syntax.SynExpr get_if
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Syntax.SynExpr get_thenExpr()
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Syntax.SynExpr ifExpr
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Syntax.SynExpr thenExpr
+FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Syntax.SynIfThenElseStart get_ifKeyword()
+FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Syntax.SynIfThenElseStart ifKeyword
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Text.Range get_ifToThenRange()
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Text.Range get_thenKeyword()
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Text.Range ifToThenRange
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+IfThenElse: FSharp.Compiler.Text.Range thenKeyword
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] elseExpr
 FSharp.Compiler.Syntax.SynExpr+IfThenElse: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr] get_elseExpr()
+FSharp.Compiler.Syntax.SynExpr+IfThenElse: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] elseKeyword
+FSharp.Compiler.Syntax.SynExpr+IfThenElse: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_elseKeyword()
 FSharp.Compiler.Syntax.SynExpr+ImplicitZero: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+ImplicitZero: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+InferredDowncast: FSharp.Compiler.Syntax.SynExpr expr
@@ -6793,7 +6799,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFor(FSharp.Com
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewForEach(FSharp.Compiler.Syntax.DebugPointAtFor, FSharp.Compiler.Syntax.SeqExprOnly, Boolean, FSharp.Compiler.Syntax.SynPat, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewFromParseError(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewIdent(FSharp.Compiler.Syntax.Ident)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewIfThenElse(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewIfThenElse(FSharp.Compiler.Syntax.SynIfThenElseStart, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynExpr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynExpr], FSharp.Compiler.Syntax.DebugPointAtBinding, Boolean, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewImplicitZero(FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewInferredDowncast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewInferredUpcast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
@@ -6927,6 +6933,27 @@ FSharp.Compiler.Syntax.SynField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Com
 FSharp.Compiler.Syntax.SynField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] accessibility
 FSharp.Compiler.Syntax.SynField: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_accessibility()
 FSharp.Compiler.Syntax.SynField: System.String ToString()
+FSharp.Compiler.Syntax.SynIfThenElseStart
+FSharp.Compiler.Syntax.SynIfThenElseStart+Elif: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynIfThenElseStart+Elif: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynIfThenElseStart+If: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynIfThenElseStart+If: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynIfThenElseStart+Tags: Int32 Elif
+FSharp.Compiler.Syntax.SynIfThenElseStart+Tags: Int32 If
+FSharp.Compiler.Syntax.SynIfThenElseStart: Boolean IsElif
+FSharp.Compiler.Syntax.SynIfThenElseStart: Boolean IsIf
+FSharp.Compiler.Syntax.SynIfThenElseStart: Boolean get_IsElif()
+FSharp.Compiler.Syntax.SynIfThenElseStart: Boolean get_IsIf()
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Syntax.SynIfThenElseStart NewElif(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Syntax.SynIfThenElseStart NewIf(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Syntax.SynIfThenElseStart+Elif
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Syntax.SynIfThenElseStart+If
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Syntax.SynIfThenElseStart+Tags
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynIfThenElseStart: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynIfThenElseStart: Int32 Tag
+FSharp.Compiler.Syntax.SynIfThenElseStart: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynIfThenElseStart: System.String ToString()
 FSharp.Compiler.Syntax.SynIndexerArg
 FSharp.Compiler.Syntax.SynIndexerArg+One: Boolean fromEnd
 FSharp.Compiler.Syntax.SynIndexerArg+One: Boolean get_fromEnd()
